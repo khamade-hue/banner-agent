@@ -111,7 +111,14 @@ if "analysis" in st.session_state:
                 st.caption(f"根拠: {ax.get('rationale', '—')}")
             with col_btn:
                 if st.button("リストに追加", key=f"add_axis_{i}", use_container_width=True):
-                    add_axis(product_name_s, product_url_s, ax)
+                    product_context = {
+                        "value_proposition": c3.get("company", {}).get("value_proposition", ""),
+                        "strengths": c3.get("company", {}).get("strengths", ""),
+                        "customer_needs": c3.get("customer", {}).get("needs", ""),
+                        "pain_points": c3.get("customer", {}).get("pain_points", ""),
+                        "differentiation": c3.get("competitor", {}).get("differentiation", ""),
+                    }
+                    add_axis(product_name_s, product_url_s, ax, product_context)
                     st.success(f"「{ax['axis']}」を追加しました")
                     st.rerun()
 

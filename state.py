@@ -14,12 +14,18 @@ def load_axes() -> list[dict]:
         return json.load(f)
 
 
-def add_axis(product_name: str, product_url: str, axis: dict) -> dict:
+def add_axis(
+    product_name: str,
+    product_url: str,
+    axis: dict,
+    product_context: dict | None = None,
+) -> dict:
     entry = {
         "id": str(uuid.uuid4()),
         "product_name": product_name,
         "product_url": product_url,
         **axis,
+        "product_context": product_context or {},
         "created_at": datetime.now().isoformat(),
     }
     axes = load_axes()

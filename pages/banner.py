@@ -16,6 +16,26 @@ from image_gen import generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_axes
 
+# ── トンマナ / 目的 定義 ──────────────────────────────────────────────────────
+TONMANA = {
+    "モダン・ミニマル": "modern minimalist: clean geometric composition, ample white space, muted neutral palette (white/light gray/black), simple elegant forms, understated sophistication",
+    "プロフェッショナル・信頼感": "professional and trustworthy: structured balanced composition, authoritative navy-gray-white palette, polished corporate aesthetic, conveys stability and credibility",
+    "ポップ・カジュアル": "playful and casual: vibrant saturated colors, energetic dynamic layout, bold graphic shapes, youthful approachable feel",
+    "ラグジュアリー・高級感": "luxury premium: deep rich tones (black/gold/deep burgundy), dramatic chiaroscuro lighting, exclusive sophisticated atmosphere, opulent textures",
+    "エネルギッシュ・ダイナミック": "energetic and dynamic: bold diagonal lines, high-contrast vivid colors, sense of speed and momentum, powerful impactful composition",
+    "ナチュラル・オーガニック": "natural and organic: earthy warm tones (sage green/warm beige/terracotta), soft natural textures, wholesome honest aesthetic, nature-inspired elements",
+    "テック・イノベーティブ": "tech-forward and innovative: dark background, electric neon accent colors (blue/cyan/purple), futuristic geometric elements, cutting-edge digital aesthetic",
+    "ウォーム・フレンドリー": "warm and friendly: soft warm colors (peach/warm yellow/coral), inviting comfortable composition, heartfelt approachable mood, human-centered",
+}
+
+OBJECTIVE = {
+    "認知拡大（ブランディング）": "brand awareness — striking and memorable, strong brand world-building, aspirational and inspiring, makes the viewer want to know more",
+    "クリック促進（CTR向上）": "CTR optimization — visually arresting with a clear focal point, creates curiosity and desire, irresistible visual pull",
+    "コンバージョン（購入・申込）": "direct conversion — clearly conveys the core product benefit and value, builds immediate trust, creates desire to act now",
+    "リターゲティング（再訪問促進）": "retargeting — reinforces familiarity with the product, warm and inviting re-engagement tone, reminds the viewer of the value they saw before",
+    "シーズン・キャンペーン": "seasonal campaign — timely and festive elements, limited-time energy, celebratory and urgent mood",
+}
+
 
 def _img_to_bytes(img: Image.Image) -> bytes:
     buf = io.BytesIO()
@@ -66,6 +86,14 @@ with st.sidebar:
         st.markdown(f"**{selected_axis['axis']}**")
         st.markdown(selected_axis.get("description", ""))
         st.caption(f"ターゲット: {selected_axis.get('target_segment', '—')}")
+        ctx = selected_axis.get("product_context", {})
+        if ctx.get("value_proposition"):
+            st.caption(f"提供価値: {ctx['value_proposition']}")
+
+    st.divider()
+
+    objective_label = st.selectbox("目的 *", list(OBJECTIVE.keys()))
+    tonmana_label = st.selectbox("トンマナ *", list(TONMANA.keys()))
 
     st.divider()
 
@@ -79,7 +107,6 @@ with st.sidebar:
     num_variations = st.selectbox(
         "出力枚数（バリエーション数）", [1, 2, 3, 4, 5], index=2
     )
-    style = st.text_input("ビジュアルスタイル", value="モダン・プロフェッショナル")
 
     st.divider()
     generate_btn = st.button("画像生成", type="primary", use_container_width=True)
@@ -92,6 +119,8 @@ if generate_btn:
         st.stop()
 
     selected_platforms = [p for p in PLATFORMS if p.name in selected_platform_names]
+    tonmana_desc = TONMANA[tonmana_label]
+    objective_desc = OBJECTIVE[objective_label]
 
     with st.status("バナーを生成中...", expanded=True) as status:
         st.write("**Step 1 / 2** — Claude がクリエイティブプロンプトを生成中")
@@ -100,10 +129,12 @@ if generate_btn:
                 brand_name=selected_axis["product_name"],
                 product=selected_axis["product_name"],
                 message=selected_axis["description"],
-                style=style,
+                tonmana=tonmana_desc,
                 target_audience=selected_axis.get("target_segment", ""),
                 num_variations=num_variations,
                 appeal_axis=selected_axis,
+                product_context=selected_axis.get("product_context"),
+                objective=objective_desc,
             )
             st.write(f"✓ {len(variations)} バリエーション確定")
         except Exception as e:
@@ -127,6 +158,8 @@ if generate_btn:
     st.session_state["gen_results"] = results
     st.session_state["gen_axis"] = selected_axis
     st.session_state["gen_platforms"] = selected_platforms
+    st.session_state["gen_tonmana"] = tonmana_label
+    st.session_state["gen_objective"] = objective_label
 
 
 # ── Results display ───────────────────────────────────────────────────────────
@@ -144,7 +177,11 @@ with col_title:
         f"生成結果 — {len(results)} バリエーション × {len(current_platforms)} プラットフォーム"
     )
     if current_axis:
-        st.caption(f"訴求軸: {current_axis['axis']} ｜ 商品: {current_axis['product_name']}")
+        st.caption(
+            f"訴求軸: {current_axis['axis']} ｜ "
+            f"トンマナ: {st.session_state.get('gen_tonmana', '—')} ｜ "
+            f"目的: {st.session_state.get('gen_objective', '—')}"
+        )
 with col_dl:
     st.download_button(
         "全ファイルを ZIP でダウンロード",

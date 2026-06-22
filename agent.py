@@ -118,14 +118,17 @@ def generate_banner_prompts(
     brand_name: str,
     product: str,
     message: str,
-    style: str,
+    tonmana: str,
     target_audience: str,
     num_variations: int = 3,
     appeal_axis: dict | None = None,
+    product_context: dict | None = None,
+    objective: str = "",
 ) -> list[dict]:
     """Use Claude to craft A/B test image prompts for banner ads."""
     client = _claude()
 
+    ctx = product_context or {}
     axis_section = ""
     if appeal_axis:
         axis_section = f"""
@@ -133,39 +136,57 @@ Appeal Axis: {appeal_axis['axis']}
 Axis Detail: {appeal_axis['description']}
 Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
 
+    product_section = ""
+    if ctx:
+        product_section = f"""
+PRODUCT DETAILS:
+- Value Proposition: {ctx.get('value_proposition', '')}
+- Key Strengths: {ctx.get('strengths', '')}
+- Customer Needs: {ctx.get('customer_needs', '')}
+- Customer Pain Points: {ctx.get('pain_points', '')}
+- Competitive Differentiation: {ctx.get('differentiation', '')}"""
+
+    objective_section = f"\nCampaign Objective: {objective}" if objective else ""
+
     response = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2000,
         system=(
             "You are a senior advertising creative director specializing in digital performance ads. "
-            "Generate image prompts for gpt-image-1 that produce high-converting banner creatives. "
+            "Generate image prompts for gpt-image-1 that produce high-converting banner creatives "
+            "deeply rooted in the actual product and brand context provided. "
+            "The visuals must feel specific to this product — never generic or metaphorical. "
             "Output ONLY valid JSON — no markdown fences, no explanation."
         ),
         messages=[{
             "role": "user",
-            "content": f"""Create {num_variations} visually distinct A/B test variations for a banner ad campaign.
+            "content": f"""Create {num_variations} visually distinct A/B test banner ad variations for this specific product.
 
-Brand: {brand_name}
-Product / Service: {product}
+BRAND & PRODUCT:
+Brand / Product Name: {brand_name}
+Product URL: {appeal_axis.get('product_url', '') if appeal_axis else ''}
+{product_section}
+
+CREATIVE STRATEGY:
 Key Message: {message}
-Visual Style Preference: {style}
-Target Audience: {target_audience}{axis_section}
+Tone & Manner: {tonmana}
+Target Audience: {target_audience}{axis_section}{objective_section}
 
 Return a JSON array with exactly {num_variations} objects:
 [
   {{
     "variation": "A",
     "label": "Short descriptive label (2-3 words)",
-    "prompt": "Highly detailed English prompt for gpt-image-1. NO text or typography in the image. Specify: dominant colors, composition, lighting, visual elements, mood, style. Professional advertising quality. Square format.",
+    "prompt": "Highly detailed English prompt for gpt-image-1. The image MUST visually represent the actual product category and brand world — e.g. if it's a software product, show a sleek digital interface; if it's food, show the actual dish. NO text, NO typography, NO generic metaphors. Specify: subject matter directly related to the product, dominant colors matching the tone & manner, composition, lighting, mood, visual style. Square format. Professional advertising quality.",
     "rationale": "One sentence: why this creative will resonate with the target audience"
   }}
 ]
 
-Differentiation rules (each variation must differ on at least 2):
-- Color palette (warm vs cool vs neutral vs bold)
-- Composition (centered vs rule-of-thirds vs asymmetric)
-- Mood (energetic vs calm vs aspirational vs urgent)
-- Visual style (photo-realistic vs illustrated vs abstract vs minimalist)""",
+CRITICAL rules:
+- Each image prompt must depict something visually tied to the actual product category (not abstract metaphors)
+- Apply the Tone & Manner ({tonmana}) to determine color palette, lighting mood, and visual style
+- Variations must differ on at least 2 of: color palette, composition, mood, visual style
+- Absolutely NO text, numbers, or typography in any image""",
         }],
     )
 

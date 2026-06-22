@@ -66,7 +66,7 @@ def main():
         brand_name=brand_name,
         product=product,
         message=message,
-        style=style,
+        tonmana=style,
         target_audience=target_audience,
         num_variations=num_variations,
     )
