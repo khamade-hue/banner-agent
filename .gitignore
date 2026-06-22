@@ -1,6 +1,6 @@
 .env
 output/
-data/
+data/banners/*.png
 __pycache__/
 *.pyc
 .DS_Store
