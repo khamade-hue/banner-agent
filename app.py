@@ -26,5 +26,6 @@ if missing:
 pg = st.navigation([
     st.Page("pages/analysis.py", title="訴求軸の検討", icon="🎯"),
     st.Page("pages/banner.py", title="バナー生成", icon="🖼️"),
+    st.Page("pages/saved_banners.py", title="保存済みバナー", icon="📁"),
 ])
 pg.run()

@@ -35,6 +35,12 @@ with st.form("analysis_form"):
         product_name = st.text_input("商品名 *", placeholder="例: プロテインバー MUSCLE BOOST")
     with col2:
         product_url = st.text_input("商品URL *", placeholder="例: https://example.com/product")
+
+    competitor_url = st.text_input(
+        "競合商品URL（任意）",
+        placeholder="例: https://competitor.com/product — 空欄の場合はClaudeが競合を自動リサーチ",
+    )
+
     submitted = st.form_submit_button(
         "3C分析・訴求軸を生成", type="primary", use_container_width=True
     )
@@ -45,16 +51,33 @@ if submitted:
         st.stop()
 
     with st.status("分析中...", expanded=True) as status:
-        st.write("URLからページ内容を取得中...")
+        st.write("自社ページの内容を取得中...")
         page_content = _fetch_page_content(product_url)
         if page_content:
-            st.write(f"✓ ページ内容を取得しました（{len(page_content)} 文字）")
+            st.write(f"✓ 自社ページ取得完了（{len(page_content)} 文字）")
         else:
-            st.write("⚠ ページ内容の取得に失敗しました（URLの情報のみで分析します）")
+            st.write("⚠ 自社ページの取得に失敗しました（URLの情報のみで分析します）")
+
+        competitor_content = ""
+        if competitor_url.strip():
+            st.write("競合ページの内容を取得中...")
+            competitor_content = _fetch_page_content(competitor_url.strip())
+            if competitor_content:
+                st.write(f"✓ 競合ページ取得完了（{len(competitor_content)} 文字）")
+            else:
+                st.write("⚠ 競合ページの取得に失敗しました（URLの情報のみで分析します）")
+        else:
+            st.write("競合URLなし → Claude が競合を自動リサーチします")
 
         st.write("Claude が3C分析・訴求軸を生成中...")
         try:
-            analysis = analyze_product(product_name, product_url, page_content)
+            analysis = analyze_product(
+                product_name,
+                product_url,
+                page_content,
+                competitor_url=competitor_url.strip(),
+                competitor_content=competitor_content,
+            )
         except Exception as e:
             st.error(f"分析エラー: {e}")
             st.stop()

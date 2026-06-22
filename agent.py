@@ -7,13 +7,34 @@ def _claude() -> anthropic.Anthropic:
     return anthropic.Anthropic()
 
 
-def analyze_product(product_name: str, product_url: str, page_content: str) -> dict:
+def analyze_product(
+    product_name: str,
+    product_url: str,
+    page_content: str,
+    competitor_url: str = "",
+    competitor_content: str = "",
+) -> dict:
     """3C analysis and appeal axis generation."""
     client = _claude()
 
     content_section = (
-        f"\nページ内容（抜粋）:\n{page_content[:4000]}" if page_content.strip() else ""
+        f"\n自社ページ内容（抜粋）:\n{page_content[:3000]}" if page_content.strip() else ""
     )
+
+    if competitor_url and competitor_content.strip():
+        competitor_section = f"""
+【競合情報（指定URL）】
+競合URL: {competitor_url}
+競合ページ内容（抜粋）:
+{competitor_content[:2500]}
+
+上記の競合商品を中心に詳細な競合分析を実施し、自社商品が勝てる差別化ポイントを明確にしてください。"""
+    else:
+        competitor_section = """
+【競合情報】
+競合URLは指定されていません。あなたの知識をベースに、この商品カテゴリの主要競合（3〜5社）を
+特定し、各社の強み・市場ポジション・差別化ポイントを分析してください。
+競合landscape フィールドには特定した競合企業名と概要を含めてください。"""
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
@@ -29,6 +50,7 @@ def analyze_product(product_name: str, product_url: str, page_content: str) -> d
 
 商品名: {product_name}
 商品URL: {product_url}{content_section}
+{competitor_section}
 
 以下のJSON形式で出力してください:
 {{
@@ -39,8 +61,8 @@ def analyze_product(product_name: str, product_url: str, page_content: str) -> d
       "demographics": "ターゲット属性"
     }},
     "competitor": {{
-      "landscape": "競合状況の概観",
-      "differentiation": "差別化ポイント"
+      "landscape": "競合状況の概観（特定した競合企業名を含む）",
+      "differentiation": "自社商品の差別化ポイント"
     }},
     "company": {{
       "strengths": "自社・商品の強み",
