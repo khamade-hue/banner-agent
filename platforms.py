@@ -49,3 +49,10 @@ def save_all_platforms(source: Image.Image, label: str, output_dir: str) -> list
 def resize_for_all_platforms(source: Image.Image) -> list[tuple[Platform, Image.Image]]:
     """Return resized PIL images for all platforms (no disk I/O)."""
     return [(p, _smart_crop(source, p.width, p.height)) for p in PLATFORMS]
+
+
+def resize_for_selected_platforms(
+    source: Image.Image, selected: list[Platform]
+) -> list[tuple[Platform, Image.Image]]:
+    """Return resized PIL images for the given platform subset (no disk I/O)."""
+    return [(p, _smart_crop(source, p.width, p.height)) for p in selected]
