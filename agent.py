@@ -230,7 +230,7 @@ PRODUCT DETAILS:
 
     banner_tool = {
         "name": "submit_banner_prompts",
-        "description": "Submit A/B test banner ad image prompts",
+        "description": "Submit A/B test banner ad image prompts with Japanese copy",
         "input_schema": {
             "type": "object",
             "required": ["variations"],
@@ -241,11 +241,13 @@ PRODUCT DETAILS:
                     "maxItems": num_variations,
                     "items": {
                         "type": "object",
-                        "required": ["variation", "label", "prompt", "rationale"],
+                        "required": ["variation", "label", "prompt", "headline", "subtext", "rationale"],
                         "properties": {
                             "variation": {"type": "string"},
                             "label": {"type": "string"},
                             "prompt": {"type": "string"},
+                            "headline": {"type": "string", "description": "キャッチコピー（20文字以内）"},
+                            "subtext": {"type": "string", "description": "サブコピー（30文字以内）"},
                             "rationale": {"type": "string"},
                         },
                     },
@@ -260,14 +262,16 @@ PRODUCT DETAILS:
         tools=[banner_tool],
         tool_choice={"type": "any"},
         system=(
-            "You are a senior advertising creative director specializing in digital performance ads. "
-            "Generate image prompts for gpt-image-1 that produce high-converting banner creatives "
-            "deeply rooted in the actual product and brand context provided. "
-            "The visuals must feel specific to this product — never generic or metaphorical."
+            "You are a senior advertising creative director specializing in high-converting SNS banner ads. "
+            "Your task: craft image prompts that visualize the EMOTIONAL OUTCOME customers experience AFTER using this product — "
+            "NOT the product itself, its features, or generic category imagery. "
+            "Ask yourself: what does the customer's life, work, or self-image look like after this product transforms them? "
+            "Show that transformed moment — achievement, confidence, relief, joy, status, empowerment. "
+            "Also generate punchy Japanese copy (キャッチコピー) for each variation."
         ),
         messages=[{
             "role": "user",
-            "content": f"""Create {num_variations} visually distinct A/B test banner ad variations (labeled {', '.join(variation_labels)}) for this specific product.
+            "content": f"""Create {num_variations} visually distinct A/B test banner ad variations (labeled {', '.join(variation_labels)}).
 
 BRAND & PRODUCT:
 Brand / Product Name: {brand_name}
@@ -279,12 +283,20 @@ Key Message: {message}
 Tone & Manner: {tonmana}
 Target Audience: {target_audience}{axis_section}{objective_section}
 
-CRITICAL rules for each image prompt:
-- Visually tied to the actual product category (not abstract metaphors)
-- Apply the Tone & Manner ({tonmana}) to color palette, lighting mood, and visual style
-- Variations must differ on at least 2 of: color palette, composition, mood, visual style
-- Absolutely NO text, numbers, or typography in any image
-- Square format, professional advertising quality""",
+For each variation output:
+
+1. image prompt (English):
+   - Visualize the EMOTIONAL OUTCOME — the customer's transformed state AFTER using this product
+   - Show a person, scene, or atmosphere that embodies the feeling this product delivers
+   - Do NOT show the product, equipment, or literal product category
+   - Apply Tone & Manner ({tonmana}) to color palette, lighting, and visual style
+   - Keep the bottom 25% of the composition relatively simple (solid color, gradient, or uncluttered background) — this area will have text overlaid
+   - Variations must differ on at least 2 of: subject, color palette, composition, mood
+   - NO text, numbers, or typography anywhere in the image
+   - Square format, professional advertising quality
+
+2. headline (Japanese, ≤20 chars): キャッチコピー — punchy, benefit-focused, speaks directly to the target's desire
+3. subtext (Japanese, ≤30 chars): サブコピー — brief supporting message that complements the headline""",
         }],
     )
 

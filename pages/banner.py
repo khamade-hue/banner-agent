@@ -12,7 +12,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import generate_banner_prompts, refine_banner_prompt
-from image_gen import generate_image
+from image_gen import generate_image, add_text_overlay
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_axes, load_banners, save_banner_entry
 
@@ -196,7 +196,10 @@ if generate_btn:
             except RuntimeError as e:
                 st.error(f"画像生成エラー:\n\n```\n{e}\n```")
                 st.stop()
-            platform_images = resize_for_selected_platforms(base_img, selected_platforms)
+            platform_images = [
+                (platform, add_text_overlay(img, v.get("headline", ""), v.get("subtext", "")))
+                for platform, img in resize_for_selected_platforms(base_img, selected_platforms)
+            ]
             results.append((v, platform_images))
 
         st.write("**Step 3 / 3** — バナーを保存中")
@@ -255,6 +258,10 @@ tabs = st.tabs([f"[{v['variation']}] {v['label']}" for v, _ in results])
 
 for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
     with tab:
+        if v.get("headline"):
+            st.markdown(f"**コピー:** {v['headline']}")
+            if v.get("subtext"):
+                st.caption(v["subtext"])
         st.markdown(f"**戦略:** {v['rationale']}")
         with st.expander("生成プロンプトを見る"):
             st.code(v["prompt"], language=None)
@@ -300,9 +307,10 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
                         new_base_img = generate_image(
                             new_prompt, reference_image=reference_image
                         )
-                        new_platform_images = resize_for_selected_platforms(
-                            new_base_img, current_platforms
-                        )
+                        new_platform_images = [
+                            (platform, add_text_overlay(img, v.get("headline", ""), v.get("subtext", "")))
+                            for platform, img in resize_for_selected_platforms(new_base_img, current_platforms)
+                        ]
                         updated_v = {
                             **v,
                             "prompt": new_prompt,
