@@ -97,10 +97,14 @@ if submitted:
         )
         st.write(f"✓ {len(variations)} バリエーション確定")
 
-        st.write("**Step 2 / 3** — gpt-image-1 で画像を生成中")
+        st.write("**Step 2 / 3** — gpt-image-1 / dall-e-3 で画像を生成中")
         for i, v in enumerate(variations):
             st.write(f"  [{v['variation']}] {v['label']} ({i + 1}/{len(variations)})")
-            base_img       = generate_image(v["prompt"], quality=quality)
+            try:
+                base_img = generate_image(v["prompt"], quality=quality)
+            except RuntimeError as e:
+                st.error(f"画像生成エラー:\n\n```\n{e}\n```")
+                st.stop()
             platform_images = resize_for_all_platforms(base_img)
             results.append((v, platform_images))
 
