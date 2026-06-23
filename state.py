@@ -1,21 +1,31 @@
-import json
+"""Persistence layer — Supabase backend."""
+
+import io
 import os
 import uuid
 from datetime import datetime
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-_AXES_FILE = os.path.join(_DATA_DIR, "appeal_axes.json")
-_BANNERS_FILE = os.path.join(_DATA_DIR, "banners.json")
-_BANNERS_IMG_DIR = os.path.join(_DATA_DIR, "banners")
+from supabase import create_client, Client
+
+_BUCKET = "banner-images"
+
+
+def _client() -> Client:
+    url = os.getenv("SUPABASE_URL", "")
+    key = os.getenv("SUPABASE_KEY", "")
+    if not url or not key:
+        raise RuntimeError(
+            "SUPABASE_URL と SUPABASE_KEY が設定されていません。"
+            ".env ファイルまたは Streamlit Cloud の Secrets を確認してください。"
+        )
+    return create_client(url, key)
 
 
 # ── Appeal axes ───────────────────────────────────────────────────────────────
 
 def load_axes() -> list[dict]:
-    if not os.path.exists(_AXES_FILE):
-        return []
-    with open(_AXES_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    res = _client().table("appeal_axes").select("*").order("created_at").execute()
+    return res.data or []
 
 
 def add_axis(
@@ -28,32 +38,27 @@ def add_axis(
         "id": str(uuid.uuid4()),
         "product_name": product_name,
         "product_url": product_url,
-        **axis,
+        "axis": axis.get("axis", ""),
+        "description": axis.get("description", ""),
+        "target_segment": axis.get("target_segment", ""),
+        "rationale": axis.get("rationale", ""),
+        "copy_suggestions": axis.get("copy_suggestions", {}),
         "product_context": product_context or {},
         "created_at": datetime.now().isoformat(),
     }
-    axes = load_axes()
-    axes.append(entry)
-    os.makedirs(_DATA_DIR, exist_ok=True)
-    with open(_AXES_FILE, "w", encoding="utf-8") as f:
-        json.dump(axes, f, ensure_ascii=False, indent=2)
+    _client().table("appeal_axes").insert(entry).execute()
     return entry
 
 
 def delete_axis(axis_id: str) -> None:
-    axes = [a for a in load_axes() if a["id"] != axis_id]
-    os.makedirs(_DATA_DIR, exist_ok=True)
-    with open(_AXES_FILE, "w", encoding="utf-8") as f:
-        json.dump(axes, f, ensure_ascii=False, indent=2)
+    _client().table("appeal_axes").delete().eq("id", axis_id).execute()
 
 
 # ── Saved banners ─────────────────────────────────────────────────────────────
 
 def load_banners() -> list[dict]:
-    if not os.path.exists(_BANNERS_FILE):
-        return []
-    with open(_BANNERS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    res = _client().table("banners").select("*").order("created_at").execute()
+    return res.data or []
 
 
 def save_banner_entry(
@@ -65,18 +70,29 @@ def save_banner_entry(
     objective: str,
 ) -> dict:
     banner_id = str(uuid.uuid4())
-    img_dir = os.path.join(_BANNERS_IMG_DIR, banner_id)
-    os.makedirs(img_dir, exist_ok=True)
+    client = _client()
 
     saved_platforms = []
     for platform, img in platform_images:
         filename = f"{platform.filename}_{platform.width}x{platform.height}.png"
-        fpath = os.path.join(img_dir, filename)
-        img.save(fpath, "PNG", optimize=True)
+        storage_path = f"{banner_id}/{filename}"
+
+        buf = io.BytesIO()
+        img.save(buf, "PNG", optimize=True)
+        buf.seek(0)
+
+        client.storage.from_(_BUCKET).upload(
+            storage_path,
+            buf.getvalue(),
+            {"content-type": "image/png", "upsert": "true"},
+        )
+        public_url = client.storage.from_(_BUCKET).get_public_url(storage_path)
+
         saved_platforms.append({
             "platform_name": platform.name,
             "filename": filename,
-            "path": fpath,
+            "storage_path": storage_path,
+            "public_url": public_url,
             "width": platform.width,
             "height": platform.height,
         })
@@ -94,22 +110,20 @@ def save_banner_entry(
         "platforms": saved_platforms,
         "created_at": datetime.now().isoformat(),
     }
-
-    banners = load_banners()
-    banners.append(entry)
-    os.makedirs(_DATA_DIR, exist_ok=True)
-    with open(_BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(banners, f, ensure_ascii=False, indent=2)
-
+    client.table("banners").insert(entry).execute()
     return entry
 
 
 def delete_banner(banner_id: str) -> None:
-    import shutil
-    banners = [b for b in load_banners() if b["id"] != banner_id]
-    img_dir = os.path.join(_BANNERS_IMG_DIR, banner_id)
-    if os.path.exists(img_dir):
-        shutil.rmtree(img_dir)
-    os.makedirs(_DATA_DIR, exist_ok=True)
-    with open(_BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(banners, f, ensure_ascii=False, indent=2)
+    client = _client()
+    banners = load_banners()
+    target = next((b for b in banners if b["id"] == banner_id), None)
+    if target:
+        paths = [
+            p["storage_path"]
+            for p in target.get("platforms", [])
+            if "storage_path" in p
+        ]
+        if paths:
+            client.storage.from_(_BUCKET).remove(paths)
+    client.table("banners").delete().eq("id", banner_id).execute()

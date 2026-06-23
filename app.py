@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 if hasattr(st, "secrets"):
-    for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY"):
+    for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY"):
         if k in st.secrets and not os.getenv(k):
             os.environ[k] = st.secrets[k]
 
@@ -339,7 +339,7 @@ hr {
 </style>
 """, unsafe_allow_html=True)
 
-missing = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY") if not os.getenv(k)]
+missing = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY") if not os.getenv(k)]
 if missing:
     st.error(f"APIキーが設定されていません: `{', '.join(missing)}`")
     st.info("`.env` ファイルを作成して API キーを設定してください（`.env.example` 参照）。")
