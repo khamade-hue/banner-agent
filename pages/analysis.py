@@ -10,7 +10,7 @@ import streamlit as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import analyze_product, generate_more_axes
-from state import add_axis
+from state import add_axis, load_axes
 
 
 def _fetch_page_content(url: str) -> str:
@@ -54,6 +54,18 @@ def _pills(items: list, bg: str, color: str, border: str) -> str:
              border:1px solid {border};border-radius:20px;padding:5px 13px;
              font-size:0.8rem;margin:3px 4px 3px 0;line-height:1.3;font-weight:500">{item}</span>"""
         for item in items
+    )
+
+
+def _copy_section(label: str, items: list, bg: str, color: str, border: str) -> str:
+    if not items:
+        return ""
+    return (
+        f'<div style="margin-bottom:8px">'
+        f'<div style="font-size:0.67rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+        f'letter-spacing:0.1em;margin-bottom:5px">{label}</div>'
+        f'{_pills(items, bg, color, border)}'
+        f'</div>'
     )
 
 
@@ -202,77 +214,92 @@ if "analysis" in st.session_state:
         "rgba(236,72,153,0.35)", "rgba(245,158,11,0.35)", "rgba(16,185,129,0.35)",
     ]
 
+    saved_axis_names = {a["axis"] for a in load_axes()}
+
     for i, ax in enumerate(current_axes):
-        color = BADGE_COLORS[i % len(BADGE_COLORS)]
-        glow  = BADGE_GLOWS[i % len(BADGE_GLOWS)]
+        color  = BADGE_COLORS[i % len(BADGE_COLORS)]
+        glow   = BADGE_GLOWS[i % len(BADGE_GLOWS)]
         copy_s = ax.get("copy_suggestions", {})
 
-        st.markdown(f"""
-        <div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:16px;
-             padding:24px 26px;border:1px solid #334155;margin-bottom:16px;
-             border-left:4px solid {color};
-             box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow}">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-                <div style="display:inline-flex;align-items:center;justify-content:center;
-                     width:32px;height:32px;border-radius:50%;background:{color};
-                     color:white;font-weight:800;font-size:13px;flex-shrink:0;
-                     box-shadow:0 2px 8px {glow}">{i+1}</div>
-                <span style="font-size:1.1rem;font-weight:800;color:#f1f5f9;
-                      letter-spacing:-0.01em">{ax["axis"]}</span>
-            </div>
-            <p style="color:#94a3b8;font-size:0.875rem;line-height:1.65;margin:0 0 14px">
-                {ax.get("description","")}
-            </p>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
-                     border-radius:8px;padding:5px 12px;font-size:0.78rem">
-                    <span style="color:#64748b;font-weight:600">🎯 ターゲット</span>
-                    <span style="color:#cbd5e1;margin-left:6px">{ax.get("target_segment","—")}</span>
-                </div>
-                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
-                     border-radius:8px;padding:5px 12px;font-size:0.78rem">
-                    <span style="color:#64748b;font-weight:600">💡 根拠</span>
-                    <span style="color:#cbd5e1;margin-left:6px">{ax.get("rationale","—")}</span>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
+        # Build copy pills HTML inline
+        copy_html = ""
         if copy_s:
-            if copy_s.get("headlines"):
-                st.markdown(f"""
-                <div style="margin-bottom:10px">
-                    <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;
-                         letter-spacing:0.1em;margin-bottom:6px">キャッチコピー</div>
-                    {_pills(copy_s["headlines"],"rgba(59,130,246,0.15)","#93c5fd","rgba(59,130,246,0.4)")}
-                </div>""", unsafe_allow_html=True)
-            if copy_s.get("offers"):
-                st.markdown(f"""
-                <div style="margin-bottom:10px">
-                    <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;
-                         letter-spacing:0.1em;margin-bottom:6px">オファー・CTA</div>
-                    {_pills(copy_s["offers"],"rgba(16,185,129,0.15)","#6ee7b7","rgba(16,185,129,0.4)")}
-                </div>""", unsafe_allow_html=True)
-            if copy_s.get("features"):
-                st.markdown(f"""
-                <div style="margin-bottom:4px">
-                    <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;
-                         letter-spacing:0.1em;margin-bottom:6px">特徴・アイコン</div>
-                    {_pills(copy_s["features"],"rgba(139,92,246,0.15)","#c4b5fd","rgba(139,92,246,0.4)")}
-                </div>""", unsafe_allow_html=True)
+            sections = (
+                _copy_section("キャッチコピー", copy_s.get("headlines", []),
+                              "rgba(59,130,246,0.15)", "#93c5fd", "rgba(59,130,246,0.4)") +
+                _copy_section("オファー・CTA", copy_s.get("offers", []),
+                              "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.4)") +
+                _copy_section("特徴・アイコン", copy_s.get("features", []),
+                              "rgba(139,92,246,0.15)", "#c4b5fd", "rgba(139,92,246,0.4)")
+            )
+            if sections:
+                copy_html = (
+                    f'<div style="border-top:1px solid #334155;margin-top:14px;padding-top:14px">'
+                    f'{sections}</div>'
+                )
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        col_card, col_btn = st.columns([10, 2])
 
-        if st.button("＋ バナー生成で使う", key=f"add_axis_{i}", type="primary"):
-            product_context = {
-                "value_proposition": co.get("value_proposition",""),
-                "strengths": co.get("strengths",""),
-                "customer_needs": cust.get("needs",""),
-                "pain_points": cust.get("pain_points",""),
-                "differentiation": comp.get("differentiation",""),
-            }
-            add_axis(product_name_s, product_url_s, ax, product_context)
-            st.success(f"「{ax['axis']}」を追加しました")
-            st.rerun()
+        with col_card:
+            st.markdown(f"""
+            <div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:16px;
+                 padding:22px 24px;border:1px solid #334155;
+                 border-left:4px solid {color};
+                 box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow}">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                    <div style="display:inline-flex;align-items:center;justify-content:center;
+                         width:30px;height:30px;border-radius:50%;background:{color};
+                         color:white;font-weight:800;font-size:12px;flex-shrink:0;
+                         box-shadow:0 2px 8px {glow}">{i+1}</div>
+                    <span style="font-size:1.05rem;font-weight:800;color:#f1f5f9;
+                          letter-spacing:-0.01em">{ax["axis"]}</span>
+                </div>
+                <p style="color:#94a3b8;font-size:0.85rem;line-height:1.65;margin:0 0 12px">
+                    {ax.get("description","")}
+                </p>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
+                         border-radius:8px;padding:4px 11px;font-size:0.76rem">
+                        <span style="color:#64748b;font-weight:600">🎯 ターゲット</span>
+                        <span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
+                         border-radius:8px;padding:4px 11px;font-size:0.76rem">
+                        <span style="color:#64748b;font-weight:600">💡 根拠</span>
+                        <span style="color:#cbd5e1;margin-left:5px">{ax.get("rationale","—")}</span>
+                    </div>
+                </div>
+                {copy_html}
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col_btn:
+            if ax["axis"] in saved_axis_names:
+                st.markdown("""
+                <div style="display:flex;flex-direction:column;align-items:center;
+                     justify-content:flex-start;padding-top:18px;gap:5px">
+                    <div style="width:32px;height:32px;border-radius:50%;
+                         background:rgba(16,185,129,0.15);border:2px solid #10b981;
+                         display:flex;align-items:center;justify-content:center;
+                         color:#10b981;font-size:15px;font-weight:800">✓</div>
+                    <div style="color:#10b981;font-size:0.68rem;font-weight:700;
+                         text-align:center;line-height:1.3">保存済み</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                if st.button("＋ 追加", key=f"add_axis_{i}", type="primary",
+                             use_container_width=True):
+                    product_context = {
+                        "value_proposition": co.get("value_proposition",""),
+                        "strengths": co.get("strengths",""),
+                        "customer_needs": cust.get("needs",""),
+                        "pain_points": cust.get("pain_points",""),
+                        "differentiation": comp.get("differentiation",""),
+                    }
+                    add_axis(product_name_s, product_url_s, ax, product_context)
+                    st.rerun()
+
+        st.markdown("<div style='margin-bottom:12px'></div>", unsafe_allow_html=True)
 
     # ── Additional axes ────────────────────────────────────────────────────────
     st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
