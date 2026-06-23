@@ -69,7 +69,7 @@ st.markdown("""
            border-radius:8px;padding:3px 10px;font-size:0.72rem;font-weight:700;
            color:#c4b5fd;letter-spacing:0.1em;text-transform:uppercase">Step 2 / 2</div>
   </div>
-  <h1 style="color:#ffffff;margin:0 0 10px;font-size:2rem;font-weight:800;
+  <h1 style="color:#e2e8f0;margin:0 0 10px;font-size:2rem;font-weight:800;
        line-height:1.15;letter-spacing:-0.02em">バナー画像生成</h1>
   <p style="color:#a5b4fc;margin:0;font-size:0.9rem;line-height:1.6;max-width:560px">
       Claude がデザインブリーフを作成し、gpt-image-2 が各プラットフォーム向けのバナーを生成します

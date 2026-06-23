@@ -16,7 +16,7 @@ st.markdown("""
      padding:32px 36px;border-radius:20px;margin-bottom:28px;
      border:1px solid rgba(16,185,129,0.3);
      box-shadow:0 8px 32px rgba(16,185,129,0.15),inset 0 1px 0 rgba(255,255,255,0.07)">
-  <h1 style="color:#ffffff;margin:0 0 10px;font-size:2rem;font-weight:800;
+  <h1 style="color:#e2e8f0;margin:0 0 10px;font-size:2rem;font-weight:800;
        line-height:1.15;letter-spacing:-0.02em">保存済みバナー</h1>
   <p style="color:#6ee7b7;margin:0;font-size:0.9rem;line-height:1.6">
       これまでに生成・保存したバナー画像の一覧です

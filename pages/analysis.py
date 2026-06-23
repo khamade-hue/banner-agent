@@ -10,7 +10,7 @@ import streamlit as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import analyze_product, generate_more_axes
-from state import load_axes, add_axis, delete_axis
+from state import add_axis
 
 
 def _fetch_page_content(url: str) -> str:
@@ -68,7 +68,7 @@ st.markdown("""
            border-radius:8px;padding:3px 10px;font-size:0.72rem;font-weight:700;
            color:#93c5fd;letter-spacing:0.1em;text-transform:uppercase">Step 1 / 2</div>
   </div>
-  <h1 style="color:#ffffff;margin:0 0 10px;font-size:2rem;font-weight:800;
+  <h1 style="color:#e2e8f0;margin:0 0 10px;font-size:2rem;font-weight:800;
        line-height:1.15;letter-spacing:-0.02em">訴求軸の検討</h1>
   <p style="color:#93c5fd;margin:0;font-size:0.9rem;line-height:1.6;max-width:560px">
       商品URLをもとに Claude が 3C 分析を実施し、SNS広告の最適な訴求軸とコピー候補を提案します
@@ -297,55 +297,11 @@ if "analysis" in st.session_state:
                     st.error(f"生成エラー: {e}")
 
 
-# ── Saved axes ────────────────────────────────────────────────────────────────
-st.markdown("<div style='margin-top:48px'></div>", unsafe_allow_html=True)
 st.markdown("""
-<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;
-     letter-spacing:0.1em;margin-bottom:16px">保存済み訴求軸</div>
+<div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);
+     border-radius:10px;padding:12px 18px;margin-top:32px">
+    <span style="color:#93c5fd;font-size:0.82rem">
+        📋 追加した訴求軸は <strong>「保存済み訴求軸」</strong> ページで管理できます
+    </span>
+</div>
 """, unsafe_allow_html=True)
-
-saved_axes = load_axes()
-if not saved_axes:
-    st.markdown("""
-    <div style="background:linear-gradient(145deg,#1e293b,#162032);border:1px dashed #334155;
-         border-radius:14px;padding:40px;text-align:center">
-        <div style="font-size:2.5rem;margin-bottom:12px">📋</div>
-        <div style="color:#475569;font-size:0.9rem;line-height:1.6">
-            まだ訴求軸が保存されていません<br>
-            <span style="color:#64748b;font-size:0.8rem">
-                上記で分析を実施して「＋ バナー生成で使う」を押してください
-            </span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(
-        f"<p style='color:#475569;font-size:0.82rem;margin-bottom:12px'>"
-        f"{len(saved_axes)} 件保存済み</p>",
-        unsafe_allow_html=True,
-    )
-    for ax in reversed(saved_axes):
-        col_text, col_btn = st.columns([6, 1])
-        with col_text:
-            st.markdown(f"""
-            <div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:12px;
-                 padding:16px 18px;border:1px solid #334155;margin-bottom:8px">
-                <div style="font-weight:700;color:#f1f5f9;font-size:0.95rem;
-                     margin-bottom:4px">{ax["axis"]}</div>
-                <div style="color:#475569;font-size:0.75rem;margin-bottom:8px">
-                    {ax["product_name"]} ｜ {ax.get("created_at","")[:10]}
-                </div>
-                <div style="color:#94a3b8;font-size:0.84rem;line-height:1.55;margin-bottom:8px">
-                    {ax.get("description","")}
-                </div>
-                <span style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);
-                     border-radius:6px;padding:3px 10px;font-size:0.75rem;color:#93c5fd">
-                    🎯 {ax.get("target_segment","—")}
-                </span>
-            </div>
-            """, unsafe_allow_html=True)
-        with col_btn:
-            st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
-            if st.button("削除", key=f"del_{ax['id']}", type="secondary", use_container_width=True):
-                delete_axis(ax["id"])
-                st.rerun()

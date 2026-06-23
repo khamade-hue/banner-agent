@@ -21,6 +21,15 @@ st.markdown("""
 <style>
 /* ── Base ── */
 .stApp { background: #0f172a; }
+
+/* ── Top toolbar (hamburger bar) ── */
+[data-testid="stHeader"] {
+    background: #0f172a !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+[data-testid="stToolbar"] { background: transparent !important; }
+[data-testid="stDecoration"] { display: none !important; }
+[data-testid="stMainMenuButton"] svg { fill: #475569 !important; }
 .main .block-container {
     padding-top: 1.5rem !important;
     padding-bottom: 4rem !important;
@@ -155,8 +164,9 @@ if missing:
     st.stop()
 
 pg = st.navigation([
-    st.Page("pages/analysis.py", title="訴求軸の検討", icon="🎯"),
-    st.Page("pages/banner.py", title="バナー生成", icon="🖼️"),
+    st.Page("pages/analysis.py",    title="訴求軸の検討",   icon="🎯"),
+    st.Page("pages/banner.py",      title="バナー生成",     icon="🖼️"),
+    st.Page("pages/saved_axes.py",  title="保存済み訴求軸", icon="📋"),
     st.Page("pages/saved_banners.py", title="保存済みバナー", icon="📁"),
 ])
 pg.run()
