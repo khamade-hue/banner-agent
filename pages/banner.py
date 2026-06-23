@@ -281,7 +281,7 @@ if generate_btn:
 
 
 # ── Results display ───────────────────────────────────────────────────────────
-if "gen_results" not in st.session_state:
+if not st.session_state.get("gen_results"):
     st.info("左サイドバーで設定を入力し「画像生成」を押してください。")
     st.stop()
 
