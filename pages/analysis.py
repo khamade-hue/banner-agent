@@ -25,25 +25,85 @@ def _fetch_page_content(url: str) -> str:
         return ""
 
 
-st.title("ターゲットと訴求軸の検討")
-st.caption("商品URLをもとに Claude が3C分析を実施し、SNS広告の訴求軸を提案します")
+def _c3_card(title: str, color: str, gradient: str, icon: str, items: list) -> str:
+    rows = "".join(
+        f"""<div style="margin-bottom:14px">
+            <div style="font-size:0.7rem;font-weight:700;color:{color};
+                 text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">{label}</div>
+            <div style="color:#cbd5e1;font-size:0.875rem;line-height:1.6">{value}</div>
+        </div>"""
+        for label, value in items
+    )
+    return f"""
+    <div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:14px;
+         padding:22px 24px;border-top:3px solid {color};
+         box-shadow:0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <div style="background:{gradient};width:36px;height:36px;border-radius:10px;
+                 display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.3)">{icon}</div>
+            <span style="font-weight:700;font-size:0.95rem;color:#f1f5f9">{title}</span>
+        </div>
+        {rows}
+    </div>"""
 
-# ── Input form ───────────────────────────────────────────────────────────────
+
+def _pills(items: list, bg: str, color: str, border: str) -> str:
+    return "".join(
+        f"""<span style="display:inline-block;background:{bg};color:{color};
+             border:1px solid {border};border-radius:20px;padding:5px 13px;
+             font-size:0.8rem;margin:3px 4px 3px 0;line-height:1.3;font-weight:500">{item}</span>"""
+        for item in items
+    )
+
+
+# ── Page header ───────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="background:linear-gradient(135deg,#0f2744 0%,#1e3a8a 60%,#1d4ed8 100%);
+     padding:32px 36px;border-radius:20px;margin-bottom:28px;
+     border:1px solid rgba(59,130,246,0.3);
+     box-shadow:0 8px 32px rgba(37,99,235,0.25),inset 0 1px 0 rgba(255,255,255,0.07)">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="background:rgba(59,130,246,0.25);border:1px solid rgba(59,130,246,0.4);
+           border-radius:8px;padding:3px 10px;font-size:0.72rem;font-weight:700;
+           color:#93c5fd;letter-spacing:0.1em;text-transform:uppercase">Step 1 / 2</div>
+  </div>
+  <h1 style="color:#ffffff;margin:0 0 10px;font-size:2rem;font-weight:800;
+       line-height:1.15;letter-spacing:-0.02em">訴求軸の検討</h1>
+  <p style="color:#93c5fd;margin:0;font-size:0.9rem;line-height:1.6;max-width:560px">
+      商品URLをもとに Claude が 3C 分析を実施し、SNS広告の最適な訴求軸とコピー候補を提案します
+  </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Input form ────────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:16px;
+     padding:24px 28px;border:1px solid #334155;margin-bottom:24px;
+     box-shadow:0 4px 16px rgba(0,0,0,0.2)">
+  <div style="font-size:0.72rem;font-weight:700;color:#3b82f6;
+       text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px">
+      商品情報の入力
+  </div>
+""", unsafe_allow_html=True)
+
 with st.form("analysis_form"):
     col1, col2 = st.columns(2)
     with col1:
-        product_name = st.text_input("商品名 *", placeholder="例: プロテインバー MUSCLE BOOST")
+        product_name = st.text_input("商品名 *", placeholder="例: Craftin for Company")
     with col2:
-        product_url = st.text_input("商品URL *", placeholder="例: https://example.com/product")
-
+        product_url = st.text_input("商品URL *", placeholder="https://example.com/product")
     competitor_url = st.text_input(
         "競合商品URL（任意）",
-        placeholder="例: https://competitor.com/product — 空欄の場合はClaudeが競合を自動リサーチ",
+        placeholder="空欄の場合は Claude が自動でリサーチします",
+    )
+    submitted = st.form_submit_button(
+        "3C分析・訴求軸を生成",
+        type="primary",
+        use_container_width=True,
     )
 
-    submitted = st.form_submit_button(
-        "3C分析・訴求軸を生成", type="primary", use_container_width=True
-    )
+st.markdown("</div>", unsafe_allow_html=True)
 
 if submitted:
     if not product_name or not product_url:
@@ -51,37 +111,35 @@ if submitted:
         st.stop()
 
     with st.status("分析中...", expanded=True) as status:
-        st.write("自社ページの内容を取得中...")
+        st.write("自社ページを取得中...")
         page_content = _fetch_page_content(product_url)
-        if page_content:
-            st.write(f"✓ 自社ページ取得完了（{len(page_content)} 文字）")
-        else:
-            st.write("⚠ 自社ページの取得に失敗しました（URLの情報のみで分析します）")
+        st.write(
+            f"✓ 取得完了（{len(page_content)} 文字）"
+            if page_content else "⚠ ページ取得失敗（URL情報のみで分析）"
+        )
 
         competitor_content = ""
         if competitor_url.strip():
-            st.write("競合ページの内容を取得中...")
+            st.write("競合ページを取得中...")
             competitor_content = _fetch_page_content(competitor_url.strip())
-            if competitor_content:
-                st.write(f"✓ 競合ページ取得完了（{len(competitor_content)} 文字）")
-            else:
-                st.write("⚠ 競合ページの取得に失敗しました（URLの情報のみで分析します）")
+            st.write(
+                f"✓ 競合ページ取得完了（{len(competitor_content)} 文字）"
+                if competitor_content else "⚠ 競合ページ取得失敗"
+            )
         else:
-            st.write("競合URLなし → Claude が競合を自動リサーチします")
+            st.write("競合URLなし → Claude が自動リサーチします")
 
         st.write("Claude が3C分析・訴求軸を生成中...")
         try:
             analysis = analyze_product(
-                product_name,
-                product_url,
-                page_content,
+                product_name, product_url, page_content,
                 competitor_url=competitor_url.strip(),
                 competitor_content=competitor_content,
             )
         except Exception as e:
             err = str(e)
             if "overloaded" in err or "529" in err:
-                st.error("Anthropic API が一時的に混雑しています（529 Overloaded）。少し待ってから再度「3C分析・訴求軸を生成」を押してください。")
+                st.error("Anthropic API が一時的に混雑しています。少し待ってから再度お試しください。")
             else:
                 st.error(f"分析エラー: {e}")
             st.stop()
@@ -93,86 +151,142 @@ if submitted:
     st.session_state["analysis_product_url"] = product_url
 
 
-# ── Analysis results ─────────────────────────────────────────────────────────
+# ── Analysis results ──────────────────────────────────────────────────────────
 if "analysis" in st.session_state:
     analysis = st.session_state["analysis"]
     product_name_s = st.session_state.get("analysis_product_name", "")
-    product_url_s = st.session_state.get("analysis_product_url", "")
-    c3 = analysis.get("3c_analysis", {})
+    product_url_s  = st.session_state.get("analysis_product_url", "")
+    c3   = analysis.get("3c_analysis", {})
+    cust = c3.get("customer", {})
+    comp = c3.get("competitor", {})
+    co   = c3.get("company", {})
 
-    st.divider()
-    st.subheader("3C分析結果")
+    # ── 3C cards ──────────────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;
+         letter-spacing:0.1em;margin:8px 0 14px">3C 分析結果</div>
+    """, unsafe_allow_html=True)
+
     col1, col2, col3 = st.columns(3)
-
     with col1:
-        st.markdown("**顧客（Customer）**")
-        cust = c3.get("customer", {})
-        st.markdown(f"🎯 **ニーズ:** {cust.get('needs', '—')}")
-        st.markdown(f"😣 **課題:** {cust.get('pain_points', '—')}")
-        st.markdown(f"👤 **属性:** {cust.get('demographics', '—')}")
-
+        st.markdown(_c3_card(
+            "顧客 Customer", "#3b82f6", "linear-gradient(135deg,#1d4ed8,#3b82f6)", "👥",
+            [("ニーズ", cust.get("needs","—")),
+             ("課題・ペイン", cust.get("pain_points","—")),
+             ("属性", cust.get("demographics","—"))],
+        ), unsafe_allow_html=True)
     with col2:
-        st.markdown("**競合（Competitor）**")
-        comp = c3.get("competitor", {})
-        st.markdown(f"🏢 **競合状況:** {comp.get('landscape', '—')}")
-        st.markdown(f"⚡ **差別化:** {comp.get('differentiation', '—')}")
-
+        st.markdown(_c3_card(
+            "競合 Competitor", "#f43f5e", "linear-gradient(135deg,#be123c,#f43f5e)", "⚔️",
+            [("競合状況", comp.get("landscape","—")),
+             ("差別化ポイント", comp.get("differentiation","—"))],
+        ), unsafe_allow_html=True)
     with col3:
-        st.markdown("**自社（Company）**")
-        co = c3.get("company", {})
-        st.markdown(f"💪 **強み:** {co.get('strengths', '—')}")
-        st.markdown(f"💡 **提供価値:** {co.get('value_proposition', '—')}")
+        st.markdown(_c3_card(
+            "自社 Company", "#10b981", "linear-gradient(135deg,#059669,#10b981)", "🏢",
+            [("強み", co.get("strengths","—")),
+             ("提供価値", co.get("value_proposition","—"))],
+        ), unsafe_allow_html=True)
 
-    st.divider()
-    st.subheader("提案訴求軸")
+    # ── Appeal axes ───────────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="margin-top:36px;margin-bottom:16px">
+        <div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;
+             letter-spacing:0.1em;margin-bottom:6px">提案訴求軸</div>
+        <p style="color:#64748b;font-size:0.82rem;margin:0">
+            「＋ 追加」でバナー生成ページから使用できるようになります
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     current_axes = analysis.get("appeal_axes", [])
+    BADGE_COLORS  = ["#3b82f6","#8b5cf6","#ec4899","#f59e0b","#10b981"]
+    BADGE_GLOWS   = [
+        "rgba(59,130,246,0.35)", "rgba(139,92,246,0.35)",
+        "rgba(236,72,153,0.35)", "rgba(245,158,11,0.35)", "rgba(16,185,129,0.35)",
+    ]
 
     for i, ax in enumerate(current_axes):
-        with st.container(border=True):
-            col_text, col_btn = st.columns([5, 1])
-            with col_text:
-                st.markdown(f"#### {ax['axis']}")
-                st.markdown(ax.get("description", ""))
-                st.caption(f"ターゲット: {ax.get('target_segment', '—')}")
-                st.caption(f"根拠: {ax.get('rationale', '—')}")
-                copy_s = ax.get("copy_suggestions", {})
-                if copy_s:
-                    with st.expander("コピー候補"):
-                        if copy_s.get("headlines"):
-                            st.markdown("**キャッチ:**")
-                            for h in copy_s["headlines"]:
-                                st.markdown(f"- {h}")
-                        if copy_s.get("offers"):
-                            st.markdown("**オファー・CTA:**")
-                            for o in copy_s["offers"]:
-                                st.markdown(f"- {o}")
-                        if copy_s.get("features"):
-                            st.markdown("**特徴:**")
-                            for f in copy_s["features"]:
-                                st.markdown(f"- {f}")
-            with col_btn:
-                if st.button("リストに追加", key=f"add_axis_{i}", use_container_width=True):
-                    product_context = {
-                        "value_proposition": c3.get("company", {}).get("value_proposition", ""),
-                        "strengths": c3.get("company", {}).get("strengths", ""),
-                        "customer_needs": c3.get("customer", {}).get("needs", ""),
-                        "pain_points": c3.get("customer", {}).get("pain_points", ""),
-                        "differentiation": c3.get("competitor", {}).get("differentiation", ""),
-                    }
-                    add_axis(product_name_s, product_url_s, ax, product_context)
-                    st.success(f"「{ax['axis']}」を追加しました")
-                    st.rerun()
+        color = BADGE_COLORS[i % len(BADGE_COLORS)]
+        glow  = BADGE_GLOWS[i % len(BADGE_GLOWS)]
+        copy_s = ax.get("copy_suggestions", {})
 
-    # ── Additional axis generation ────────────────────────────────────────────
-    st.divider()
-    with st.expander("さらに訴求軸を追加する"):
+        st.markdown(f"""
+        <div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:16px;
+             padding:24px 26px;border:1px solid #334155;margin-bottom:16px;
+             border-left:4px solid {color};
+             box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow}">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                <div style="display:inline-flex;align-items:center;justify-content:center;
+                     width:32px;height:32px;border-radius:50%;background:{color};
+                     color:white;font-weight:800;font-size:13px;flex-shrink:0;
+                     box-shadow:0 2px 8px {glow}">{i+1}</div>
+                <span style="font-size:1.1rem;font-weight:800;color:#f1f5f9;
+                      letter-spacing:-0.01em">{ax["axis"]}</span>
+            </div>
+            <p style="color:#94a3b8;font-size:0.875rem;line-height:1.65;margin:0 0 14px">
+                {ax.get("description","")}
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
+                     border-radius:8px;padding:5px 12px;font-size:0.78rem">
+                    <span style="color:#64748b;font-weight:600">🎯 ターゲット</span>
+                    <span style="color:#cbd5e1;margin-left:6px">{ax.get("target_segment","—")}</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
+                     border-radius:8px;padding:5px 12px;font-size:0.78rem">
+                    <span style="color:#64748b;font-weight:600">💡 根拠</span>
+                    <span style="color:#cbd5e1;margin-left:6px">{ax.get("rationale","—")}</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        if copy_s:
+            if copy_s.get("headlines"):
+                st.markdown(f"""
+                <div style="margin-bottom:10px">
+                    <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;
+                         letter-spacing:0.1em;margin-bottom:6px">キャッチコピー</div>
+                    {_pills(copy_s["headlines"],"rgba(59,130,246,0.15)","#93c5fd","rgba(59,130,246,0.4)")}
+                </div>""", unsafe_allow_html=True)
+            if copy_s.get("offers"):
+                st.markdown(f"""
+                <div style="margin-bottom:10px">
+                    <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;
+                         letter-spacing:0.1em;margin-bottom:6px">オファー・CTA</div>
+                    {_pills(copy_s["offers"],"rgba(16,185,129,0.15)","#6ee7b7","rgba(16,185,129,0.4)")}
+                </div>""", unsafe_allow_html=True)
+            if copy_s.get("features"):
+                st.markdown(f"""
+                <div style="margin-bottom:4px">
+                    <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;
+                         letter-spacing:0.1em;margin-bottom:6px">特徴・アイコン</div>
+                    {_pills(copy_s["features"],"rgba(139,92,246,0.15)","#c4b5fd","rgba(139,92,246,0.4)")}
+                </div>""", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if st.button("＋ バナー生成で使う", key=f"add_axis_{i}", type="primary"):
+            product_context = {
+                "value_proposition": co.get("value_proposition",""),
+                "strengths": co.get("strengths",""),
+                "customer_needs": cust.get("needs",""),
+                "pain_points": cust.get("pain_points",""),
+                "differentiation": comp.get("differentiation",""),
+            }
+            add_axis(product_name_s, product_url_s, ax, product_context)
+            st.success(f"「{ax['axis']}」を追加しました")
+            st.rerun()
+
+    # ── Additional axes ────────────────────────────────────────────────────────
+    st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+    with st.expander("＋ さらに訴求軸を追加する"):
         add_angle = st.text_input(
-            "追加で検討したい観点（任意）",
+            "追加で検討したい観点",
             placeholder="例: 季節訴求、価格訴求、BtoB向けなど",
             key="add_angle_input",
         )
-        if st.button("追加訴求軸を生成", key="gen_more_btn"):
+        if st.button("追加訴求軸を生成", key="gen_more_btn", type="primary"):
             with st.spinner("訴求軸を生成中..."):
                 try:
                     new_axes = generate_more_axes(product_name_s, current_axes, add_angle)
@@ -183,27 +297,55 @@ if "analysis" in st.session_state:
                     st.error(f"生成エラー: {e}")
 
 
-# ── Saved axes list ───────────────────────────────────────────────────────────
-st.divider()
-st.subheader("保存済み訴求軸リスト")
+# ── Saved axes ────────────────────────────────────────────────────────────────
+st.markdown("<div style='margin-top:48px'></div>", unsafe_allow_html=True)
+st.markdown("""
+<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;
+     letter-spacing:0.1em;margin-bottom:16px">保存済み訴求軸</div>
+""", unsafe_allow_html=True)
 
 saved_axes = load_axes()
 if not saved_axes:
-    st.info("まだ訴求軸が保存されていません。上記で分析を実施して「リストに追加」してください。")
+    st.markdown("""
+    <div style="background:linear-gradient(145deg,#1e293b,#162032);border:1px dashed #334155;
+         border-radius:14px;padding:40px;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:12px">📋</div>
+        <div style="color:#475569;font-size:0.9rem;line-height:1.6">
+            まだ訴求軸が保存されていません<br>
+            <span style="color:#64748b;font-size:0.8rem">
+                上記で分析を実施して「＋ バナー生成で使う」を押してください
+            </span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 else:
-    for ax in saved_axes:
-        with st.container(border=True):
-            col_text, col_btn = st.columns([5, 1])
-            with col_text:
-                st.markdown(f"**{ax['axis']}** — *{ax['product_name']}*")
-                st.markdown(ax.get("description", ""))
-                st.caption(
-                    f"ターゲット: {ax.get('target_segment', '—')} ｜ "
-                    f"追加日: {ax.get('created_at', '')[:10]}"
-                )
-            with col_btn:
-                if st.button(
-                    "削除", key=f"del_{ax['id']}", type="secondary", use_container_width=True
-                ):
-                    delete_axis(ax["id"])
-                    st.rerun()
+    st.markdown(
+        f"<p style='color:#475569;font-size:0.82rem;margin-bottom:12px'>"
+        f"{len(saved_axes)} 件保存済み</p>",
+        unsafe_allow_html=True,
+    )
+    for ax in reversed(saved_axes):
+        col_text, col_btn = st.columns([6, 1])
+        with col_text:
+            st.markdown(f"""
+            <div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:12px;
+                 padding:16px 18px;border:1px solid #334155;margin-bottom:8px">
+                <div style="font-weight:700;color:#f1f5f9;font-size:0.95rem;
+                     margin-bottom:4px">{ax["axis"]}</div>
+                <div style="color:#475569;font-size:0.75rem;margin-bottom:8px">
+                    {ax["product_name"]} ｜ {ax.get("created_at","")[:10]}
+                </div>
+                <div style="color:#94a3b8;font-size:0.84rem;line-height:1.55;margin-bottom:8px">
+                    {ax.get("description","")}
+                </div>
+                <span style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);
+                     border-radius:6px;padding:3px 10px;font-size:0.75rem;color:#93c5fd">
+                    🎯 {ax.get("target_segment","—")}
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_btn:
+            st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+            if st.button("削除", key=f"del_{ax['id']}", type="secondary", use_container_width=True):
+                delete_axis(ax["id"])
+                st.rerun()

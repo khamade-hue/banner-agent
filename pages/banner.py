@@ -59,20 +59,50 @@ def _build_zip(results: list) -> bytes:
 # ── Load saved axes ───────────────────────────────────────────────────────────
 axes = load_axes()
 
-st.title("バナー画像生成")
-st.caption("Claude がクリエイティブ戦略を立案 → gpt-image-2 で各プラットフォーム向け画像を生成")
+st.markdown("""
+<div style="background:linear-gradient(135deg,#0f2744 0%,#1e1b4b 60%,#312e81 100%);
+     padding:32px 36px;border-radius:20px;margin-bottom:28px;
+     border:1px solid rgba(139,92,246,0.3);
+     box-shadow:0 8px 32px rgba(99,102,241,0.2),inset 0 1px 0 rgba(255,255,255,0.07)">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="background:rgba(139,92,246,0.25);border:1px solid rgba(139,92,246,0.4);
+           border-radius:8px;padding:3px 10px;font-size:0.72rem;font-weight:700;
+           color:#c4b5fd;letter-spacing:0.1em;text-transform:uppercase">Step 2 / 2</div>
+  </div>
+  <h1 style="color:#ffffff;margin:0 0 10px;font-size:2rem;font-weight:800;
+       line-height:1.15;letter-spacing:-0.02em">バナー画像生成</h1>
+  <p style="color:#a5b4fc;margin:0;font-size:0.9rem;line-height:1.6;max-width:560px">
+      Claude がデザインブリーフを作成し、gpt-image-2 が各プラットフォーム向けのバナーを生成します
+  </p>
+</div>
+""", unsafe_allow_html=True)
 
 if not axes:
-    st.warning("訴求軸がまだ保存されていません。")
-    st.info("先に「訴求軸の検討」ページで訴求軸を生成・保存してください。")
-    if st.button("訴求軸の検討ページへ", type="primary"):
+    st.markdown("""
+    <div style="background:linear-gradient(145deg,#1e293b,#162032);border:1px dashed #334155;
+         border-radius:14px;padding:48px;text-align:center">
+        <div style="font-size:3rem;margin-bottom:16px">🎯</div>
+        <div style="color:#f1f5f9;font-size:1.1rem;font-weight:700;margin-bottom:8px">
+            訴求軸がまだ保存されていません
+        </div>
+        <div style="color:#64748b;font-size:0.875rem;margin-bottom:24px">
+            先に「訴求軸の検討」ページで3C分析を実施して訴求軸を保存してください
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("訴求軸の検討ページへ →", type="primary"):
         st.switch_page("pages/analysis.py")
     st.stop()
 
 
 # ── Sidebar: generation settings ─────────────────────────────────────────────
 with st.sidebar:
-    st.header("生成設定")
+    st.markdown("""
+    <div style="padding:16px 0 8px">
+        <div style="font-size:0.7rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;
+             letter-spacing:0.1em">生成設定</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     axis_labels = [f"{a['axis']} — {a['product_name']}" for a in axes]
     selected_idx = st.selectbox(
