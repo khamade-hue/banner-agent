@@ -239,55 +239,47 @@ if "analysis" in st.session_state:
                     f'{sections}</div>'
                 )
 
-        # CSS: target the innermost stVerticalBlock that holds our marker.
-        # :not(:has(stVerticalBlock:has(marker))) excludes ancestor blocks.
-        st.markdown(f"""
-        <style>
-        [data-testid="stVerticalBlock"]:has(.{marker}):not(
-            :has([data-testid="stVerticalBlock"]:has(.{marker}))
-        ) {{
-            background: linear-gradient(145deg,#1e293b,#162032);
-            border-radius: 16px;
-            border: 1px solid #334155;
-            border-left: 4px solid {color};
-            padding: 18px 20px 20px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow};
-        }}
-        </style>
-        """, unsafe_allow_html=True)
+        # CSS: stVerticalBlockBorderWrapper (from st.container(border=True)) + :has(marker)
+        # app.py global CSS already sets background/#334155 border — only add color + glow here
+        st.markdown(
+            f"<style>[data-testid='stVerticalBlockBorderWrapper']:has(.{marker}){{"
+            f"border-left:4px solid {color} !important;"
+            f"border-radius:16px !important;"
+            f"box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow} !important;"
+            f"}}</style>",
+            unsafe_allow_html=True,
+        )
 
-        with st.container():
-            # Hidden marker — lets the CSS selector identify this container
+        with st.container(border=True):
             st.markdown(f'<div class="{marker}" style="display:none"></div>',
                         unsafe_allow_html=True)
 
-            # Header row: badge + title (left) | button (right)
             col_title, col_btn = st.columns([8, 2])
             with col_title:
-                st.markdown(f"""
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-                    <div style="display:inline-flex;align-items:center;justify-content:center;
-                         width:30px;height:30px;border-radius:50%;background:{color};
-                         color:white;font-weight:800;font-size:12px;flex-shrink:0;
-                         box-shadow:0 2px 8px {glow}">{i+1}</div>
-                    <span style="font-size:1.0rem;font-weight:800;color:#f1f5f9;
-                          letter-spacing:-0.01em">{ax["axis"]}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:10px">'
+                    f'<div style="display:inline-flex;align-items:center;justify-content:center;'
+                    f'width:28px;height:28px;border-radius:50%;background:{color};'
+                    f'color:white;font-weight:800;font-size:12px;flex-shrink:0;'
+                    f'box-shadow:0 2px 8px {glow}">{i+1}</div>'
+                    f'<span style="font-size:1.0rem;font-weight:800;color:#f1f5f9;'
+                    f'letter-spacing:-0.01em">{ax["axis"]}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
             with col_btn:
                 if ax["axis"] in saved_axis_names:
-                    st.markdown("""
-                    <div style="display:flex;flex-direction:column;align-items:center;
-                         gap:4px;padding-top:2px">
-                        <div style="width:30px;height:30px;border-radius:50%;
-                             background:rgba(16,185,129,0.15);border:2px solid #10b981;
-                             display:flex;align-items:center;justify-content:center;
-                             color:#10b981;font-size:14px;font-weight:800">✓</div>
-                        <div style="color:#10b981;font-size:0.68rem;font-weight:700;
-                             text-align:center">保存済み</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(
+                        '<div style="display:flex;flex-direction:column;align-items:center;gap:4px">'
+                        '<div style="width:28px;height:28px;border-radius:50%;'
+                        'background:rgba(16,185,129,0.15);border:2px solid #10b981;'
+                        'display:flex;align-items:center;justify-content:center;'
+                        'color:#10b981;font-size:13px;font-weight:800">✓</div>'
+                        '<div style="color:#10b981;font-size:0.67rem;font-weight:700;'
+                        'text-align:center">保存済み</div>'
+                        '</div>',
+                        unsafe_allow_html=True,
+                    )
                 else:
                     if st.button("＋ 追加", key=f"add_axis_{i}", type="primary",
                                  use_container_width=True):
@@ -301,25 +293,24 @@ if "analysis" in st.session_state:
                         add_axis(product_name_s, product_url_s, ax, product_context)
                         st.rerun()
 
-            # Card body
-            st.markdown(f"""
-            <p style="color:#94a3b8;font-size:0.85rem;line-height:1.65;margin:0 0 10px">
-                {ax.get("description","")}
-            </p>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">
-                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
-                     border-radius:8px;padding:4px 11px;font-size:0.76rem">
-                    <span style="color:#64748b;font-weight:600">🎯 ターゲット</span>
-                    <span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>
-                </div>
-                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
-                     border-radius:8px;padding:4px 11px;font-size:0.76rem">
-                    <span style="color:#64748b;font-weight:600">💡 根拠</span>
-                    <span style="color:#cbd5e1;margin-left:5px">{ax.get("rationale","—")}</span>
-                </div>
-            </div>
-            {copy_html}
-            """, unsafe_allow_html=True)
+            # Card body — single f-string, no blank lines (blank lines in markdown = code blocks)
+            st.markdown(
+                f'<p style="color:#94a3b8;font-size:0.85rem;line-height:1.65;margin:8px 0 10px">'
+                f'{ax.get("description","")}</p>'
+                f'<div style="display:flex;flex-wrap:wrap;gap:6px">'
+                f'<div style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
+                f'border-radius:8px;padding:4px 11px;font-size:0.76rem">'
+                f'<span style="color:#64748b;font-weight:600">🎯 ターゲット</span>'
+                f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>'
+                f'</div>'
+                f'<div style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
+                f'border-radius:8px;padding:4px 11px;font-size:0.76rem">'
+                f'<span style="color:#64748b;font-weight:600">💡 根拠</span>'
+                f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("rationale","—")}</span>'
+                f'</div></div>'
+                f'{copy_html}',
+                unsafe_allow_html=True,
+            )
 
     # ── Additional axes ────────────────────────────────────────────────────────
     st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
