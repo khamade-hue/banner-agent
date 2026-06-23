@@ -132,6 +132,21 @@ if "analysis" in st.session_state:
                 st.markdown(ax.get("description", ""))
                 st.caption(f"ターゲット: {ax.get('target_segment', '—')}")
                 st.caption(f"根拠: {ax.get('rationale', '—')}")
+                copy_s = ax.get("copy_suggestions", {})
+                if copy_s:
+                    with st.expander("コピー候補"):
+                        if copy_s.get("headlines"):
+                            st.markdown("**キャッチ:**")
+                            for h in copy_s["headlines"]:
+                                st.markdown(f"- {h}")
+                        if copy_s.get("offers"):
+                            st.markdown("**オファー・CTA:**")
+                            for o in copy_s["offers"]:
+                                st.markdown(f"- {o}")
+                        if copy_s.get("features"):
+                            st.markdown("**特徴:**")
+                            for f in copy_s["features"]:
+                                st.markdown(f"- {f}")
             with col_btn:
                 if st.button("リストに追加", key=f"add_axis_{i}", use_container_width=True):
                     product_context = {

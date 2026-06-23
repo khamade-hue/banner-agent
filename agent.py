@@ -61,12 +61,33 @@ _ANALYSIS_TOOL = {
                 "maxItems": 5,
                 "items": {
                     "type": "object",
-                    "required": ["axis", "description", "target_segment", "rationale"],
+                    "required": ["axis", "description", "target_segment", "rationale", "copy_suggestions"],
                     "properties": {
                         "axis": {"type": "string"},
                         "description": {"type": "string"},
                         "target_segment": {"type": "string"},
                         "rationale": {"type": "string"},
+                        "copy_suggestions": {
+                            "type": "object",
+                            "required": ["headlines", "offers", "features"],
+                            "properties": {
+                                "headlines": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "キャッチコピー候補 3つ（各20文字以内）",
+                                },
+                                "offers": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "オファー・CTA候補 2つ",
+                                },
+                                "features": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "バナー用特徴・ベネフィット 4〜6項目",
+                                },
+                            },
+                        },
                     },
                 },
             },
@@ -150,7 +171,12 @@ def analyze_product(
 appeal_axesは必ず3つ以上5つ以内で生成してください。各訴求軸は以下の観点で差別化してください:
 - 感情訴求 vs 機能訴求
 - ターゲット層の違い
-- ベネフィットの切り口の違い""",
+- ベネフィットの切り口の違い
+
+各訴求軸のcopy_suggestionsも必ず生成してください:
+- headlines: その訴求軸に合ったキャッチコピー候補を3つ（各20文字以内、インパクト重視）
+- offers: バナーで使えるオファー・CTA候補を2つ（「今なら○○無料」「限定○○」など）
+- features: バナーのアイコン行で使える特徴・ベネフィットを4〜6項目（短く簡潔に）""",
         }],
     )
 
@@ -284,7 +310,9 @@ BRAND/SERVICE DETAILS:
             "Write comprehensive, specific design briefs that gpt-image-2 executes directly — like briefing a skilled graphic designer.\n\n"
             "Your briefs MUST include:\n"
             "• Layout structure: split panels / diagonal division / layered depth / etc.\n"
-            "• Visual zones: exactly what appears in each zone (photography, UI mockups, data visualizations, product imagery, abstract graphics)\n"
+            "• VISUAL ZONE (REQUIRED): every brief must have at least one zone with impactful visual imagery — "
+            "cinematic photography of a person or scene, lifestyle shot, product/service imagery, abstract graphic art, or UI mockup. "
+            "Describe exactly what this visual shows and its photographic style. Do NOT create text-only layouts.\n"
             "• ALL text to render: state exact Japanese text verbatim — gpt-image-2 renders Japanese text reliably when explicitly specified\n"
             "• Typography: font weight, color, size hierarchy, placement for every text element\n"
             "• Color palette: specific colors, gradients, accent usage\n"

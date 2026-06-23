@@ -97,20 +97,59 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**バナーに入れるコピー**")
-    headline_copy = st.text_input(
-        "メインキャッチ（任意）",
-        placeholder="例: 制作費、10分の1でいい。",
-        help="空欄の場合は Claude が自動生成します",
-    )
-    offer_copy = st.text_input(
-        "オファー / CTA（任意）",
-        placeholder="例: 今なら1件まるごと無料",
-    )
-    features_text = st.text_area(
-        "特徴・アイコン（1行1項目、任意）",
-        placeholder="最短3営業日で納品\n修正回数無制限\nプロのディレクター監修\n著作権譲渡・商用利用OK",
-        height=100,
-    )
+
+    copy_s = selected_axis.get("copy_suggestions", {})
+    headlines_opts = copy_s.get("headlines", [])
+    offers_opts = copy_s.get("offers", [])
+    features_opts = copy_s.get("features", [])
+
+    # ── Headline ──────────────────────────────────────────────────────────────
+    if headlines_opts:
+        hl_choices = headlines_opts + ["カスタム入力..."]
+        hl_sel = st.selectbox("メインキャッチ", hl_choices, key="hl_sel")
+        if hl_sel == "カスタム入力...":
+            headline_copy = st.text_input("キャッチを入力", key="hl_custom")
+        else:
+            headline_copy = hl_sel
+    else:
+        headline_copy = st.text_input(
+            "メインキャッチ（任意）",
+            placeholder="例: 制作費、10分の1でいい。",
+            help="空欄の場合は Claude が自動生成します",
+        )
+
+    # ── Offer / CTA ───────────────────────────────────────────────────────────
+    if offers_opts:
+        of_choices = ["なし"] + offers_opts + ["カスタム入力..."]
+        of_sel = st.selectbox("オファー / CTA", of_choices, key="of_sel")
+        if of_sel == "カスタム入力...":
+            offer_copy = st.text_input("オファーを入力", key="of_custom")
+        elif of_sel == "なし":
+            offer_copy = ""
+        else:
+            offer_copy = of_sel
+    else:
+        offer_copy = st.text_input(
+            "オファー / CTA（任意）",
+            placeholder="例: 今なら1件まるごと無料",
+        )
+
+    # ── Features ──────────────────────────────────────────────────────────────
+    if features_opts:
+        selected_features = st.multiselect(
+            "特徴・アイコン",
+            features_opts,
+            default=features_opts,
+            key="feat_sel",
+        )
+        features_text = ""
+    else:
+        selected_features = []
+        features_text = st.text_area(
+            "特徴・アイコン（1行1項目、任意）",
+            placeholder="最短3営業日で納品\n修正回数無制限\nプロのディレクター監修\n著作権譲渡・商用利用OK",
+            height=100,
+        )
 
     st.divider()
 
@@ -184,7 +223,7 @@ if generate_btn:
     with st.status("バナーを生成中...", expanded=True) as status:
         st.write("**Step 1 / 3** — Claude がクリエイティブプロンプトを生成中")
         try:
-            features = [f.strip() for f in features_text.splitlines() if f.strip()]
+            features = selected_features if features_opts else [f.strip() for f in features_text.splitlines() if f.strip()]
             variations = generate_banner_prompts(
                 brand_name=selected_axis["product_name"],
                 product=selected_axis["product_name"],
