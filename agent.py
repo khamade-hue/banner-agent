@@ -4,7 +4,7 @@ import anthropic
 
 
 def _claude() -> anthropic.Anthropic:
-    return anthropic.Anthropic()
+    return anthropic.Anthropic(max_retries=5)
 
 
 def _parse_json(text: str, is_array: bool = False):

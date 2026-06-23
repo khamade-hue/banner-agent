@@ -79,7 +79,11 @@ if submitted:
                 competitor_content=competitor_content,
             )
         except Exception as e:
-            st.error(f"分析エラー: {e}")
+            err = str(e)
+            if "overloaded" in err or "529" in err:
+                st.error("Anthropic API が一時的に混雑しています（529 Overloaded）。少し待ってから再度「3C分析・訴求軸を生成」を押してください。")
+            else:
+                st.error(f"分析エラー: {e}")
             st.stop()
 
         status.update(label="分析完了！", state="complete", expanded=False)
