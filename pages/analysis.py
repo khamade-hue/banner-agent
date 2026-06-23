@@ -220,6 +220,7 @@ if "analysis" in st.session_state:
         color  = BADGE_COLORS[i % len(BADGE_COLORS)]
         glow   = BADGE_GLOWS[i % len(BADGE_GLOWS)]
         copy_s = ax.get("copy_suggestions", {})
+        marker = f"axis-card-{i}"
 
         # Build copy pills HTML inline
         copy_html = ""
@@ -238,68 +239,87 @@ if "analysis" in st.session_state:
                     f'{sections}</div>'
                 )
 
-        col_card, col_btn = st.columns([10, 2])
+        # CSS: target the innermost stVerticalBlock that holds our marker.
+        # :not(:has(stVerticalBlock:has(marker))) excludes ancestor blocks.
+        st.markdown(f"""
+        <style>
+        [data-testid="stVerticalBlock"]:has(.{marker}):not(
+            :has([data-testid="stVerticalBlock"]:has(.{marker}))
+        ) {{
+            background: linear-gradient(145deg,#1e293b,#162032);
+            border-radius: 16px;
+            border: 1px solid #334155;
+            border-left: 4px solid {color};
+            padding: 18px 20px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow};
+        }}
+        </style>
+        """, unsafe_allow_html=True)
 
-        with col_card:
-            st.markdown(f"""
-            <div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:16px;
-                 padding:22px 24px;border:1px solid #334155;
-                 border-left:4px solid {color};
-                 box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow}">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        with st.container():
+            # Hidden marker — lets the CSS selector identify this container
+            st.markdown(f'<div class="{marker}" style="display:none"></div>',
+                        unsafe_allow_html=True)
+
+            # Header row: badge + title (left) | button (right)
+            col_title, col_btn = st.columns([8, 2])
+            with col_title:
+                st.markdown(f"""
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
                     <div style="display:inline-flex;align-items:center;justify-content:center;
                          width:30px;height:30px;border-radius:50%;background:{color};
                          color:white;font-weight:800;font-size:12px;flex-shrink:0;
                          box-shadow:0 2px 8px {glow}">{i+1}</div>
-                    <span style="font-size:1.05rem;font-weight:800;color:#f1f5f9;
+                    <span style="font-size:1.0rem;font-weight:800;color:#f1f5f9;
                           letter-spacing:-0.01em">{ax["axis"]}</span>
                 </div>
-                <p style="color:#94a3b8;font-size:0.85rem;line-height:1.65;margin:0 0 12px">
-                    {ax.get("description","")}
-                </p>
-                <div style="display:flex;flex-wrap:wrap;gap:6px">
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
-                         border-radius:8px;padding:4px 11px;font-size:0.76rem">
-                        <span style="color:#64748b;font-weight:600">🎯 ターゲット</span>
-                        <span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
-                         border-radius:8px;padding:4px 11px;font-size:0.76rem">
-                        <span style="color:#64748b;font-weight:600">💡 根拠</span>
-                        <span style="color:#cbd5e1;margin-left:5px">{ax.get("rationale","—")}</span>
-                    </div>
-                </div>
-                {copy_html}
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col_btn:
-            if ax["axis"] in saved_axis_names:
-                st.markdown("""
-                <div style="display:flex;flex-direction:column;align-items:center;
-                     justify-content:flex-start;padding-top:18px;gap:5px">
-                    <div style="width:32px;height:32px;border-radius:50%;
-                         background:rgba(16,185,129,0.15);border:2px solid #10b981;
-                         display:flex;align-items:center;justify-content:center;
-                         color:#10b981;font-size:15px;font-weight:800">✓</div>
-                    <div style="color:#10b981;font-size:0.68rem;font-weight:700;
-                         text-align:center;line-height:1.3">保存済み</div>
-                </div>
                 """, unsafe_allow_html=True)
-            else:
-                if st.button("＋ 追加", key=f"add_axis_{i}", type="primary",
-                             use_container_width=True):
-                    product_context = {
-                        "value_proposition": co.get("value_proposition",""),
-                        "strengths": co.get("strengths",""),
-                        "customer_needs": cust.get("needs",""),
-                        "pain_points": cust.get("pain_points",""),
-                        "differentiation": comp.get("differentiation",""),
-                    }
-                    add_axis(product_name_s, product_url_s, ax, product_context)
-                    st.rerun()
+            with col_btn:
+                if ax["axis"] in saved_axis_names:
+                    st.markdown("""
+                    <div style="display:flex;flex-direction:column;align-items:center;
+                         gap:4px;padding-top:2px">
+                        <div style="width:30px;height:30px;border-radius:50%;
+                             background:rgba(16,185,129,0.15);border:2px solid #10b981;
+                             display:flex;align-items:center;justify-content:center;
+                             color:#10b981;font-size:14px;font-weight:800">✓</div>
+                        <div style="color:#10b981;font-size:0.68rem;font-weight:700;
+                             text-align:center">保存済み</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    if st.button("＋ 追加", key=f"add_axis_{i}", type="primary",
+                                 use_container_width=True):
+                        product_context = {
+                            "value_proposition": co.get("value_proposition",""),
+                            "strengths": co.get("strengths",""),
+                            "customer_needs": cust.get("needs",""),
+                            "pain_points": cust.get("pain_points",""),
+                            "differentiation": comp.get("differentiation",""),
+                        }
+                        add_axis(product_name_s, product_url_s, ax, product_context)
+                        st.rerun()
 
-        st.markdown("<div style='margin-bottom:12px'></div>", unsafe_allow_html=True)
+            # Card body
+            st.markdown(f"""
+            <p style="color:#94a3b8;font-size:0.85rem;line-height:1.65;margin:0 0 10px">
+                {ax.get("description","")}
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
+                     border-radius:8px;padding:4px 11px;font-size:0.76rem">
+                    <span style="color:#64748b;font-weight:600">🎯 ターゲット</span>
+                    <span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border:1px solid #334155;
+                     border-radius:8px;padding:4px 11px;font-size:0.76rem">
+                    <span style="color:#64748b;font-weight:600">💡 根拠</span>
+                    <span style="color:#cbd5e1;margin-left:5px">{ax.get("rationale","—")}</span>
+                </div>
+            </div>
+            {copy_html}
+            """, unsafe_allow_html=True)
 
     # ── Additional axes ────────────────────────────────────────────────────────
     st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
