@@ -299,7 +299,7 @@ BRAND/SERVICE DETAILS:
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=3000,
+        max_tokens=4096,
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
         system=(
@@ -351,7 +351,13 @@ The output prompt will be passed directly to gpt-image-2 — make it exhaustive 
 
     for block in response.content:
         if block.type == "tool_use":
-            return list(block.input.get("variations", []))
+            variations = list(block.input.get("variations", []))
+            if not variations:
+                raise ValueError(
+                    f"Claudeがバリエーションを生成しませんでした。"
+                    f"stop_reason={response.stop_reason}, data={block.input}"
+                )
+            return variations
     raise ValueError("バナープロンプトが取得できませんでした")
 
 

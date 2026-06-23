@@ -238,6 +238,9 @@ if generate_btn:
                 offer_copy=offer_copy.strip(),
                 features=features,
             )
+            if not variations:
+                st.error("バリエーションが生成されませんでした。再度「画像生成」を押してください。")
+                st.stop()
             st.write(f"✓ {len(variations)} バリエーション確定")
         except Exception as e:
             st.error(f"プロンプト生成エラー: {e}")
