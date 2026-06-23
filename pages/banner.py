@@ -12,7 +12,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import generate_banner_prompts, refine_banner_prompt
-from image_gen import generate_image, add_text_overlay
+from image_gen import generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_axes, load_banners, save_banner_entry
 
@@ -96,6 +96,23 @@ with st.sidebar:
     tonmana_label = st.selectbox("トンマナ *", list(TONMANA.keys()))
 
     st.divider()
+    st.markdown("**バナーに入れるコピー**")
+    headline_copy = st.text_input(
+        "メインキャッチ（任意）",
+        placeholder="例: 制作費、10分の1でいい。",
+        help="空欄の場合は Claude が自動生成します",
+    )
+    offer_copy = st.text_input(
+        "オファー / CTA（任意）",
+        placeholder="例: 今なら1件まるごと無料",
+    )
+    features_text = st.text_area(
+        "特徴・アイコン（1行1項目、任意）",
+        placeholder="最短3営業日で納品\n修正回数無制限\nプロのディレクター監修\n著作権譲渡・商用利用OK",
+        height=100,
+    )
+
+    st.divider()
 
     platform_names = [p.name for p in PLATFORMS]
     selected_platform_names = st.multiselect(
@@ -167,6 +184,7 @@ if generate_btn:
     with st.status("バナーを生成中...", expanded=True) as status:
         st.write("**Step 1 / 3** — Claude がクリエイティブプロンプトを生成中")
         try:
+            features = [f.strip() for f in features_text.splitlines() if f.strip()]
             variations = generate_banner_prompts(
                 brand_name=selected_axis["product_name"],
                 product=selected_axis["product_name"],
@@ -177,6 +195,9 @@ if generate_btn:
                 appeal_axis=selected_axis,
                 product_context=selected_axis.get("product_context"),
                 objective=objective_desc,
+                headline_copy=headline_copy.strip(),
+                offer_copy=offer_copy.strip(),
+                features=features,
             )
             st.write(f"✓ {len(variations)} バリエーション確定")
         except Exception as e:
@@ -196,10 +217,7 @@ if generate_btn:
             except RuntimeError as e:
                 st.error(f"画像生成エラー:\n\n```\n{e}\n```")
                 st.stop()
-            platform_images = [
-                (platform, add_text_overlay(img, v.get("headline", ""), v.get("subtext", "")))
-                for platform, img in resize_for_selected_platforms(base_img, selected_platforms)
-            ]
+            platform_images = resize_for_selected_platforms(base_img, selected_platforms)
             results.append((v, platform_images))
 
         st.write("**Step 3 / 3** — バナーを保存中")
@@ -258,10 +276,6 @@ tabs = st.tabs([f"[{v['variation']}] {v['label']}" for v, _ in results])
 
 for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
     with tab:
-        if v.get("headline"):
-            st.markdown(f"**コピー:** {v['headline']}")
-            if v.get("subtext"):
-                st.caption(v["subtext"])
         st.markdown(f"**戦略:** {v['rationale']}")
         with st.expander("生成プロンプトを見る"):
             st.code(v["prompt"], language=None)
@@ -307,10 +321,7 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
                         new_base_img = generate_image(
                             new_prompt, reference_image=reference_image
                         )
-                        new_platform_images = [
-                            (platform, add_text_overlay(img, v.get("headline", ""), v.get("subtext", "")))
-                            for platform, img in resize_for_selected_platforms(new_base_img, current_platforms)
-                        ]
+                        new_platform_images = resize_for_selected_platforms(new_base_img, current_platforms)
                         updated_v = {
                             **v,
                             "prompt": new_prompt,

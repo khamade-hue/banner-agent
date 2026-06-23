@@ -213,8 +213,11 @@ def generate_banner_prompts(
     appeal_axis: dict | None = None,
     product_context: dict | None = None,
     objective: str = "",
+    headline_copy: str = "",
+    offer_copy: str = "",
+    features: list[str] | None = None,
 ) -> list[dict]:
-    """Use Claude to craft A/B test image prompts for banner ads."""
+    """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
     client = _claude()
 
     ctx = product_context or {}
@@ -228,20 +231,26 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
     product_section = ""
     if ctx:
         product_section = f"""
-PRODUCT DETAILS:
+BRAND/SERVICE DETAILS:
 - Value Proposition: {ctx.get('value_proposition', '')}
 - Key Strengths: {ctx.get('strengths', '')}
 - Customer Needs: {ctx.get('customer_needs', '')}
-- Customer Pain Points: {ctx.get('pain_points', '')}
-- Competitive Differentiation: {ctx.get('differentiation', '')}"""
+- Pain Points Solved: {ctx.get('pain_points', '')}
+- vs Competitors: {ctx.get('differentiation', '')}"""
 
     objective_section = f"\nCampaign Objective: {objective}" if objective else ""
+
+    headline_section = f"Main Headline: {headline_copy}" if headline_copy else "Main Headline: (generate a compelling Japanese headline)"
+    offer_section = f"Offer/CTA: {offer_copy}" if offer_copy else ""
+    features_section = ""
+    if features:
+        features_section = "Feature Badges:\n" + "\n".join(f"• {f}" for f in features)
 
     variation_labels = [chr(65 + i) for i in range(num_variations)]
 
     banner_tool = {
         "name": "submit_banner_prompts",
-        "description": "Submit A/B test banner ad image prompts with Japanese copy",
+        "description": "Submit design brief prompts for gpt-image-2 banner ad generation",
         "input_schema": {
             "type": "object",
             "required": ["variations"],
@@ -252,13 +261,11 @@ PRODUCT DETAILS:
                     "maxItems": num_variations,
                     "items": {
                         "type": "object",
-                        "required": ["variation", "label", "prompt", "headline", "subtext", "rationale"],
+                        "required": ["variation", "label", "prompt", "rationale"],
                         "properties": {
                             "variation": {"type": "string"},
                             "label": {"type": "string"},
-                            "prompt": {"type": "string"},
-                            "headline": {"type": "string", "description": "キャッチコピー（20文字以内）"},
-                            "subtext": {"type": "string", "description": "サブコピー（30文字以内）"},
+                            "prompt": {"type": "string", "description": "Complete design brief in Japanese+English for gpt-image-2, including all text content"},
                             "rationale": {"type": "string"},
                         },
                     },
@@ -269,51 +276,57 @@ PRODUCT DETAILS:
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=2000,
+        max_tokens=3000,
         tools=[banner_tool],
-        tool_choice={"type": "any"},
+        tool_choice={"type": "tool", "name": "submit_banner_prompts"},
         system=(
-            "You are a senior advertising creative director specializing in high-converting SNS banner ads. "
-            "Your task: craft image prompts that visualize the EMOTIONAL OUTCOME customers experience AFTER using this product — "
-            "NOT the product itself, its features, or generic category imagery. "
-            "Ask yourself: what does the customer's life, work, or self-image look like after this product transforms them? "
-            "Show that transformed moment — achievement, confidence, relief, joy, status, empowerment. "
-            "Also generate punchy Japanese copy (キャッチコピー) for each variation."
+            "You are an expert SNS banner ad art director writing design briefs for gpt-image-2.\n\n"
+            "Write comprehensive, specific design briefs that gpt-image-2 executes directly — like briefing a skilled graphic designer.\n\n"
+            "Your briefs MUST include:\n"
+            "• Layout structure: split panels / diagonal division / layered depth / etc.\n"
+            "• Visual zones: exactly what appears in each zone (photography, UI mockups, data visualizations, product imagery, abstract graphics)\n"
+            "• ALL text to render: state exact Japanese text verbatim — gpt-image-2 renders Japanese text reliably when explicitly specified\n"
+            "• Typography: font weight, color, size hierarchy, placement for every text element\n"
+            "• Color palette: specific colors, gradients, accent usage\n"
+            "• Brand placement: brand name/logo position and style\n"
+            "• Production quality: real commercial advertising standard\n\n"
+            "Do NOT write abstract scene descriptions. Write actionable design briefs with specific visual and textual content.\n"
+            "Square 1:1 format (1080×1080px) for SNS ads."
         ),
         messages=[{
             "role": "user",
-            "content": f"""Create {num_variations} visually distinct A/B test banner ad variations (labeled {', '.join(variation_labels)}).
+            "content": f"""Create {num_variations} distinct banner ad design brief variations (labeled {', '.join(variation_labels)}).
 
-BRAND & PRODUCT:
-Brand / Product Name: {brand_name}
-Product URL: {appeal_axis.get('product_url', '') if appeal_axis else ''}
+BRAND & SERVICE:
+Brand Name: {brand_name}
 {product_section}
 
-CREATIVE STRATEGY:
+MARKETING CONTEXT:
 Key Message: {message}
 Tone & Manner: {tonmana}
 Target Audience: {target_audience}{axis_section}{objective_section}
 
-For each variation output:
+COPY TO EMBED IN THE IMAGE:
+{headline_section}
+{offer_section}
+{features_section}
 
-1. image prompt (English):
-   - Visualize the EMOTIONAL OUTCOME — the customer's transformed state AFTER using this product
-   - Show a person, scene, or atmosphere that embodies the feeling this product delivers
-   - Do NOT show the product, equipment, or literal product category
-   - Apply Tone & Manner ({tonmana}) to color palette, lighting, and visual style
-   - Keep the bottom 25% of the composition relatively simple (solid color, gradient, or uncluttered background) — this area will have text overlaid
-   - Variations must differ on at least 2 of: subject, color palette, composition, mood
-   - NO text, numbers, or typography anywhere in the image
-   - Square format, professional advertising quality
+For each variation, write a complete design brief covering:
+1. Layout: visual architecture (split panels, diagonal, layered, full-bleed photo + overlay, etc.)
+2. Visual zones: specify each zone's content and style in detail
+3. Color & atmosphere: exact palette, gradients, lighting treatment
+4. Text placement: verbatim Japanese text for every element, with position / size / weight / color
+5. Brand element: how the brand name appears
+6. Production quality cues: cinematic lighting, studio quality, editorial photography, etc.
 
-2. headline (Japanese, ≤20 chars): キャッチコピー — punchy, benefit-focused, speaks directly to the target's desire
-3. subtext (Japanese, ≤30 chars): サブコピー — brief supporting message that complements the headline""",
+Each variation must use a meaningfully different layout concept.
+The output prompt will be passed directly to gpt-image-2 — make it exhaustive and specific.""",
         }],
     )
 
     for block in response.content:
         if block.type == "tool_use":
-            return block.input["variations"]
+            return list(block.input.get("variations", []))
     raise ValueError("バナープロンプトが取得できませんでした")
 
 
