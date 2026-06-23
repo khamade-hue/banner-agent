@@ -89,16 +89,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Input form ────────────────────────────────────────────────────────────────
-st.markdown("""
-<div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:16px;
-     padding:24px 28px;border:1px solid #334155;margin-bottom:24px;
-     box-shadow:0 4px 16px rgba(0,0,0,0.2)">
-  <div style="font-size:0.72rem;font-weight:700;color:#3b82f6;
-       text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px">
-      商品情報の入力
-  </div>
-""", unsafe_allow_html=True)
-
 with st.form("analysis_form"):
     col1, col2 = st.columns(2)
     with col1:
@@ -114,8 +104,6 @@ with st.form("analysis_form"):
         type="primary",
         use_container_width=True,
     )
-
-st.markdown("</div>", unsafe_allow_html=True)
 
 if submitted:
     if not product_name or not product_url:
