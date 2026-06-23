@@ -287,7 +287,7 @@ BRAND/SERVICE DETAILS:
                             "label": {"type": "string"},
                             "prompt": {
                                 "type": "string",
-                                "description": "Design brief for gpt-image-2 (300-400 words). Include: layout, visual zone with photo/illustration, exact Japanese text verbatim, typography, colors, brand placement.",
+                                "description": "Complete production-ready design brief for gpt-image-2 (500-700 words). Must cover: layout zones with exact proportions, visual zone with cinematic photo description, ALL text elements verbatim in Japanese with px size/weight/color/position, accent elements, full hex color palette.",
                             },
                             "rationale": {"type": "string"},
                         },
@@ -302,29 +302,64 @@ BRAND/SERVICE DETAILS:
         max_tokens=4096,
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
-        system=(
-            "You are an SNS banner ad art director writing design briefs for gpt-image-2.\n"
-            "Each brief is 300-400 words and covers: (1) layout structure, "
-            "(2) VISUAL ZONE — cinematic photo or illustration of a person/scene/product (required, describe vividly), "
-            "(3) exact Japanese text verbatim for every text element, "
-            "(4) typography: weight/color/size/position per element, "
-            "(5) color palette, (6) brand name placement. "
-            "Square 1080×1080px SNS format. Real commercial quality."
-        ),
+        system="""You are a senior SNS banner ad art director. Your job is to write exhaustive, production-ready design briefs that a graphic designer (or gpt-image-2) can execute pixel-perfectly without asking any questions.
+
+Each brief must specify ALL of the following — omitting any item is not acceptable:
+
+## CANVAS
+- 1080×1080px square, SNS ad format
+
+## LAYOUT ZONES
+Divide the canvas into named zones with exact proportions (e.g. "LEFT PANEL: 48% width, full height"). Each zone must have:
+- Exact dimensions as % of canvas
+- Background: specific hex color, gradient (hex1 → hex2, direction), or photo
+- Any overlays: geometric shapes, color washes, opacity values
+
+## VISUAL ZONE (REQUIRED — every brief must have one)
+Describe a cinematic photograph or high-end illustration occupying at least one zone. Specify:
+- Subject: who/what is shown (age, appearance, clothing, expression, action)
+- Setting: environment details, props, background elements
+- Composition: framing, angle, depth of field (e.g. f/1.4 shallow bokeh)
+- Lighting: sources, quality, color temperature (e.g. warm amber softbox, cool key light)
+- Color grading: tones, LUT style (e.g. cool highlights, desaturated mids, cinematic)
+- Mood: the emotional atmosphere the image conveys
+
+## TYPOGRAPHY (every text element)
+For each text element, specify ALL of:
+- Exact Japanese text verbatim (copy word-for-word from the brief instructions)
+- Position: zone name + alignment (e.g. "top-left of LEFT PANEL, 40px from top, 32px from left")
+- Font size in px
+- Font weight (Thin/Regular/Medium/Bold/Black)
+- Font: Noto Sans JP or similar Japanese sans-serif
+- Color: hex code
+- Letter-spacing, line-height if relevant
+
+## ACCENT ELEMENTS
+- Divider lines: thickness in px, color hex, exact position
+- Icon badges: style (outline/filled), size, color, label text
+- CTA bar: dimensions, gradient, text specs
+- Geometric overlays: shape, opacity, color, position
+
+## COLOR PALETTE
+List all hex codes used, with role (background / headline / accent / CTA / etc.)
+
+Write at commercial advertising quality. gpt-image-2 renders Japanese text reliably when specified verbatim.""",
         messages=[{
             "role": "user",
-            "content": f"""Create {num_variations} banner ad design brief variations (labeled {', '.join(variation_labels)}). Each variation uses a distinctly different layout concept.
+            "content": f"""Write {num_variations} distinct banner ad design briefs (labeled {', '.join(variation_labels)}). Each must use a meaningfully different layout concept (e.g. vertical split / diagonal / full-bleed photo with overlay / stacked zones / asymmetric grid).
 
-Brand: {brand_name}
+BRAND: {brand_name}
 {product_section}
-Key Message: {message}
-Tone: {tonmana}
-Audience: {target_audience}{axis_section}{objective_section}
+KEY MESSAGE: {message}
+TONE & MANNER: {tonmana}
+TARGET AUDIENCE: {target_audience}{axis_section}{objective_section}
 
-COPY TO EMBED:
+COPY TO EMBED VERBATIM IN THE IMAGE:
 {headline_section}
 {offer_section}
-{features_section}""",
+{features_section}
+
+For each variation, deliver a complete brief covering every section listed in your instructions (canvas, layout zones, visual zone, typography for every element, accent elements, color palette). Be specific and exhaustive — this brief goes directly to the image renderer.""",
         }],
     )
 
