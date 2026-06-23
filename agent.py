@@ -280,15 +280,16 @@ BRAND/SERVICE DETAILS:
             "properties": {
                 "variations": {
                     "type": "array",
-                    "minItems": num_variations,
-                    "maxItems": num_variations,
                     "items": {
                         "type": "object",
                         "required": ["variation", "label", "prompt", "rationale"],
                         "properties": {
                             "variation": {"type": "string"},
                             "label": {"type": "string"},
-                            "prompt": {"type": "string", "description": "Complete design brief in Japanese+English for gpt-image-2, including all text content"},
+                            "prompt": {
+                                "type": "string",
+                                "description": "Design brief for gpt-image-2 (300-400 words). Include: layout, visual zone with photo/illustration, exact Japanese text verbatim, typography, colors, brand placement.",
+                            },
                             "rationale": {"type": "string"},
                         },
                     },
@@ -303,59 +304,42 @@ BRAND/SERVICE DETAILS:
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
         system=(
-            "You are an expert SNS banner ad art director writing design briefs for gpt-image-2.\n\n"
-            "Write comprehensive, specific design briefs that gpt-image-2 executes directly — like briefing a skilled graphic designer.\n\n"
-            "Your briefs MUST include:\n"
-            "• Layout structure: split panels / diagonal division / layered depth / etc.\n"
-            "• VISUAL ZONE (REQUIRED): every brief must have at least one zone with impactful visual imagery — "
-            "cinematic photography of a person or scene, lifestyle shot, product/service imagery, abstract graphic art, or UI mockup. "
-            "Describe exactly what this visual shows and its photographic style. Do NOT create text-only layouts.\n"
-            "• ALL text to render: state exact Japanese text verbatim — gpt-image-2 renders Japanese text reliably when explicitly specified\n"
-            "• Typography: font weight, color, size hierarchy, placement for every text element\n"
-            "• Color palette: specific colors, gradients, accent usage\n"
-            "• Brand placement: brand name/logo position and style\n"
-            "• Production quality: real commercial advertising standard\n\n"
-            "Do NOT write abstract scene descriptions. Write actionable design briefs with specific visual and textual content.\n"
-            "Square 1:1 format (1080×1080px) for SNS ads."
+            "You are an SNS banner ad art director writing design briefs for gpt-image-2.\n"
+            "Each brief is 300-400 words and covers: (1) layout structure, "
+            "(2) VISUAL ZONE — cinematic photo or illustration of a person/scene/product (required, describe vividly), "
+            "(3) exact Japanese text verbatim for every text element, "
+            "(4) typography: weight/color/size/position per element, "
+            "(5) color palette, (6) brand name placement. "
+            "Square 1080×1080px SNS format. Real commercial quality."
         ),
         messages=[{
             "role": "user",
-            "content": f"""Create {num_variations} distinct banner ad design brief variations (labeled {', '.join(variation_labels)}).
+            "content": f"""Create {num_variations} banner ad design brief variations (labeled {', '.join(variation_labels)}). Each variation uses a distinctly different layout concept.
 
-BRAND & SERVICE:
-Brand Name: {brand_name}
+Brand: {brand_name}
 {product_section}
-
-MARKETING CONTEXT:
 Key Message: {message}
-Tone & Manner: {tonmana}
-Target Audience: {target_audience}{axis_section}{objective_section}
+Tone: {tonmana}
+Audience: {target_audience}{axis_section}{objective_section}
 
-COPY TO EMBED IN THE IMAGE:
+COPY TO EMBED:
 {headline_section}
 {offer_section}
-{features_section}
-
-For each variation, write a complete design brief covering:
-1. Layout: visual architecture (split panels, diagonal, layered, full-bleed photo + overlay, etc.)
-2. Visual zones: specify each zone's content and style in detail
-3. Color & atmosphere: exact palette, gradients, lighting treatment
-4. Text placement: verbatim Japanese text for every element, with position / size / weight / color
-5. Brand element: how the brand name appears
-6. Production quality cues: cinematic lighting, studio quality, editorial photography, etc.
-
-Each variation must use a meaningfully different layout concept.
-The output prompt will be passed directly to gpt-image-2 — make it exhaustive and specific.""",
+{features_section}""",
         }],
     )
+
+    if response.stop_reason == "max_tokens":
+        raise ValueError(
+            "トークン制限に達しました。バリエーション数を減らして再試行してください。"
+        )
 
     for block in response.content:
         if block.type == "tool_use":
             variations = list(block.input.get("variations", []))
             if not variations:
                 raise ValueError(
-                    f"Claudeがバリエーションを生成しませんでした。"
-                    f"stop_reason={response.stop_reason}, data={block.input}"
+                    f"Claudeがバリエーションを生成しませんでした (stop_reason={response.stop_reason})"
                 )
             return variations
     raise ValueError("バナープロンプトが取得できませんでした")
