@@ -225,6 +225,63 @@ def generate_more_axes(
     raise ValueError("ツール呼び出し結果が取得できませんでした")
 
 
+_PART_LABELS = {
+    "headlines": "キャッチコピー（20文字以内×3つ）",
+    "offers":    "オファー・CTA（2つ）",
+    "features":  "特徴・アイコン（4〜6項目、短く簡潔に）",
+}
+
+
+def refine_copy_part(axis: dict, part_key: str, instructions: str) -> list[str]:
+    """Refine a specific copy part (headlines/offers/features) of an appeal axis."""
+    client = _claude()
+    part_label   = _PART_LABELS.get(part_key, part_key)
+    current_items = axis.get("copy_suggestions", {}).get(part_key, [])
+
+    tool = {
+        "name": "submit_refined_copy",
+        "description": f"改修した{part_label}を送信する",
+        "input_schema": {
+            "type": "object",
+            "required": ["items"],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": f"改修後の{part_label}リスト",
+                }
+            },
+        },
+    }
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1000,
+        tools=[tool],
+        tool_choice={"type": "tool", "name": "submit_refined_copy"},
+        system="あなたはデジタル広告に精通したシニアコピーライターです。",
+        messages=[{
+            "role": "user",
+            "content": (
+                f"以下の訴求軸の「{part_label}」を、改修指示に基づいて書き直してください。\n\n"
+                f"【訴求軸】\n"
+                f"軸名: {axis.get('axis','')}\n"
+                f"説明: {axis.get('description','')}\n"
+                f"ターゲット: {axis.get('target_segment','')}\n\n"
+                f"【現在の{part_label}】\n"
+                + "\n".join(f"・{item}" for item in current_items) +
+                f"\n\n【改修指示】\n{instructions}\n\n"
+                f"改修指示を反映し、{part_label}として最適なリストのみを返してください。"
+            ),
+        }],
+    )
+
+    for block in response.content:
+        if block.type == "tool_use":
+            return list(block.input.get("items", []))
+    raise ValueError("コピー候補の改修結果が取得できませんでした")
+
+
 def refine_axis(existing_axis: dict, revision_instructions: str) -> dict:
     """Refine an existing appeal axis based on user revision instructions."""
     client = _claude()

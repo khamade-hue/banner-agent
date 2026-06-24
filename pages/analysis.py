@@ -9,7 +9,7 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import analyze_product, generate_more_axes, refine_axis
+from agent import analyze_product, generate_more_axes, refine_copy_part
 from state import add_axis, delete_axis, load_axes
 
 
@@ -364,20 +364,30 @@ else:
         st.markdown(_axis_card_body(selected_ax), unsafe_allow_html=True)
 
     # ── 改修指示フォーム ──────────────────────────────────────────────────────
+    PART_OPTIONS = {
+        "キャッチコピー": "headlines",
+        "オファー・CTA":  "offers",
+        "特徴・アイコン": "features",
+    }
+
     st.markdown(
         '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.1em;margin:20px 0 10px">改修指示</div>',
         unsafe_allow_html=True,
     )
     with st.form("refine_form"):
+        target_part_label = st.selectbox(
+            "修正するパーツ",
+            list(PART_OPTIONS.keys()),
+        )
         revision_instructions = st.text_area(
             "改修指示",
-            placeholder="例: もっと感情に訴えるコピーにして / ターゲットを20代女性に絞って / 価格訴求を強化して",
+            placeholder="例: もっと感情的に訴えるコピーにして / 価格訴求を前面に出して",
             height=100,
             label_visibility="collapsed",
         )
         refine_submitted = st.form_submit_button(
-            "訴求軸を磨きこむ",
+            "選択パーツを磨きこむ",
             type="primary",
             use_container_width=True,
         )
@@ -386,10 +396,14 @@ else:
         if not revision_instructions.strip():
             st.error("改修指示を入力してください")
             st.stop()
-        with st.spinner("Claude が訴求軸を改修中..."):
+        part_key = PART_OPTIONS[target_part_label]
+        with st.spinner(f"「{target_part_label}」を改修中..."):
             try:
-                refined = refine_axis(selected_ax, revision_instructions)
-                st.session_state["refined_axis"] = refined
+                new_items = refine_copy_part(selected_ax, part_key, revision_instructions)
+                refined = {**selected_ax}
+                refined["copy_suggestions"] = {**selected_ax.get("copy_suggestions", {}), part_key: new_items}
+                st.session_state["refined_axis"]            = refined
+                st.session_state["refined_part_label"]      = target_part_label
                 st.session_state["refined_source_id"]       = selected_ax["id"]
                 st.session_state["refined_product_name"]    = selected_ax.get("product_name", "")
                 st.session_state["refined_product_url"]     = selected_ax.get("product_url", "")
@@ -406,9 +420,13 @@ else:
         p_url     = st.session_state.get("refined_product_url", "")
         p_ctx     = st.session_state.get("refined_product_context", {})
 
+        part_label_display = st.session_state.get("refined_part_label", "")
         st.markdown(
-            '<div style="font-size:0.72rem;font-weight:700;color:#10b981;text-transform:uppercase;'
-            'letter-spacing:0.1em;margin:24px 0 10px">改修後の訴求軸</div>',
+            f'<div style="font-size:0.72rem;font-weight:700;color:#10b981;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin:24px 0 10px">改修後の訴求軸'
+            f'<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.5);'
+            f'border-radius:4px;padding:2px 8px;margin-left:8px;font-size:0.65rem;'
+            f'text-transform:none;letter-spacing:0">「{part_label_display}」を改修</span></div>',
             unsafe_allow_html=True,
         )
         color_r = BADGE_COLORS[2]
