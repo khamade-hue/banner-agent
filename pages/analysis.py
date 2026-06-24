@@ -486,9 +486,13 @@ else:
                             refined_ai["copy_suggestions"] = {
                                 **selected_ax.get("copy_suggestions", {}), part_key: new_items
                             }
-                            st.session_state["refined_axis"]       = refined_ai
-                            st.session_state["refined_part_label"] = target_part_label
-                            st.session_state["refined_source_id"]  = selected_ax["id"]
+                            st.session_state["refined_axis"]           = refined_ai
+                            st.session_state["refined_part_label"]     = target_part_label
+                            st.session_state["refined_part_key"]       = part_key
+                            st.session_state["refined_source_id"]      = selected_ax["id"]
+                            st.session_state["refined_original_items"] = list(
+                                selected_ax.get("copy_suggestions", {}).get(part_key, [])
+                            )
                             st.rerun()
                         except Exception as e:
                             st.error(f"改修エラー: {e}")
@@ -519,14 +523,29 @@ else:
             f"}}</style>",
             unsafe_allow_html=True,
         )
+        part_key_r      = st.session_state.get("refined_part_key", "")
+        original_items  = st.session_state.get("refined_original_items", [])
+        new_items_r     = refined.get("copy_suggestions", {}).get(part_key_r, [])
+
         with st.container(border=True):
             st.markdown('<div class="refine-result" style="display:none"></div>', unsafe_allow_html=True)
             st.markdown(
-                f'<span style="font-size:1.0rem;font-weight:800;color:#f1f5f9">'
-                f'{refined.get("axis","")}</span>',
+                f'<span style="font-size:0.85rem;color:#64748b">{refined.get("axis","")}</span>',
                 unsafe_allow_html=True,
             )
-            st.markdown(_axis_card_body(refined), unsafe_allow_html=True)
+            if original_items:
+                st.markdown(
+                    '<div style="font-size:0.67rem;font-weight:700;color:#64748b;'
+                    'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正前</div>'
+                    + _pills(original_items, "rgba(255,255,255,0.04)", "#64748b", "#334155"),
+                    unsafe_allow_html=True,
+                )
+            st.markdown(
+                '<div style="font-size:0.67rem;font-weight:700;color:#10b981;'
+                'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正後</div>'
+                + _pills(new_items_r, "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.5)"),
+                unsafe_allow_html=True,
+            )
 
         col_overwrite, col_discard = st.columns([3, 1])
         with col_overwrite:
