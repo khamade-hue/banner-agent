@@ -46,6 +46,17 @@ st.markdown(
 
 saved_axes = load_axes()
 
+# CTA: proceed to banner generation
+if saved_axes:
+    col_cta, col_refine, _ = st.columns([2, 2, 3])
+    with col_cta:
+        if st.button("バナー生成へ進む →", type="primary", use_container_width=True, key="goto_banner"):
+            st.switch_page("pages/banner.py")
+    with col_refine:
+        if st.button("訴求軸を磨きこむ →", type="secondary", use_container_width=True, key="goto_refine"):
+            st.switch_page("pages/analysis.py")
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
+
 if not saved_axes:
     st.markdown(
         '<div style="background:linear-gradient(145deg,#1e293b,#162032);border:1px dashed #334155;'

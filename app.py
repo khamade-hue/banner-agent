@@ -159,7 +159,13 @@ header button:hover svg {
     border: 1px solid #334155 !important;
     border-radius: 10px !important;
 }
-[data-testid="stExpander"] summary span { color: #94a3b8 !important; }
+[data-testid="stExpander"] summary { padding: 10px 14px !important; }
+[data-testid="stExpander"] summary span {
+    color: #cbd5e1 !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+}
+[data-testid="stExpander"] summary:hover span { color: #f1f5f9 !important; }
 [data-testid="stExpander"] p,
 [data-testid="stExpander"] li { color: #cbd5e1 !important; }
 
@@ -350,6 +356,25 @@ if missing:
     st.error(f"APIキーが設定されていません: `{', '.join(missing)}`")
     st.info("`.env` ファイルを作成して API キーを設定してください（`.env.example` 参照）。")
     st.stop()
+
+with st.sidebar:
+    st.markdown(
+        '<div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);'
+        'border-radius:10px;padding:12px 14px;margin-bottom:4px">'
+        '<div style="font-size:0.68rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+        'letter-spacing:0.1em;margin-bottom:10px">使い方フロー</div>'
+        '<div style="font-size:0.8rem;color:#94a3b8;line-height:1.9">'
+        '<span style="color:#3b82f6;font-weight:700">①</span>'
+        ' <span style="color:#cbd5e1">訴求軸の検討</span><br>'
+        '<span style="color:#475569;font-size:0.73rem;margin-left:14px">'
+        '商品URLを入力して分析</span><br>'
+        '<span style="color:#3b82f6;font-weight:700">②</span>'
+        ' <span style="color:#cbd5e1">バナー生成</span><br>'
+        '<span style="color:#475569;font-size:0.73rem;margin-left:14px">'
+        '訴求軸を選んで画像生成</span>'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
 
 pg = st.navigation([
     st.Page("pages/analysis.py",      title="訴求軸の検討",   icon="🎯"),

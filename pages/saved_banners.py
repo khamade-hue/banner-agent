@@ -71,14 +71,15 @@ st.markdown(
 for banner in banners_sorted:
     platforms = banner.get("platforms", [])
 
-    # Minimal header: label + delete button
+    # Group header: label + axis + date + delete
     col_info, col_del = st.columns([9, 1])
     with col_info:
         st.markdown(
-            f'<div style="color:#475569;font-size:0.78rem;margin-bottom:2px">'
-            f'<span style="color:#94a3b8;font-weight:700">[{banner["variation"]}] {banner["label"]}</span>'
-            f'<span style="margin:0 6px">·</span>{banner.get("axis","—")}'
-            f'<span style="margin:0 6px">·</span>{banner["created_at"][:10]}'
+            f'<div style="margin-bottom:4px">'
+            f'<span style="color:#e2e8f0;font-weight:700;font-size:0.85rem">'
+            f'[{banner["variation"]}] {banner["label"]}</span>'
+            f'<span style="color:#475569;font-size:0.75rem;margin-left:8px">'
+            f'{banner.get("axis","—")} · {banner["created_at"][:10]}</span>'
             f'</div>',
             unsafe_allow_html=True,
         )

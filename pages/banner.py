@@ -331,20 +331,35 @@ current_platforms = st.session_state.get("gen_platforms", [])
 
 st.divider()
 
-col_title, col_dl = st.columns([3, 1])
+# 生成完了バナー
+st.markdown(
+    f'<div style="background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(16,185,129,0.04));'
+    f'border:1px solid rgba(16,185,129,0.35);border-radius:12px;'
+    f'padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px">'
+    f'<div style="color:#10b981;font-size:1.1rem">✓</div>'
+    f'<div>'
+    f'<div style="color:#10b981;font-weight:700;font-size:0.9rem">'
+    f'{len(results)} バリエーション × {len(current_platforms)} プラットフォーム を生成・保存しました</div>'
+    f'<div style="color:#6ee7b7;font-size:0.78rem;margin-top:2px">'
+    f'「保存済みバナー」ページからいつでも確認・ダウンロードできます</div>'
+    f'</div></div>',
+    unsafe_allow_html=True,
+)
+
+col_title, col_saved, col_dl = st.columns([3, 1, 1])
 with col_title:
-    st.subheader(
-        f"生成結果 — {len(results)} バリエーション × {len(current_platforms)} プラットフォーム"
-    )
     if current_axis:
         st.caption(
             f"訴求軸: {current_axis['axis']} ｜ "
             f"トンマナ: {st.session_state.get('gen_tonmana', '—')} ｜ "
             f"目的: {st.session_state.get('gen_objective', '—')}"
         )
+with col_saved:
+    if st.button("保存済みバナー →", type="secondary", use_container_width=True, key="goto_saved"):
+        st.switch_page("pages/saved_banners.py")
 with col_dl:
     st.download_button(
-        "全ファイルを ZIP でダウンロード",
+        "ZIP でダウンロード",
         data=_build_zip(results),
         file_name=f"banners_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
         mime="application/zip",

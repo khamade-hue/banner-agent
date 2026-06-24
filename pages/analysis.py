@@ -27,20 +27,20 @@ def _fetch_page_content(url: str) -> str:
 
 def _c3_card(title: str, color: str, gradient: str, icon: str, items: list) -> str:
     rows = "".join(
-        f"""<div style="margin-bottom:14px">
-            <div style="font-size:0.7rem;font-weight:700;color:{color};
-                 text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">{label}</div>
-            <div style="color:#cbd5e1;font-size:0.875rem;line-height:1.6">{value}</div>
-        </div>"""
+        f'<div style="margin-bottom:12px">'
+        f'<div style="font-size:0.7rem;font-weight:700;color:{color};'
+        f'text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px">{label}</div>'
+        f'<div style="color:#cbd5e1;font-size:0.875rem;line-height:1.6">{value}</div>'
+        f'</div>'
         for label, value in items
     )
     return (
         f'<div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:14px;'
-        f'padding:22px 24px;border-top:3px solid {color};'
+        f'padding:20px 22px;border-top:3px solid {color};margin-bottom:10px;'
         f'box-shadow:0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">'
-        f'<div style="background:{gradient};width:36px;height:36px;border-radius:10px;'
-        f'display:flex;align-items:center;justify-content:center;font-size:1.1rem;'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+        f'<div style="background:{gradient};width:34px;height:34px;border-radius:10px;'
+        f'display:flex;align-items:center;justify-content:center;font-size:1rem;'
         f'box-shadow:0 2px 8px rgba(0,0,0,0.3)">{icon}</div>'
         f'<span style="font-weight:700;font-size:0.95rem;color:#f1f5f9">{title}</span>'
         f'</div>{rows}</div>'
@@ -115,13 +115,14 @@ BADGE_GLOWS  = [
 # ── Page header ───────────────────────────────────────────────────────────────
 st.markdown(
     '<div style="background:linear-gradient(135deg,#0f2744 0%,#1e3a8a 60%,#1d4ed8 100%);'
-    'padding:32px 36px;border-radius:20px;margin-bottom:28px;'
+    'padding:32px 36px;border-radius:20px;margin-bottom:24px;'
     'border:1px solid rgba(59,130,246,0.3);'
     'box-shadow:0 8px 32px rgba(37,99,235,0.25),inset 0 1px 0 rgba(255,255,255,0.07)">'
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
     '<div style="background:rgba(59,130,246,0.25);border:1px solid rgba(59,130,246,0.4);'
     'border-radius:8px;padding:3px 10px;font-size:0.72rem;font-weight:700;'
     'color:#93c5fd;letter-spacing:0.1em;text-transform:uppercase">Step 1 / 2</div>'
+    '<div style="color:#475569;font-size:0.75rem">次: バナー生成</div>'
     '</div>'
     '<h1 style="color:#e2e8f0;margin:0 0 10px;font-size:2rem;font-weight:800;'
     'line-height:1.15;letter-spacing:-0.02em">訴求軸の検討</h1>'
@@ -137,6 +138,12 @@ mode = st.radio(
     ["新規作成", "既存の磨きこみ"],
     horizontal=True,
     label_visibility="collapsed",
+)
+st.markdown(
+    f'<div style="color:#64748b;font-size:0.78rem;margin:2px 0 20px;padding-left:2px">'
+    f'{"商品URLを入力して 3C 分析と訴求軸を自動生成します" if mode == "新規作成" else "保存済みの訴求軸のコピーを手動またはAIで磨きこみます"}'
+    f'</div>',
+    unsafe_allow_html=True,
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -214,47 +221,27 @@ if mode == "新規作成":
         comp = c3.get("competitor", {})
         co   = c3.get("company", {})
 
-        st.markdown(
-            '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-            'letter-spacing:0.1em;margin:8px 0 14px">3C 分析結果</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(_c3_card(
-            "顧客 Customer", "#3b82f6", "linear-gradient(135deg,#1d4ed8,#3b82f6)", "👥",
-            [("ニーズ", cust.get("needs","—")),
-             ("課題・ペイン", cust.get("pain_points","—")),
-             ("属性", cust.get("demographics","—"))],
-        ), unsafe_allow_html=True)
-        st.markdown(_c3_card(
-            "競合 Competitor", "#f43f5e", "linear-gradient(135deg,#be123c,#f43f5e)", "⚔️",
-            [("競合状況", comp.get("landscape","—")),
-             ("差別化ポイント", comp.get("differentiation","—"))],
-        ), unsafe_allow_html=True)
-        st.markdown(_c3_card(
-            "自社 Company", "#10b981", "linear-gradient(135deg,#059669,#10b981)", "🏢",
-            [("強み", co.get("strengths","—")),
-             ("提供価値", co.get("value_proposition","—"))],
-        ), unsafe_allow_html=True)
-
-        st.markdown(
-            '<div style="margin-top:36px;margin-bottom:16px">'
-            '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-            'letter-spacing:0.1em;margin-bottom:6px">提案訴求軸</div>'
-            '<p style="color:#64748b;font-size:0.82rem;margin:0">'
-            '「＋ 追加」でバナー生成ページから使用できるようになります'
-            '</p></div>',
-            unsafe_allow_html=True,
-        )
-
-        current_axes = analysis.get("appeal_axes", [])
-        saved_axis_names = {a["axis"] for a in load_axes()}
-        product_context = {
+        current_axes     = analysis.get("appeal_axes", [])
+        saved_axes_list  = load_axes()
+        saved_axis_names = {a["axis"] for a in saved_axes_list}
+        product_context  = {
             "value_proposition": co.get("value_proposition",""),
             "strengths": co.get("strengths",""),
             "customer_needs": cust.get("needs",""),
             "pain_points": cust.get("pain_points",""),
             "differentiation": comp.get("differentiation",""),
         }
+
+        # ── 提案訴求軸（最初に表示）──────────────────────────────────────────
+        st.markdown(
+            '<div style="margin-top:4px;margin-bottom:16px">'
+            '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+            'letter-spacing:0.1em;margin-bottom:6px">提案訴求軸</div>'
+            '<p style="color:#64748b;font-size:0.82rem;margin:0">'
+            '「＋ 追加」を押してバナー生成で使えるように保存してください'
+            '</p></div>',
+            unsafe_allow_html=True,
+        )
 
         for i, ax in enumerate(current_axes):
             color  = BADGE_COLORS[i % len(BADGE_COLORS)]
@@ -305,8 +292,36 @@ if mode == "新規作成":
                             st.rerun()
                 st.markdown(_axis_card_body(ax), unsafe_allow_html=True)
 
-        st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
-        with st.expander("＋ さらに訴求軸を追加する"):
+        # ── 次のアクション ─────────────────────────────────────────────────────
+        st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
+        saved_count = len(saved_axes_list)
+        if saved_count > 0:
+            col_cta, col_info = st.columns([3, 2])
+            with col_cta:
+                if st.button("バナー生成へ進む →", type="primary",
+                             use_container_width=True, key="goto_banner"):
+                    st.switch_page("pages/banner.py")
+            with col_info:
+                st.markdown(
+                    f'<div style="height:38px;display:flex;align-items:center">'
+                    f'<span style="color:#10b981;font-size:0.8rem;font-weight:600">'
+                    f'✓ {saved_count} 件の訴求軸を保存中</span></div>',
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.markdown(
+                '<div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);'
+                'border-radius:10px;padding:12px 16px">'
+                '<span style="color:#93c5fd;font-size:0.82rem">'
+                '上の訴求軸に「＋ 追加」を押して保存すると、バナー生成へ進めます'
+                '</span></div>',
+                unsafe_allow_html=True,
+            )
+
+        # ── さらに訴求軸を追加 ─────────────────────────────────────────────────
+        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
+        with st.expander("さらに違う角度で訴求軸を追加生成する"):
+            st.caption("別の切り口（季節訴求・価格訴求・BtoB向けなど）を指定して追加できます")
             add_angle = st.text_input(
                 "追加で検討したい観点",
                 placeholder="例: 季節訴求、価格訴求、BtoB向けなど",
@@ -322,6 +337,31 @@ if mode == "新規作成":
                     except Exception as e:
                         st.error(f"生成エラー: {e}")
 
+        # ── 3C 分析の詳細（折りたたみ）────────────────────────────────────────
+        st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+        with st.expander("3C 分析の詳細を見る"):
+            st.markdown(
+                '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;'
+                'text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">3C 分析結果</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(_c3_card(
+                "顧客 Customer", "#3b82f6", "linear-gradient(135deg,#1d4ed8,#3b82f6)", "👥",
+                [("ニーズ", cust.get("needs","—")),
+                 ("課題・ペイン", cust.get("pain_points","—")),
+                 ("属性", cust.get("demographics","—"))],
+            ), unsafe_allow_html=True)
+            st.markdown(_c3_card(
+                "競合 Competitor", "#f43f5e", "linear-gradient(135deg,#be123c,#f43f5e)", "⚔️",
+                [("競合状況", comp.get("landscape","—")),
+                 ("差別化ポイント", comp.get("differentiation","—"))],
+            ), unsafe_allow_html=True)
+            st.markdown(_c3_card(
+                "自社 Company", "#10b981", "linear-gradient(135deg,#059669,#10b981)", "🏢",
+                [("強み", co.get("strengths","—")),
+                 ("提供価値", co.get("value_proposition","—"))],
+            ), unsafe_allow_html=True)
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MODE B: 既存の磨きこみ
@@ -330,7 +370,16 @@ else:
     saved_axes = load_axes()
 
     if not saved_axes:
-        st.info("保存済みの訴求軸がありません。まず「新規作成」で訴求軸を生成・保存してください。")
+        st.markdown(
+            '<div style="background:linear-gradient(145deg,#1e293b,#162032);border:1px dashed #334155;'
+            'border-radius:14px;padding:40px;text-align:center">'
+            '<div style="color:#f1f5f9;font-size:1rem;font-weight:700;margin-bottom:8px">'
+            '保存済みの訴求軸がありません</div>'
+            '<div style="color:#64748b;font-size:0.85rem">'
+            'まず「新規作成」で訴求軸を生成・保存してください</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
         st.stop()
 
     # ── 訴求軸セレクタ ────────────────────────────────────────────────────────
@@ -528,7 +577,6 @@ else:
         target_items_r = st.session_state.get("refined_target_items", [])
         original_set   = set(st.session_state.get("refined_original_items", []))
         all_new_items  = refined.get("copy_suggestions", {}).get(part_key_r, [])
-        # 変更されたアイテムのみ（元のリストに存在しないもの）
         changed_items  = [item for item in all_new_items if item not in original_set]
 
         with st.container(border=True):
@@ -564,14 +612,3 @@ else:
             if st.button("破棄", type="secondary", use_container_width=True, key="ai_discard"):
                 del st.session_state["refined_axis"]
                 st.rerun()
-
-
-# ── Footer hint ───────────────────────────────────────────────────────────────
-st.markdown(
-    '<div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);'
-    'border-radius:10px;padding:12px 18px;margin-top:32px">'
-    '<span style="color:#93c5fd;font-size:0.82rem">'
-    '📋 追加した訴求軸は <strong>「保存済み訴求軸」</strong> ページで管理できます'
-    '</span></div>',
-    unsafe_allow_html=True,
-)
