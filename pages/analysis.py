@@ -490,6 +490,7 @@ else:
                             st.session_state["refined_part_label"]     = target_part_label
                             st.session_state["refined_part_key"]       = part_key
                             st.session_state["refined_source_id"]      = selected_ax["id"]
+                            st.session_state["refined_target_items"]   = list(target_items)
                             st.session_state["refined_original_items"] = list(
                                 selected_ax.get("copy_suggestions", {}).get(part_key, [])
                             )
@@ -523,9 +524,12 @@ else:
             f"}}</style>",
             unsafe_allow_html=True,
         )
-        part_key_r      = st.session_state.get("refined_part_key", "")
-        original_items  = st.session_state.get("refined_original_items", [])
-        new_items_r     = refined.get("copy_suggestions", {}).get(part_key_r, [])
+        part_key_r     = st.session_state.get("refined_part_key", "")
+        target_items_r = st.session_state.get("refined_target_items", [])
+        original_set   = set(st.session_state.get("refined_original_items", []))
+        all_new_items  = refined.get("copy_suggestions", {}).get(part_key_r, [])
+        # 変更されたアイテムのみ（元のリストに存在しないもの）
+        changed_items  = [item for item in all_new_items if item not in original_set]
 
         with st.container(border=True):
             st.markdown('<div class="refine-result" style="display:none"></div>', unsafe_allow_html=True)
@@ -533,17 +537,18 @@ else:
                 f'<span style="font-size:0.85rem;color:#64748b">{refined.get("axis","")}</span>',
                 unsafe_allow_html=True,
             )
-            if original_items:
+            if target_items_r:
                 st.markdown(
                     '<div style="font-size:0.67rem;font-weight:700;color:#64748b;'
                     'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正前</div>'
-                    + _pills(original_items, "rgba(255,255,255,0.04)", "#64748b", "#334155"),
+                    + _pills(target_items_r, "rgba(255,255,255,0.04)", "#64748b", "#334155"),
                     unsafe_allow_html=True,
                 )
             st.markdown(
                 '<div style="font-size:0.67rem;font-weight:700;color:#10b981;'
                 'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正後</div>'
-                + _pills(new_items_r, "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.5)"),
+                + _pills(changed_items or all_new_items[:len(target_items_r)],
+                         "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.5)"),
                 unsafe_allow_html=True,
             )
 
