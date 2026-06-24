@@ -435,16 +435,6 @@ else:
             key="refine_method",
         )
 
-        def _store_refined(new_list: list) -> None:
-            refined = {**selected_ax}
-            refined["copy_suggestions"] = {**selected_ax.get("copy_suggestions", {}), part_key: new_list}
-            st.session_state["refined_axis"]            = refined
-            st.session_state["refined_part_label"]      = target_part_label
-            st.session_state["refined_source_id"]       = selected_ax["id"]
-            st.session_state["refined_product_name"]    = selected_ax.get("product_name", "")
-            st.session_state["refined_product_url"]     = selected_ax.get("product_url", "")
-            st.session_state["refined_product_context"] = selected_ax.get("product_context", {})
-
         if refine_method == "手動で修正":
             edited_map = {}
             for idx, item in enumerate(target_items):
@@ -456,12 +446,23 @@ else:
                     label_visibility="collapsed",
                 )
                 edited_map[item] = edited
-            if st.button("手動編集を保存", type="primary", use_container_width=True, key="manual_save"):
+            if st.button("上書き保存", type="primary", use_container_width=True, key="manual_save"):
                 new_list = list(current_items)
-                for orig, edited in edited_map.items():
+                for orig, edited_val in edited_map.items():
                     if orig in new_list:
-                        new_list[new_list.index(orig)] = edited
-                _store_refined(new_list)
+                        new_list[new_list.index(orig)] = edited_val
+                refined_manual = {**selected_ax}
+                refined_manual["copy_suggestions"] = {
+                    **selected_ax.get("copy_suggestions", {}), part_key: new_list
+                }
+                delete_axis(selected_ax["id"])
+                add_axis(
+                    selected_ax.get("product_name", ""),
+                    selected_ax.get("product_url", ""),
+                    refined_manual,
+                    selected_ax.get("product_context", {}),
+                )
+                st.success("上書き保存しました")
                 st.rerun()
 
         else:  # AIで修正
@@ -481,7 +482,13 @@ else:
                             new_items = refine_copy_part(
                                 selected_ax, part_key, target_items, revision_instructions
                             )
-                            _store_refined(new_items)
+                            refined_ai = {**selected_ax}
+                            refined_ai["copy_suggestions"] = {
+                                **selected_ax.get("copy_suggestions", {}), part_key: new_items
+                            }
+                            st.session_state["refined_axis"]       = refined_ai
+                            st.session_state["refined_part_label"] = target_part_label
+                            st.session_state["refined_source_id"]  = selected_ax["id"]
                             st.rerun()
                         except Exception as e:
                             st.error(f"改修エラー: {e}")
@@ -490,9 +497,9 @@ else:
     if "refined_axis" in st.session_state:
         refined   = st.session_state["refined_axis"]
         source_id = st.session_state.get("refined_source_id")
-        p_name    = st.session_state.get("refined_product_name", "")
-        p_url     = st.session_state.get("refined_product_url", "")
-        p_ctx     = st.session_state.get("refined_product_context", {})
+        p_name    = refined.get("product_name", "")
+        p_url     = refined.get("product_url", "")
+        p_ctx     = refined.get("product_context", {})
 
         part_label_display = st.session_state.get("refined_part_label", "")
         st.markdown(
@@ -521,28 +528,18 @@ else:
             )
             st.markdown(_axis_card_body(refined), unsafe_allow_html=True)
 
-        saved_names = {a["axis"] for a in load_axes()}
-        if refined.get("axis") in saved_names:
-            st.success("この訴求軸は既に保存されています")
-        else:
-            col_overwrite, col_new, col_discard = st.columns([2, 2, 1])
-            with col_overwrite:
-                if st.button("上書き保存（元を削除）", type="primary", use_container_width=True):
-                    delete_axis(source_id)
-                    add_axis(p_name, p_url, refined, p_ctx)
-                    del st.session_state["refined_axis"]
-                    st.success("上書き保存しました")
-                    st.rerun()
-            with col_new:
-                if st.button("新規追加（元を残す）", type="secondary", use_container_width=True):
-                    add_axis(p_name, p_url, refined, p_ctx)
-                    del st.session_state["refined_axis"]
-                    st.success("新規追加しました")
-                    st.rerun()
-            with col_discard:
-                if st.button("破棄", type="secondary", use_container_width=True):
-                    del st.session_state["refined_axis"]
-                    st.rerun()
+        col_overwrite, col_discard = st.columns([3, 1])
+        with col_overwrite:
+            if st.button("上書き保存", type="primary", use_container_width=True, key="ai_overwrite"):
+                delete_axis(source_id)
+                add_axis(p_name, p_url, refined, p_ctx)
+                del st.session_state["refined_axis"]
+                st.success("上書き保存しました")
+                st.rerun()
+        with col_discard:
+            if st.button("破棄", type="secondary", use_container_width=True, key="ai_discard"):
+                del st.session_state["refined_axis"]
+                st.rerun()
 
 
 # ── Footer hint ───────────────────────────────────────────────────────────────
