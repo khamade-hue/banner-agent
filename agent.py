@@ -225,6 +225,45 @@ def generate_more_axes(
     raise ValueError("ツール呼び出し結果が取得できませんでした")
 
 
+def refine_axis(existing_axis: dict, revision_instructions: str) -> dict:
+    """Refine an existing appeal axis based on user revision instructions."""
+    client = _claude()
+
+    copy_str = json.dumps(existing_axis.get("copy_suggestions", {}), ensure_ascii=False)
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=3000,
+        tools=[{
+            "name": "submit_refined_axis",
+            "description": "改修した訴求軸を送信する",
+            "input_schema": _AXIS_ITEM_SCHEMA,
+        }],
+        tool_choice={"type": "tool", "name": "submit_refined_axis"},
+        system="あなたはデジタル広告に精通したシニアマーケティングストラテジストです。",
+        messages=[{
+            "role": "user",
+            "content": (
+                f"以下の訴求軸を、改修指示に基づいて磨きこんでください。\n\n"
+                f"【既存の訴求軸】\n"
+                f"軸名: {existing_axis.get('axis','')}\n"
+                f"説明: {existing_axis.get('description','')}\n"
+                f"ターゲット: {existing_axis.get('target_segment','')}\n"
+                f"根拠: {existing_axis.get('rationale','')}\n"
+                f"コピー候補: {copy_str}\n\n"
+                f"【改修指示】\n{revision_instructions}\n\n"
+                f"改修指示を反映しつつ、マーケティング的に有効な訴求軸に仕上げてください。"
+                f"copy_suggestions（headlines 3つ・offers 2つ・features 4〜6項目）を必ず含めてください。"
+            ),
+        }],
+    )
+
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input
+    raise ValueError("訴求軸の改修結果が取得できませんでした")
+
+
 def generate_banner_prompts(
     brand_name: str,
     product: str,
