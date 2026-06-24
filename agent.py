@@ -232,15 +232,19 @@ _PART_LABELS = {
 }
 
 
-def refine_copy_part(axis: dict, part_key: str, instructions: str) -> list[str]:
-    """Refine a specific copy part (headlines/offers/features) of an appeal axis."""
+def refine_copy_part(
+    axis: dict, part_key: str, target_items: list[str], instructions: str
+) -> list[str]:
+    """Refine specific items within a copy part, returning the complete updated list."""
     client = _claude()
-    part_label   = _PART_LABELS.get(part_key, part_key)
-    current_items = axis.get("copy_suggestions", {}).get(part_key, [])
+    part_label = _PART_LABELS.get(part_key, part_key)
+    all_items  = axis.get("copy_suggestions", {}).get(part_key, [])
+    all_str    = "\n".join(f"・{item}" for item in all_items)
+    target_str = "\n".join(f"・{item}" for item in target_items)
 
     tool = {
         "name": "submit_refined_copy",
-        "description": f"改修した{part_label}を送信する",
+        "description": f"改修した{part_label}の完全リストを送信する",
         "input_schema": {
             "type": "object",
             "required": ["items"],
@@ -248,7 +252,7 @@ def refine_copy_part(axis: dict, part_key: str, instructions: str) -> list[str]:
                 "items": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": f"改修後の{part_label}リスト",
+                    "description": f"改修後の{part_label}完全リスト（改修対象以外は変更しない）",
                 }
             },
         },
@@ -263,15 +267,16 @@ def refine_copy_part(axis: dict, part_key: str, instructions: str) -> list[str]:
         messages=[{
             "role": "user",
             "content": (
-                f"以下の訴求軸の「{part_label}」を、改修指示に基づいて書き直してください。\n\n"
+                f"以下の訴求軸の「{part_label}」から、指定した項目のみを改修してください。\n\n"
                 f"【訴求軸】\n"
                 f"軸名: {axis.get('axis','')}\n"
                 f"説明: {axis.get('description','')}\n"
                 f"ターゲット: {axis.get('target_segment','')}\n\n"
-                f"【現在の{part_label}】\n"
-                + "\n".join(f"・{item}" for item in current_items) +
-                f"\n\n【改修指示】\n{instructions}\n\n"
-                f"改修指示を反映し、{part_label}として最適なリストのみを返してください。"
+                f"【現在の{part_label}（全項目）】\n{all_str}\n\n"
+                f"【改修対象（この項目のみ書き直す）】\n{target_str}\n\n"
+                f"【改修指示】\n{instructions}\n\n"
+                f"改修対象の項目を改修指示に従って書き直し、他の項目は変更せずに、"
+                f"全項目を含む完全なリストを返してください。"
             ),
         }],
     )

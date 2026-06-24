@@ -363,7 +363,7 @@ else:
         )
         st.markdown(_axis_card_body(selected_ax), unsafe_allow_html=True)
 
-    # ── 改修指示フォーム ──────────────────────────────────────────────────────
+    # ── 改修指示（3ステップ）────────────────────────────────────────────────
     PART_OPTIONS = {
         "キャッチコピー": "headlines",
         "オファー・CTA":  "offers",
@@ -372,45 +372,89 @@ else:
 
     st.markdown(
         '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-        'letter-spacing:0.1em;margin:20px 0 10px">改修指示</div>',
+        'letter-spacing:0.1em;margin:20px 0 16px">改修指示</div>',
         unsafe_allow_html=True,
     )
-    with st.form("refine_form"):
-        target_part_label = st.selectbox(
-            "修正するパーツ",
-            list(PART_OPTIONS.keys()),
-        )
-        revision_instructions = st.text_area(
-            "改修指示",
-            placeholder="例: もっと感情的に訴えるコピーにして / 価格訴求を前面に出して",
-            height=100,
-            label_visibility="collapsed",
-        )
-        refine_submitted = st.form_submit_button(
-            "選択パーツを磨きこむ",
-            type="primary",
-            use_container_width=True,
-        )
 
-    if refine_submitted:
+    # ① パーツの選択
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:6px">'
+        '① パーツの選択</div>',
+        unsafe_allow_html=True,
+    )
+    target_part_label = st.selectbox(
+        "パーツの選択",
+        list(PART_OPTIONS.keys()),
+        label_visibility="collapsed",
+        key="refine_part_select",
+    )
+    part_key      = PART_OPTIONS[target_part_label]
+    current_items = selected_ax.get("copy_suggestions", {}).get(part_key, [])
+
+    # ② 具体パーツの選択
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 6px">'
+        '② 具体パーツの選択</div>',
+        unsafe_allow_html=True,
+    )
+    if not current_items:
+        st.caption("このパーツにコピー候補がありません")
+        target_items = []
+    elif part_key == "features":
+        target_items = st.multiselect(
+            "修正する項目（複数可）",
+            options=current_items,
+            default=current_items[:1] if current_items else [],
+            label_visibility="collapsed",
+            key="refine_items_multi",
+        )
+    else:
+        selected_item = st.radio(
+            "修正する項目",
+            options=current_items,
+            label_visibility="collapsed",
+            key="refine_items_radio",
+        )
+        target_items = [selected_item] if selected_item else []
+
+    # ③ 修正指示
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 6px">'
+        '③ 修正指示</div>',
+        unsafe_allow_html=True,
+    )
+    revision_instructions = st.text_area(
+        "修正指示",
+        placeholder="例: もっと感情的に訴えるコピーにして / 価格訴求を前面に出して",
+        height=90,
+        label_visibility="collapsed",
+        key="refine_instructions",
+    )
+
+    if st.button("選択パーツを磨きこむ", type="primary", use_container_width=True, key="refine_submit"):
+        errors = []
+        if not target_items:
+            errors.append("修正する項目を選択してください")
         if not revision_instructions.strip():
-            st.error("改修指示を入力してください")
-            st.stop()
-        part_key = PART_OPTIONS[target_part_label]
-        with st.spinner(f"「{target_part_label}」を改修中..."):
-            try:
-                new_items = refine_copy_part(selected_ax, part_key, revision_instructions)
-                refined = {**selected_ax}
-                refined["copy_suggestions"] = {**selected_ax.get("copy_suggestions", {}), part_key: new_items}
-                st.session_state["refined_axis"]            = refined
-                st.session_state["refined_part_label"]      = target_part_label
-                st.session_state["refined_source_id"]       = selected_ax["id"]
-                st.session_state["refined_product_name"]    = selected_ax.get("product_name", "")
-                st.session_state["refined_product_url"]     = selected_ax.get("product_url", "")
-                st.session_state["refined_product_context"] = selected_ax.get("product_context", {})
-            except Exception as e:
-                st.error(f"改修エラー: {e}")
-                st.stop()
+            errors.append("修正指示を入力してください")
+        if errors:
+            for err in errors:
+                st.error(err)
+        else:
+            with st.spinner(f"「{target_part_label}」を改修中..."):
+                try:
+                    new_items = refine_copy_part(selected_ax, part_key, target_items, revision_instructions)
+                    refined = {**selected_ax}
+                    refined["copy_suggestions"] = {**selected_ax.get("copy_suggestions", {}), part_key: new_items}
+                    st.session_state["refined_axis"]            = refined
+                    st.session_state["refined_part_label"]      = target_part_label
+                    st.session_state["refined_source_id"]       = selected_ax["id"]
+                    st.session_state["refined_product_name"]    = selected_ax.get("product_name", "")
+                    st.session_state["refined_product_url"]     = selected_ax.get("product_url", "")
+                    st.session_state["refined_product_context"] = selected_ax.get("product_context", {})
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"改修エラー: {e}")
 
     # ── 改修後の訴求軸 ────────────────────────────────────────────────────────
     if "refined_axis" in st.session_state:
