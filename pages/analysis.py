@@ -417,44 +417,74 @@ else:
         )
         target_items = [selected_item] if selected_item else []
 
-    # ③ 修正指示
+    # ③ 修正方法
     st.markdown(
         '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 6px">'
-        '③ 修正指示</div>',
+        '③ 修正方法</div>',
         unsafe_allow_html=True,
     )
-    revision_instructions = st.text_area(
-        "修正指示",
-        placeholder="例: もっと感情的に訴えるコピーにして / 価格訴求を前面に出して",
-        height=90,
-        label_visibility="collapsed",
-        key="refine_instructions",
-    )
 
-    if st.button("選択パーツを磨きこむ", type="primary", use_container_width=True, key="refine_submit"):
-        errors = []
-        if not target_items:
-            errors.append("修正する項目を選択してください")
-        if not revision_instructions.strip():
-            errors.append("修正指示を入力してください")
-        if errors:
-            for err in errors:
-                st.error(err)
-        else:
-            with st.spinner(f"「{target_part_label}」を改修中..."):
-                try:
-                    new_items = refine_copy_part(selected_ax, part_key, target_items, revision_instructions)
-                    refined = {**selected_ax}
-                    refined["copy_suggestions"] = {**selected_ax.get("copy_suggestions", {}), part_key: new_items}
-                    st.session_state["refined_axis"]            = refined
-                    st.session_state["refined_part_label"]      = target_part_label
-                    st.session_state["refined_source_id"]       = selected_ax["id"]
-                    st.session_state["refined_product_name"]    = selected_ax.get("product_name", "")
-                    st.session_state["refined_product_url"]     = selected_ax.get("product_url", "")
-                    st.session_state["refined_product_context"] = selected_ax.get("product_context", {})
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"改修エラー: {e}")
+    if not target_items:
+        st.caption("② で修正する項目を選択してください")
+    else:
+        refine_method = st.radio(
+            "修正方法",
+            ["手動で修正", "AIで修正"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="refine_method",
+        )
+
+        def _store_refined(new_list: list) -> None:
+            refined = {**selected_ax}
+            refined["copy_suggestions"] = {**selected_ax.get("copy_suggestions", {}), part_key: new_list}
+            st.session_state["refined_axis"]            = refined
+            st.session_state["refined_part_label"]      = target_part_label
+            st.session_state["refined_source_id"]       = selected_ax["id"]
+            st.session_state["refined_product_name"]    = selected_ax.get("product_name", "")
+            st.session_state["refined_product_url"]     = selected_ax.get("product_url", "")
+            st.session_state["refined_product_context"] = selected_ax.get("product_context", {})
+
+        if refine_method == "手動で修正":
+            edited_map = {}
+            for idx, item in enumerate(target_items):
+                edited = st.text_area(
+                    f"手動編集 {idx + 1}",
+                    value=item,
+                    height=68,
+                    key=f"manual_edit_{idx}",
+                    label_visibility="collapsed",
+                )
+                edited_map[item] = edited
+            if st.button("手動編集を保存", type="primary", use_container_width=True, key="manual_save"):
+                new_list = list(current_items)
+                for orig, edited in edited_map.items():
+                    if orig in new_list:
+                        new_list[new_list.index(orig)] = edited
+                _store_refined(new_list)
+                st.rerun()
+
+        else:  # AIで修正
+            revision_instructions = st.text_area(
+                "修正指示",
+                placeholder="例: もっと感情的に訴えるコピーにして / 価格訴求を前面に出して",
+                height=90,
+                label_visibility="collapsed",
+                key="refine_instructions",
+            )
+            if st.button("AIで磨きこむ", type="primary", use_container_width=True, key="refine_submit"):
+                if not revision_instructions.strip():
+                    st.error("修正指示を入力してください")
+                else:
+                    with st.spinner(f"「{target_part_label}」を改修中..."):
+                        try:
+                            new_items = refine_copy_part(
+                                selected_ax, part_key, target_items, revision_instructions
+                            )
+                            _store_refined(new_items)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"改修エラー: {e}")
 
     # ── 改修後の訴求軸 ────────────────────────────────────────────────────────
     if "refined_axis" in st.session_state:
