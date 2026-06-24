@@ -172,7 +172,16 @@ header button:hover svg {
 [data-testid="stExpanderDetails"] > div > div {
     background: #1e293b !important;
 }
-[data-testid="stExpander"] summary { padding: 10px 14px !important; }
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary:hover,
+[data-testid="stExpander"] summary:focus {
+    padding: 10px 14px !important;
+    background: #1e293b !important;
+    border-radius: 10px !important;
+}
+[data-testid="stExpander"] details[open] > summary {
+    border-radius: 10px 10px 0 0 !important;
+}
 [data-testid="stExpander"] summary span {
     color: #cbd5e1 !important;
     font-weight: 600 !important;
@@ -250,14 +259,25 @@ header button:hover svg {
     font-size: 0.78rem !important;
     font-weight: 600 !important;
 }
-/* × close button inside tag */
+/* Dropdown chevron arrows (selectbox + multiselect toggle) */
+[data-testid="stSelectbox"] [data-baseweb="select"] svg,
+[data-testid="stSelectbox"] [data-baseweb="select"] svg path,
+[data-testid="stMultiSelect"] [data-baseweb="select"] svg,
+[data-testid="stMultiSelect"] [data-baseweb="select"] svg path {
+    fill: #94a3b8 !important;
+}
+/* × close button inside tag — keep blue */
+[data-testid="stMultiSelect"] [data-baseweb="tag"] svg,
+[data-testid="stMultiSelect"] [data-baseweb="tag"] svg path,
 [data-testid="stMultiSelect"] [data-baseweb="tag"] [role="presentation"],
 [data-testid="stMultiSelect"] [data-baseweb="tag"] button {
+    fill: #93c5fd !important;
     color: #93c5fd !important;
     opacity: 1 !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="tag"] [role="presentation"]:hover,
 [data-testid="stMultiSelect"] [data-baseweb="tag"] button:hover {
+    fill: #ffffff !important;
     color: #ffffff !important;
     background: rgba(255,255,255,0.15) !important;
     border-radius: 4px !important;
