@@ -154,10 +154,23 @@ header button:hover svg {
 /* ═══════════════════════════════════════════════
    EXPANDER
 ═══════════════════════════════════════════════ */
-[data-testid="stExpander"] {
+[data-testid="stExpander"],
+[data-testid="stExpander"]:hover,
+[data-testid="stExpander"]:focus-within {
     background: #1e293b !important;
     border: 1px solid #334155 !important;
     border-radius: 10px !important;
+}
+[data-testid="stExpander"] details,
+[data-testid="stExpander"] details[open],
+[data-testid="stExpander"] details > div {
+    background: #1e293b !important;
+    border-radius: 0 0 10px 10px !important;
+}
+[data-testid="stExpanderDetails"],
+[data-testid="stExpanderDetails"] > div,
+[data-testid="stExpanderDetails"] > div > div {
+    background: #1e293b !important;
 }
 [data-testid="stExpander"] summary { padding: 10px 14px !important; }
 [data-testid="stExpander"] summary span {
@@ -209,11 +222,18 @@ header button:hover svg {
     color: #e2e8f0 !important;
 }
 [data-testid="stMultiSelect"] > div > div,
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div,
 [data-testid="stMultiSelect"] [data-baseweb="input"],
-[data-testid="stMultiSelect"] [data-baseweb="base-input"] {
+[data-testid="stMultiSelect"] [data-baseweb="base-input"],
+[data-testid="stMultiSelect"] [data-baseweb="base-input"] > div,
+[data-testid="stMultiSelect"] [data-baseweb="base-input"] > div > div {
     background: #1e293b !important;
     border-color: #334155 !important;
     border-radius: 8px !important;
+    color: #e2e8f0 !important;
+}
+[data-testid="stMultiSelect"] input[type="text"] {
+    background: transparent !important;
     color: #e2e8f0 !important;
 }
 /* Multiselect: selected tag chips */
@@ -365,7 +385,7 @@ with st.sidebar:
         'letter-spacing:0.1em;margin-bottom:10px">使い方フロー</div>'
         '<div style="font-size:0.8rem;color:#94a3b8;line-height:1.9">'
         '<span style="color:#3b82f6;font-weight:700">①</span>'
-        ' <span style="color:#cbd5e1">訴求軸の検討</span><br>'
+        ' <span style="color:#cbd5e1">訴求軸生成</span><br>'
         '<span style="color:#475569;font-size:0.73rem;margin-left:14px">'
         '商品URLを入力して分析</span><br>'
         '<span style="color:#3b82f6;font-weight:700">②</span>'
@@ -377,7 +397,7 @@ with st.sidebar:
     )
 
 pg = st.navigation([
-    st.Page("pages/analysis.py",      title="訴求軸の検討",   icon="🎯"),
+    st.Page("pages/analysis.py",      title="訴求軸生成",     icon="🎯"),
     st.Page("pages/banner.py",        title="バナー生成",     icon="🖼️"),
     st.Page("pages/saved_axes.py",    title="保存済み訴求軸", icon="📋"),
     st.Page("pages/saved_banners.py", title="保存済みバナー", icon="📁"),

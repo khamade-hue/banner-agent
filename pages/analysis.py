@@ -125,7 +125,7 @@ st.markdown(
     '<div style="color:#475569;font-size:0.75rem">次: バナー生成</div>'
     '</div>'
     '<h1 style="color:#e2e8f0;margin:0 0 10px;font-size:2rem;font-weight:800;'
-    'line-height:1.15;letter-spacing:-0.02em">訴求軸の検討</h1>'
+    'line-height:1.15;letter-spacing:-0.02em">訴求軸生成</h1>'
     '<p style="color:#93c5fd;margin:0;font-size:0.9rem;line-height:1.6;max-width:560px">'
     '商品URLをもとに Claude が 3C 分析を実施し、SNS広告の最適な訴求軸とコピー候補を提案します'
     '</p></div>',

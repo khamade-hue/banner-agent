@@ -98,7 +98,7 @@ if not axes:
         '</div>',
         unsafe_allow_html=True,
     )
-    if st.button("訴求軸の検討ページへ →", type="primary"):
+    if st.button("訴求軸生成ページへ →", type="primary"):
         st.switch_page("pages/analysis.py")
     st.stop()
 
