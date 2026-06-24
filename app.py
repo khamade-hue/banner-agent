@@ -202,7 +202,9 @@ header button:hover svg {
     border-radius: 8px !important;
     color: #e2e8f0 !important;
 }
-[data-testid="stMultiSelect"] > div > div {
+[data-testid="stMultiSelect"] > div > div,
+[data-testid="stMultiSelect"] [data-baseweb="input"],
+[data-testid="stMultiSelect"] [data-baseweb="base-input"] {
     background: #1e293b !important;
     border-color: #334155 !important;
     border-radius: 8px !important;
@@ -210,34 +212,38 @@ header button:hover svg {
 }
 /* Multiselect: selected tag chips */
 [data-testid="stMultiSelect"] [data-baseweb="tag"] {
-    background: rgba(59,130,246,0.22) !important;
-    border: 1px solid rgba(59,130,246,0.55) !important;
+    background: #1e3a5f !important;
+    border: 1px solid #3b82f6 !important;
     border-radius: 6px !important;
     padding: 2px 4px 2px 8px !important;
     margin: 2px !important;
 }
+[data-testid="stMultiSelect"] [data-baseweb="tag"] *,
 [data-testid="stMultiSelect"] [data-baseweb="tag"] span {
     color: #e2e8f0 !important;
     font-size: 0.78rem !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
 }
 /* × close button inside tag */
-[data-testid="stMultiSelect"] [data-baseweb="tag"] [role="presentation"] {
-    color: #64748b !important;
+[data-testid="stMultiSelect"] [data-baseweb="tag"] [role="presentation"],
+[data-testid="stMultiSelect"] [data-baseweb="tag"] button {
+    color: #93c5fd !important;
     opacity: 1 !important;
 }
-[data-testid="stMultiSelect"] [data-baseweb="tag"] [role="presentation"]:hover {
-    color: #e2e8f0 !important;
-    background: rgba(255,255,255,0.1) !important;
+[data-testid="stMultiSelect"] [data-baseweb="tag"] [role="presentation"]:hover,
+[data-testid="stMultiSelect"] [data-baseweb="tag"] button:hover {
+    color: #ffffff !important;
+    background: rgba(255,255,255,0.15) !important;
     border-radius: 4px !important;
 }
 /* Dropdown option text */
 [data-testid="stMultiSelect"] li {
     color: #cbd5e1 !important;
+    background: #1e293b !important;
 }
 [data-testid="stMultiSelect"] li:hover,
 [data-testid="stMultiSelect"] li[aria-selected="true"] {
-    background: rgba(59,130,246,0.15) !important;
+    background: rgba(59,130,246,0.2) !important;
     color: #e2e8f0 !important;
 }
 
