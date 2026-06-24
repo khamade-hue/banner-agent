@@ -95,42 +95,22 @@ for idx, ax in enumerate(reversed(saved_axes)):
         if sections else ""
     )
 
-    # Per-card CSS: colored left border + glow (app.py handles background + base border)
+    # Per-card CSS: colored left border + glow on expander
     st.markdown(
-        f"<style>[data-testid='stVerticalBlockBorderWrapper']:has(.{marker}){{"
+        f"<style>[data-testid='stExpander']:has(.{marker}){{"
         f"border-left:4px solid {color} !important;"
-        f"border-radius:16px !important;"
         f"box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow} !important;"
         f"}}</style>",
         unsafe_allow_html=True,
     )
 
-    with st.container(border=True):
+    with st.expander(f"[{idx+1}]  {ax['axis']}", expanded=False):
         st.markdown(f'<div class="{marker}" style="display:none"></div>',
                     unsafe_allow_html=True)
 
-        col_title, col_del = st.columns([8, 2])
-        with col_title:
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:10px">'
-                f'<div style="display:inline-flex;align-items:center;justify-content:center;'
-                f'width:28px;height:28px;border-radius:50%;background:{color};'
-                f'color:white;font-weight:800;font-size:12px;flex-shrink:0;'
-                f'box-shadow:0 2px 8px {glow}">{idx+1}</div>'
-                f'<span style="font-size:1.0rem;font-weight:800;color:#f1f5f9;'
-                f'letter-spacing:-0.01em">{ax["axis"]}</span>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        with col_del:
-            if st.button("🗑 削除", key=f"del_axis_{ax['id']}", type="secondary",
-                         use_container_width=True):
-                delete_axis(ax["id"])
-                st.rerun()
-
         # Meta tags
         st.markdown(
-            f'<div style="display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 8px">'
+            f'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">'
             f'<span style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
             f'border-radius:6px;padding:2px 9px;font-size:0.73rem;color:#64748b">'
             f'📦 {ax.get("product_name","")}</span>'
@@ -153,3 +133,10 @@ for idx, ax in enumerate(reversed(saved_axes)):
             f'{copy_html}',
             unsafe_allow_html=True,
         )
+
+        _, col_del = st.columns([8, 2])
+        with col_del:
+            if st.button("🗑 削除", key=f"del_axis_{ax['id']}", type="secondary",
+                         use_container_width=True):
+                delete_axis(ax["id"])
+                st.rerun()

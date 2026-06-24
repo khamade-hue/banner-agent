@@ -1,10 +1,8 @@
 """Page 4: 保存済みバナー"""
 
-import io
 import os
 import sys
 
-import requests
 import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,66 +49,63 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Gallery CSS (hover overlay DL button)
+st.markdown(
+    '<style>'
+    '.bn-gallery{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}'
+    '.bn-item{position:relative;width:130px;flex-shrink:0}'
+    '.bn-item img{width:100%;height:auto;border-radius:8px;display:block;'
+    'border:1px solid #334155}'
+    '.bn-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.55);'
+    'display:flex;align-items:center;justify-content:center;'
+    'border-radius:8px;opacity:0;transition:opacity 0.18s ease}'
+    '.bn-item:hover .bn-overlay{opacity:1}'
+    '.bn-dl-btn{color:#fff;font-size:0.78rem;font-weight:700;text-decoration:none;'
+    'background:rgba(59,130,246,0.75);border:1px solid rgba(99,149,255,0.6);'
+    'border-radius:6px;padding:5px 10px}'
+    '.bn-dl-btn:hover{background:rgba(59,130,246,0.95)}'
+    '</style>',
+    unsafe_allow_html=True,
+)
+
 for banner in banners_sorted:
     platforms = banner.get("platforms", [])
 
-    st.markdown(
-        f'<div style="background:linear-gradient(145deg,#1e293b,#162032);border-radius:16px;'
-        f'padding:20px 24px;border:1px solid #334155;margin-bottom:8px;'
-        f'box-shadow:0 4px 16px rgba(0,0,0,0.2)">'
-        f'<div style="font-size:1rem;font-weight:800;color:#f1f5f9;margin-bottom:6px">'
-        f'[{banner["variation"]}] {banner["label"]}</div>'
-        f'<div style="display:flex;flex-wrap:wrap;gap:6px">'
-        f'<span style="background:rgba(255,255,255,0.06);border:1px solid #334155;'
-        f'border-radius:6px;padding:3px 10px;font-size:0.75rem;color:#94a3b8">'
-        f'📦 {banner["product_name"]}</span>'
-        f'<span style="background:rgba(255,255,255,0.06);border:1px solid #334155;'
-        f'border-radius:6px;padding:3px 10px;font-size:0.75rem;color:#94a3b8">'
-        f'🎯 {banner["axis"]}</span>'
-        f'<span style="background:rgba(255,255,255,0.06);border:1px solid #334155;'
-        f'border-radius:6px;padding:3px 10px;font-size:0.75rem;color:#94a3b8">'
-        f'🎨 {banner.get("tonmana","—")}</span>'
-        f'<span style="background:rgba(255,255,255,0.06);border:1px solid #334155;'
-        f'border-radius:6px;padding:3px 10px;font-size:0.75rem;color:#64748b">'
-        f'{banner["created_at"][:10]}</span>'
-        f'</div></div>',
-        unsafe_allow_html=True,
-    )
-
-    col_del, _ = st.columns([1, 5])
+    # Minimal header: label + delete button
+    col_info, col_del = st.columns([9, 1])
+    with col_info:
+        st.markdown(
+            f'<div style="color:#475569;font-size:0.78rem;margin-bottom:2px">'
+            f'<span style="color:#94a3b8;font-weight:700">[{banner["variation"]}] {banner["label"]}</span>'
+            f'<span style="margin:0 6px">·</span>{banner.get("axis","—")}'
+            f'<span style="margin:0 6px">·</span>{banner["created_at"][:10]}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
     with col_del:
-        if st.button("🗑 削除", key=f"del_banner_{banner['id']}", type="secondary"):
+        if st.button("🗑", key=f"del_banner_{banner['id']}", type="secondary",
+                     use_container_width=True):
             delete_banner(banner["id"])
             st.rerun()
 
+    # Image gallery with hover DL overlay
     if platforms:
-        chunk = 4
-        for row_start in range(0, len(platforms), chunk):
-            row  = platforms[row_start : row_start + chunk]
-            cols = st.columns(len(row))
-            for col, p in zip(cols, row):
-                with col:
-                    public_url = p.get("public_url", "")
-                    if public_url:
-                        st.image(
-                            public_url,
-                            caption=f"{p['platform_name']}  {p['width']}×{p['height']}",
-                            use_container_width=True,
-                        )
-                        try:
-                            img_bytes = requests.get(public_url, timeout=10).content
-                            st.download_button(
-                                "↓ DL",
-                                data=img_bytes,
-                                file_name=p["filename"],
-                                mime="image/png",
-                                key=f"dl_{banner['id']}_{p['filename']}",
-                                use_container_width=True,
-                            )
-                        except Exception:
-                            st.caption("DL リンク取得失敗")
-                    else:
-                        st.caption("画像URL なし")
+        imgs_html = '<div class="bn-gallery">'
+        for p in platforms:
+            url = p.get("public_url", "")
+            if url:
+                filename = p.get("filename", "banner.png")
+                dl_url = f"{url}?download={filename}"
+                imgs_html += (
+                    f'<div class="bn-item">'
+                    f'<img src="{url}" />'
+                    f'<div class="bn-overlay">'
+                    f'<a href="{dl_url}" target="_blank" class="bn-dl-btn">↓ DL</a>'
+                    f'</div>'
+                    f'</div>'
+                )
+        imgs_html += '</div>'
+        st.markdown(imgs_html, unsafe_allow_html=True)
     else:
         st.markdown(
             '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);'
@@ -119,7 +114,4 @@ for banner in banners_sorted:
             unsafe_allow_html=True,
         )
 
-    with st.expander("生成プロンプトを見る"):
-        st.code(banner.get("prompt", ""), language=None)
-
-    st.markdown("<div style='margin-bottom:24px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:16px'></div>", unsafe_allow_html=True)

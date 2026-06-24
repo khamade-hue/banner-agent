@@ -186,20 +186,19 @@ else:
         label_visibility="collapsed",
     )
 
-# ── プラットフォーム & バリエーション ──────────────────────────────────────────
-_section("プラットフォーム & バリエーション")
-col_pf, col_var = st.columns([3, 1])
-with col_pf:
-    selected_platform_names = st.multiselect(
-        "バナーの用途（プラットフォーム）*",
-        [p.name for p in PLATFORMS],
-        default=["Instagram Square", "X (Twitter)", "Facebook"],
-        label_visibility="collapsed",
-    )
-with col_var:
-    st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">バリエーション数</div>', unsafe_allow_html=True)
-    num_variations = st.selectbox("バリエーション数", [1, 2, 3, 4, 5], index=2,
-                                  label_visibility="collapsed")
+# ── プラットフォーム ───────────────────────────────────────────────────────────
+_section("プラットフォーム")
+selected_platform_name = st.selectbox(
+    "バナーの用途（プラットフォーム）*",
+    [p.name for p in PLATFORMS],
+    index=0,
+    label_visibility="collapsed",
+)
+
+# ── バリエーション数 ────────────────────────────────────────────────────────────
+_section("バリエーション数")
+num_variations = st.selectbox("バリエーション数", [1, 2, 3, 4, 5], index=2,
+                              label_visibility="collapsed")
 
 # ── リファレンス画像 ──────────────────────────────────────────────────────────
 _section("リファレンス画像（任意）")
@@ -254,11 +253,7 @@ generate_btn = st.button("バナーを生成", type="primary", use_container_wid
 # 生成処理
 # ═══════════════════════════════════════════════════════════════════════════════
 if generate_btn:
-    if not selected_platform_names:
-        st.error("プラットフォームを1つ以上選択してください")
-        st.stop()
-
-    selected_platforms = [p for p in PLATFORMS if p.name in selected_platform_names]
+    selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
     tonmana_desc   = TONMANA[tonmana_label]
     objective_desc = OBJECTIVE[objective_label]
 
