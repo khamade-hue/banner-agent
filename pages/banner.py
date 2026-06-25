@@ -341,7 +341,7 @@ else:
         '① 修正するパーツ</div>',
         unsafe_allow_html=True,
     )
-    EX_REVISION_PARTS = ["ビジュアル", "トンマナ", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
+    EX_REVISION_PARTS = ["トンマナ", "ビジュアル", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
     sel_part_ex = st.radio(
         "修正するパーツ",
         EX_REVISION_PARTS,
