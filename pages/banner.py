@@ -107,142 +107,217 @@ if not axes:
 # 生成設定（メインエリア）
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# ── 目的 & トンマナ ────────────────────────────────────────────────────────────
-_section("目的 & トンマナ", margin_top="0")
-col_obj, col_ton = st.columns(2)
-with col_obj:
-    objective_label = st.selectbox("目的 *", list(OBJECTIVE.keys()), label_visibility="collapsed")
-with col_ton:
-    tonmana_label = st.selectbox("トンマナ *", list(TONMANA.keys()), label_visibility="collapsed")
-
-# ── 訴求軸 ────────────────────────────────────────────────────────────────────
-_section("訴求軸")
-axis_labels  = [f"{a['axis']} — {a['product_name']}" for a in axes]
-selected_idx = st.selectbox(
-    "訴求軸を選択 *",
-    range(len(axes)),
-    format_func=lambda i: axis_labels[i],
+# ── 生成モード ────────────────────────────────────────────────────────────────
+_section("生成モード", margin_top="0")
+mode = st.radio(
+    "生成モード",
+    ["新規作成", "既存のバナーから作成"],
+    horizontal=True,
+    key="gen_mode",
     label_visibility="collapsed",
 )
-selected_axis = axes[selected_idx]
 
-with st.expander("選択中の訴求軸の詳細"):
-    st.markdown(f"**{selected_axis['axis']}**")
-    st.markdown(selected_axis.get("description", ""))
-    st.caption(f"ターゲット: {selected_axis.get('target_segment', '—')}")
-    ctx = selected_axis.get("product_context", {})
-    if ctx.get("value_proposition"):
-        st.caption(f"提供価値: {ctx['value_proposition']}")
+st.divider()
 
-# ── コピー ─────────────────────────────────────────────────────────────────────
-_section("バナーに入れるコピー")
+# ════════════════════════════════════════════
+# 新規作成
+# ════════════════════════════════════════════
+if mode == "新規作成":
+    # ── 目的 & トンマナ ────────────────────────────────────────────────────────
+    _section("目的 & トンマナ", margin_top="0")
+    col_obj, col_ton = st.columns(2)
+    with col_obj:
+        objective_label = st.selectbox("目的 *", list(OBJECTIVE.keys()), label_visibility="collapsed")
+    with col_ton:
+        tonmana_label = st.selectbox("トンマナ *", list(TONMANA.keys()), label_visibility="collapsed")
 
-copy_s        = selected_axis.get("copy_suggestions", {})
-headlines_opts = copy_s.get("headlines", [])
-offers_opts    = copy_s.get("offers", [])
-features_opts  = copy_s.get("features", [])
+    # ── 訴求軸 ────────────────────────────────────────────────────────────────
+    _section("訴求軸")
+    axis_labels  = [f"{a['axis']} — {a['product_name']}" for a in axes]
+    selected_idx = st.selectbox(
+        "訴求軸を選択 *",
+        range(len(axes)),
+        format_func=lambda i: axis_labels[i],
+        label_visibility="collapsed",
+    )
+    selected_axis = axes[selected_idx]
 
-col_hl, col_of = st.columns(2)
-with col_hl:
-    st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">メインキャッチ</div>', unsafe_allow_html=True)
-    if headlines_opts:
-        hl_sel = st.selectbox("メインキャッチ", headlines_opts + ["カスタム入力..."],
-                              key="hl_sel", label_visibility="collapsed")
-        headline_copy = st.text_input("キャッチを入力", key="hl_custom",
-                                      label_visibility="collapsed") if hl_sel == "カスタム入力..." else hl_sel
-    else:
-        headline_copy = st.text_input("メインキャッチ（任意）",
-                                      placeholder="例: 制作費、10分の1でいい。",
-                                      label_visibility="collapsed")
+    with st.expander("選択中の訴求軸の詳細"):
+        st.markdown(f"**{selected_axis['axis']}**")
+        st.markdown(selected_axis.get("description", ""))
+        st.caption(f"ターゲット: {selected_axis.get('target_segment', '—')}")
+        ctx = selected_axis.get("product_context", {})
+        if ctx.get("value_proposition"):
+            st.caption(f"提供価値: {ctx['value_proposition']}")
 
-with col_of:
-    st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">オファー / CTA</div>', unsafe_allow_html=True)
-    if offers_opts:
-        of_sel = st.selectbox("オファー / CTA", ["なし"] + offers_opts + ["カスタム入力..."],
-                              key="of_sel", label_visibility="collapsed")
-        if of_sel == "カスタム入力...":
-            offer_copy = st.text_input("オファーを入力", key="of_custom", label_visibility="collapsed")
-        elif of_sel == "なし":
-            offer_copy = ""
+    # ── コピー ────────────────────────────────────────────────────────────────
+    _section("バナーに入れるコピー")
+
+    copy_s         = selected_axis.get("copy_suggestions", {})
+    headlines_opts = copy_s.get("headlines", [])
+    offers_opts    = copy_s.get("offers", [])
+    features_opts  = copy_s.get("features", [])
+
+    col_hl, col_of = st.columns(2)
+    with col_hl:
+        st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">メインキャッチ</div>', unsafe_allow_html=True)
+        if headlines_opts:
+            hl_sel = st.selectbox("メインキャッチ", headlines_opts + ["カスタム入力..."],
+                                  key="hl_sel", label_visibility="collapsed")
+            headline_copy = st.text_input("キャッチを入力", key="hl_custom",
+                                          label_visibility="collapsed") if hl_sel == "カスタム入力..." else hl_sel
         else:
-            offer_copy = of_sel
-    else:
-        offer_copy = st.text_input("オファー / CTA（任意）",
-                                   placeholder="例: 今なら1件まるごと無料",
-                                   label_visibility="collapsed")
+            headline_copy = st.text_input("メインキャッチ（任意）",
+                                          placeholder="例: 制作費、10分の1でいい。",
+                                          label_visibility="collapsed")
 
-st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:10px 0 4px">特徴・アイコン</div>', unsafe_allow_html=True)
-if features_opts:
-    selected_features = st.multiselect("特徴・アイコン", features_opts,
-                                       default=features_opts, key="feat_sel",
+    with col_of:
+        st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">オファー / CTA</div>', unsafe_allow_html=True)
+        if offers_opts:
+            of_sel = st.selectbox("オファー / CTA", ["なし"] + offers_opts + ["カスタム入力..."],
+                                  key="of_sel", label_visibility="collapsed")
+            if of_sel == "カスタム入力...":
+                offer_copy = st.text_input("オファーを入力", key="of_custom", label_visibility="collapsed")
+            elif of_sel == "なし":
+                offer_copy = ""
+            else:
+                offer_copy = of_sel
+        else:
+            offer_copy = st.text_input("オファー / CTA（任意）",
+                                       placeholder="例: 今なら1件まるごと無料",
                                        label_visibility="collapsed")
-    features_text = ""
-else:
-    selected_features = []
-    features_text = st.text_area(
-        "特徴・アイコン（1行1項目、任意）",
-        placeholder="最短3営業日で納品\n修正回数無制限\nプロのディレクター監修\n著作権譲渡・商用利用OK",
-        height=90,
+
+    st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:10px 0 4px">特徴・アイコン</div>', unsafe_allow_html=True)
+    if features_opts:
+        selected_features = st.multiselect("特徴・アイコン", features_opts,
+                                           default=features_opts, key="feat_sel",
+                                           label_visibility="collapsed")
+        features_text = ""
+    else:
+        selected_features = []
+        features_text = st.text_area(
+            "特徴・アイコン（1行1項目、任意）",
+            placeholder="最短3営業日で納品\n修正回数無制限\nプロのディレクター監修\n著作権譲渡・商用利用OK",
+            height=90,
+            label_visibility="collapsed",
+        )
+
+    # ── プラットフォーム ──────────────────────────────────────────────────────
+    _section("プラットフォーム")
+    selected_platform_name = st.selectbox(
+        "バナーの用途（プラットフォーム）*",
+        [p.name for p in PLATFORMS],
+        index=0,
         label_visibility="collapsed",
     )
 
-# ── プラットフォーム ───────────────────────────────────────────────────────────
-_section("プラットフォーム")
-selected_platform_name = st.selectbox(
-    "バナーの用途（プラットフォーム）*",
-    [p.name for p in PLATFORMS],
-    index=0,
-    label_visibility="collapsed",
-)
+    # ── バリエーション数 ──────────────────────────────────────────────────────
+    _section("バリエーション数")
+    num_variations = st.selectbox("バリエーション数", [1, 2, 3, 4, 5], index=2,
+                                  label_visibility="collapsed")
 
-# ── バリエーション数 ────────────────────────────────────────────────────────────
-_section("バリエーション数")
-num_variations = st.selectbox("バリエーション数", [1, 2, 3, 4, 5], index=2,
-                              label_visibility="collapsed")
+    # ── リファレンス画像 ──────────────────────────────────────────────────────
+    _section("リファレンス画像（任意）")
+    ref_option = st.radio(
+        "リファレンスの種類",
+        ["なし", "画像をアップロード", "保存済みバナーから選択"],
+        horizontal=True,
+        key="ref_option",
+        label_visibility="collapsed",
+    )
 
-# ── リファレンス画像 ──────────────────────────────────────────────────────────
-_section("リファレンス画像（任意）")
-ref_option = st.radio(
-    "リファレンスの種類",
-    ["なし", "画像をアップロード", "保存済みバナーから選択"],
-    horizontal=True,
-    key="ref_option",
-    label_visibility="collapsed",
-)
+    reference_image: Image.Image | None = None
 
-reference_image: Image.Image | None = None
+    if ref_option == "画像をアップロード":
+        uploaded = st.file_uploader("画像を選択", type=["png", "jpg", "jpeg"],
+                                    key="ref_upload", label_visibility="collapsed")
+        if uploaded:
+            reference_image = Image.open(uploaded).convert("RGB")
+            st.image(reference_image, caption="リファレンス", width=200)
 
-if ref_option == "画像をアップロード":
-    uploaded = st.file_uploader("画像を選択", type=["png", "jpg", "jpeg"],
-                                key="ref_upload", label_visibility="collapsed")
-    if uploaded:
-        reference_image = Image.open(uploaded).convert("RGB")
-        st.image(reference_image, caption="リファレンス", width=200)
+    elif ref_option == "保存済みバナーから選択":
+        saved_banners = load_banners()
+        if not saved_banners:
+            st.info("保存済みバナーがありません")
+        else:
+            banner_opts: dict[str, str] = {}
+            for b in sorted(saved_banners, key=lambda x: x["created_at"], reverse=True):
+                if b.get("platforms"):
+                    label = (
+                        f"[{b['variation']}] {b['label']} — "
+                        f"{b['product_name']} ({b['created_at'][:10]})"
+                    )
+                    banner_opts[label] = b["platforms"][0].get("public_url", "")
+            if banner_opts:
+                sel_label = st.selectbox("バナーを選択", list(banner_opts.keys()),
+                                         label_visibility="collapsed")
+                sel_url = banner_opts[sel_label]
+                if sel_url:
+                    try:
+                        img_bytes = requests.get(sel_url, timeout=10).content
+                        reference_image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                        st.image(reference_image, caption="リファレンス", width=200)
+                    except Exception:
+                        st.warning("画像の読み込みに失敗しました")
 
-elif ref_option == "保存済みバナーから選択":
-    saved_banners = load_banners()
-    if not saved_banners:
-        st.info("保存済みバナーがありません")
-    else:
-        banner_opts: dict[str, str] = {}
-        for b in sorted(saved_banners, key=lambda x: x["created_at"], reverse=True):
-            if b.get("platforms"):
-                label = (
-                    f"[{b['variation']}] {b['label']} — "
-                    f"{b['product_name']} ({b['created_at'][:10]})"
-                )
-                banner_opts[label] = b["platforms"][0].get("public_url", "")
-        if banner_opts:
-            sel_label = st.selectbox("バナーを選択", list(banner_opts.keys()),
-                                     label_visibility="collapsed")
-            sel_url = banner_opts[sel_label]
-            if sel_url:
-                try:
-                    img_bytes = requests.get(sel_url, timeout=10).content
-                    reference_image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                    st.image(reference_image, caption="リファレンス", width=200)
-                except Exception:
-                    st.warning("画像の読み込みに失敗しました")
+# ════════════════════════════════════════════
+# 既存のバナーから作成
+# ════════════════════════════════════════════
+else:
+    all_saved = load_banners()
+    if not all_saved:
+        st.markdown(
+            '<div style="background:rgba(255,255,255,0.03);border:1px dashed #334155;'
+            'border-radius:12px;padding:32px;text-align:center;color:#64748b">'
+            '保存済みバナーがありません。まず「新規作成」でバナーを生成してください。</div>',
+            unsafe_allow_html=True,
+        )
+        st.stop()
+
+    # ── ベースバナー選択 ──────────────────────────────────────────────────────
+    _section("ベースにするバナー", margin_top="0")
+    ex_banner_opts: dict[str, dict] = {}
+    for b in sorted(all_saved, key=lambda x: x["created_at"], reverse=True):
+        if b.get("platforms"):
+            lbl = (
+                f"[{b.get('variation','')}] {b.get('label','')} — "
+                f"{b.get('product_name','')} ({b.get('created_at','')[:10]})"
+            )
+            ex_banner_opts[lbl] = b
+    ex_sel_label = st.selectbox(
+        "ベースバナーを選択 *",
+        list(ex_banner_opts.keys()),
+        label_visibility="collapsed",
+        key="ex_sel_banner",
+    )
+    sel_banner = ex_banner_opts[ex_sel_label]
+
+    ex_ref_image: Image.Image | None = None
+    first_url = sel_banner["platforms"][0].get("public_url", "") if sel_banner.get("platforms") else ""
+    if first_url:
+        try:
+            ex_img_bytes = requests.get(first_url, timeout=10).content
+            ex_ref_image = Image.open(io.BytesIO(ex_img_bytes)).convert("RGB")
+            st.image(ex_ref_image, caption="選択中のバナー", width=200)
+        except Exception:
+            st.warning("プレビュー画像の読み込みに失敗しました")
+
+    # ── バリエーション数 ──────────────────────────────────────────────────────
+    _section("バリエーション数")
+    num_variations_ex = st.selectbox(
+        "バリエーション数", [1, 2, 3], index=0,
+        label_visibility="collapsed", key="ex_num_var",
+    )
+
+    # ── 修正指示（任意） ──────────────────────────────────────────────────────
+    _section("修正指示（任意）")
+    modification_text = st.text_area(
+        "修正指示",
+        placeholder="例: 背景色をもっと明るく / CTAボタンを赤にして / 女性向けのビジュアルに変更",
+        height=90,
+        label_visibility="collapsed",
+        key="ex_mod_text",
+    )
 
 # ── 生成ボタン ────────────────────────────────────────────────────────────────
 st.markdown("<div style='margin-top:24px'></div>", unsafe_allow_html=True)
@@ -253,73 +328,141 @@ generate_btn = st.button("バナーを生成", type="primary", use_container_wid
 # 生成処理
 # ═══════════════════════════════════════════════════════════════════════════════
 if generate_btn:
-    selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
-    tonmana_desc   = TONMANA[tonmana_label]
-    objective_desc = OBJECTIVE[objective_label]
+    if mode == "新規作成":
+        selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
+        tonmana_desc   = TONMANA[tonmana_label]
+        objective_desc = OBJECTIVE[objective_label]
 
-    with st.status("バナーを生成中...", expanded=True) as status:
-        st.write("**Step 1 / 3** — Claude がクリエイティブプロンプトを生成中")
-        try:
-            features = (
-                selected_features if features_opts
-                else [f.strip() for f in features_text.splitlines() if f.strip()]
-            )
-            variations = generate_banner_prompts(
-                brand_name=selected_axis["product_name"],
-                product=selected_axis["product_name"],
-                message=selected_axis["description"],
-                tonmana=tonmana_desc,
-                target_audience=selected_axis.get("target_segment", ""),
-                num_variations=num_variations,
-                appeal_axis=selected_axis,
-                product_context=selected_axis.get("product_context"),
-                objective=objective_desc,
-                headline_copy=headline_copy.strip(),
-                offer_copy=offer_copy.strip(),
-                features=features,
-            )
-            if not variations:
-                st.error("バリエーションが生成されませんでした。再度「バナーを生成」を押してください。")
-                st.stop()
-            st.write(f"✓ {len(variations)} バリエーション確定")
-        except Exception as e:
-            st.error(f"プロンプト生成エラー: {e}")
-            st.stop()
-
-        ref_note = "（リファレンスあり）" if reference_image is not None else ""
-        st.write(f"**Step 2 / 3** — gpt-image-2 で画像を生成中 {ref_note}")
-        results = []
-        for i, v in enumerate(variations):
-            st.write(f"  [{v['variation']}] {v['label']} ({i + 1}/{len(variations)})")
+        with st.status("バナーを生成中...", expanded=True) as status:
+            st.write("**Step 1 / 3** — Claude がクリエイティブプロンプトを生成中")
             try:
-                base_img = generate_image(v["prompt"], reference_image=reference_image)
-            except RuntimeError as e:
-                st.error(f"画像生成エラー:\n\n```\n{e}\n```")
+                features = (
+                    selected_features if features_opts
+                    else [f.strip() for f in features_text.splitlines() if f.strip()]
+                )
+                variations = generate_banner_prompts(
+                    brand_name=selected_axis["product_name"],
+                    product=selected_axis["product_name"],
+                    message=selected_axis["description"],
+                    tonmana=tonmana_desc,
+                    target_audience=selected_axis.get("target_segment", ""),
+                    num_variations=num_variations,
+                    appeal_axis=selected_axis,
+                    product_context=selected_axis.get("product_context"),
+                    objective=objective_desc,
+                    headline_copy=headline_copy.strip(),
+                    offer_copy=offer_copy.strip(),
+                    features=features,
+                )
+                if not variations:
+                    st.error("バリエーションが生成されませんでした。再度「バナーを生成」を押してください。")
+                    st.stop()
+                st.write(f"✓ {len(variations)} バリエーション確定")
+            except Exception as e:
+                st.error(f"プロンプト生成エラー: {e}")
                 st.stop()
-            platform_images = resize_for_selected_platforms(base_img, selected_platforms)
-            results.append((v, platform_images))
 
-        st.write("**Step 3 / 3** — バナーを保存中")
-        for v, platform_images in results:
-            save_banner_entry(
-                product_name=selected_axis["product_name"],
-                axis_label=selected_axis["axis"],
-                variation=v,
-                platform_images=platform_images,
-                tonmana=tonmana_label,
-                objective=objective_label,
-            )
-        st.write(f"✓ {len(results)} バリエーションを保存しました")
-        status.update(label="生成完了！", state="complete", expanded=False)
+            ref_note = "（リファレンスあり）" if reference_image is not None else ""
+            st.write(f"**Step 2 / 3** — gpt-image-2 で画像を生成中 {ref_note}")
+            results = []
+            for i, v in enumerate(variations):
+                st.write(f"  [{v['variation']}] {v['label']} ({i + 1}/{len(variations)})")
+                try:
+                    base_img = generate_image(v["prompt"], reference_image=reference_image)
+                except RuntimeError as e:
+                    st.error(f"画像生成エラー:\n\n```\n{e}\n```")
+                    st.stop()
+                platform_images = resize_for_selected_platforms(base_img, selected_platforms)
+                results.append((v, platform_images))
 
-    st.session_state["gen_results"]   = results
-    st.session_state["gen_axis"]      = selected_axis
-    st.session_state["gen_platforms"] = selected_platforms
-    st.session_state["gen_tonmana"]   = tonmana_label
-    st.session_state["gen_objective"] = objective_label
-    st.session_state["gen_headline"]  = headline_copy.strip()
-    st.session_state["gen_offer"]     = offer_copy.strip()
-    st.session_state["gen_features"]  = features
+            st.write("**Step 3 / 3** — バナーを保存中")
+            for v, platform_images in results:
+                save_banner_entry(
+                    product_name=selected_axis["product_name"],
+                    axis_label=selected_axis["axis"],
+                    variation=v,
+                    platform_images=platform_images,
+                    tonmana=tonmana_label,
+                    objective=objective_label,
+                )
+            st.write(f"✓ {len(results)} バリエーションを保存しました")
+            status.update(label="生成完了！", state="complete", expanded=False)
+
+        st.session_state["gen_results"]   = results
+        st.session_state["gen_axis"]      = selected_axis
+        st.session_state["gen_platforms"] = selected_platforms
+        st.session_state["gen_tonmana"]   = tonmana_label
+        st.session_state["gen_objective"] = objective_label
+        st.session_state["gen_headline"]  = headline_copy.strip()
+        st.session_state["gen_offer"]     = offer_copy.strip()
+        st.session_state["gen_features"]  = features
+
+    else:  # 既存のバナーから作成
+        # Determine platform from saved banner (fallback to first)
+        ex_platform_name = (
+            sel_banner["platforms"][0].get("platform_name", PLATFORMS[0].name)
+            if sel_banner.get("platforms") else PLATFORMS[0].name
+        )
+        ex_platforms = [p for p in PLATFORMS if p.name == ex_platform_name] or [PLATFORMS[0]]
+        base_prompt  = sel_banner.get("prompt", "")
+
+        with st.status("バナーを生成中...", expanded=True) as status:
+            if modification_text.strip():
+                st.write("**Step 1 / 3** — Claude がプロンプトを修正中")
+                try:
+                    base_prompt = refine_banner_prompt(base_prompt, modification_text)
+                    st.write("✓ プロンプト修正完了")
+                except Exception as e:
+                    st.error(f"プロンプト修正エラー: {e}")
+                    st.stop()
+            else:
+                st.write("**Step 1 / 3** — 元のプロンプトを使用")
+
+            ref_note = "（元バナーをリファレンスに使用）" if ex_ref_image is not None else ""
+            st.write(f"**Step 2 / 3** — gpt-image-2 で画像を生成中 {ref_note}")
+            results = []
+            suffix = "（修正）" if modification_text.strip() else "（再生成）"
+            base_label = sel_banner.get("label", "").split("（")[0]
+            for i in range(num_variations_ex):
+                st.write(f"  バリエーション {i + 1} / {num_variations_ex}")
+                try:
+                    base_img = generate_image(base_prompt, reference_image=ex_ref_image)
+                except RuntimeError as e:
+                    st.error(f"画像生成エラー:\n\n```\n{e}\n```")
+                    st.stop()
+                platform_images = resize_for_selected_platforms(base_img, ex_platforms)
+                v_dict = {
+                    "variation": chr(65 + i),
+                    "label": base_label + suffix,
+                    "prompt": base_prompt,
+                    "rationale": sel_banner.get("rationale", ""),
+                }
+                results.append((v_dict, platform_images))
+
+            st.write("**Step 3 / 3** — バナーを保存中")
+            for v, platform_images in results:
+                save_banner_entry(
+                    product_name=sel_banner.get("product_name", ""),
+                    axis_label=sel_banner.get("axis", ""),
+                    variation=v,
+                    platform_images=platform_images,
+                    tonmana=sel_banner.get("tonmana", ""),
+                    objective=sel_banner.get("objective", ""),
+                )
+            st.write(f"✓ {len(results)} バリエーションを保存しました")
+            status.update(label="生成完了！", state="complete", expanded=False)
+
+        st.session_state["gen_results"]   = results
+        st.session_state["gen_axis"]      = {
+            "product_name": sel_banner.get("product_name", ""),
+            "axis": sel_banner.get("axis", ""),
+        }
+        st.session_state["gen_platforms"] = ex_platforms
+        st.session_state["gen_tonmana"]   = sel_banner.get("tonmana", "")
+        st.session_state["gen_objective"] = sel_banner.get("objective", "")
+        st.session_state["gen_headline"]  = ""
+        st.session_state["gen_offer"]     = ""
+        st.session_state["gen_features"]  = []
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
