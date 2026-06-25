@@ -107,8 +107,16 @@ if not axes:
 # 生成設定（メインエリア）
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ── 目的 & トンマナ ────────────────────────────────────────────────────────────
+_section("目的 & トンマナ", margin_top="0")
+col_obj, col_ton = st.columns(2)
+with col_obj:
+    objective_label = st.selectbox("目的 *", list(OBJECTIVE.keys()), label_visibility="collapsed")
+with col_ton:
+    tonmana_label = st.selectbox("トンマナ *", list(TONMANA.keys()), label_visibility="collapsed")
+
 # ── 訴求軸 ────────────────────────────────────────────────────────────────────
-_section("訴求軸", margin_top="0")
+_section("訴求軸")
 axis_labels  = [f"{a['axis']} — {a['product_name']}" for a in axes]
 selected_idx = st.selectbox(
     "訴求軸を選択 *",
@@ -125,14 +133,6 @@ with st.expander("選択中の訴求軸の詳細"):
     ctx = selected_axis.get("product_context", {})
     if ctx.get("value_proposition"):
         st.caption(f"提供価値: {ctx['value_proposition']}")
-
-# ── 目的 & トンマナ ────────────────────────────────────────────────────────────
-_section("目的 & トンマナ")
-col_obj, col_ton = st.columns(2)
-with col_obj:
-    objective_label = st.selectbox("目的 *", list(OBJECTIVE.keys()), label_visibility="collapsed")
-with col_ton:
-    tonmana_label = st.selectbox("トンマナ *", list(TONMANA.keys()), label_visibility="collapsed")
 
 # ── コピー ─────────────────────────────────────────────────────────────────────
 _section("バナーに入れるコピー")
