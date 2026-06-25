@@ -186,22 +186,25 @@ if mode == "新規作成":
     col_prev, col_url = st.columns([3, 2])
     with col_prev:
         if sel_product.get("product_info"):
+            info_text = sel_product["product_info"]
+            preview   = info_text[:200] + ("…" if len(info_text) > 200 else "")
             st.markdown(
                 f'<div style="background:rgba(255,255,255,0.03);border:1px solid #334155;'
                 f'border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#94a3b8;'
-                f'line-height:1.6;margin-top:8px">'
-                f'{sel_product["product_info"][:200]}{"…" if len(sel_product["product_info"])>200 else ""}'
-                f'</div>',
+                f'line-height:1.6;margin-top:8px">{preview}</div>',
                 unsafe_allow_html=True,
             )
     with col_url:
+        competitor_badge = (
+            '<div style="font-size:0.7rem;color:#64748b;margin-top:6px">競合情報あり ✓</div>'
+            if sel_product.get("competitor_info") else ""
+        )
         st.markdown(
             f'<div style="margin-top:8px">'
             f'<div style="font-size:0.7rem;color:#64748b;margin-bottom:3px">商品URL</div>'
             f'<div style="font-size:0.75rem;color:#93c5fd;word-break:break-all">'
-            f'{sel_product.get("product_url","—")}</div>'
-            f'{"<div style=\\"font-size:0.7rem;color:#64748b;margin-top:6px\\">競合情報あり ✓</div>" if sel_product.get("competitor_info") else ""}'
-            f'</div>',
+            f'{sel_product.get("product_url", "—")}</div>'
+            f'{competitor_badge}</div>',
             unsafe_allow_html=True,
         )
 
