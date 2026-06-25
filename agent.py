@@ -400,7 +400,7 @@ BRAND/SERVICE DETAILS:
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=4096,
+        max_tokens=8000,
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
         system="""You are a senior SNS banner ad art director. Your job is to write exhaustive, production-ready design briefs that a graphic designer (or gpt-image-2) can execute pixel-perfectly without asking any questions.
