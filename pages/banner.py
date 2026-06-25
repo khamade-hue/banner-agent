@@ -4,6 +4,7 @@ import io
 import os
 import sys
 import zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 import requests
@@ -429,17 +430,40 @@ if generate_btn:
                 st.stop()
 
             ref_note = "（リファレンスあり）" if reference_image is not None else ""
-            st.write(f"**Step 2 / 3** — gpt-image-2 で画像を生成中 {ref_note}")
-            results = []
-            for i, v in enumerate(variations):
-                st.write(f"  [{v['variation']}] {v['label']} ({i + 1}/{len(variations)})")
-                try:
-                    base_img = generate_image(v["prompt"], reference_image=reference_image)
-                except RuntimeError as e:
-                    st.error(f"画像生成エラー:\n\n```\n{e}\n```")
-                    st.stop()
-                platform_images = resize_for_selected_platforms(base_img, selected_platforms)
-                results.append((v, platform_images))
+            n = len(variations)
+            st.write(f"**Step 2 / 3** — gpt-image-2 で {n} 枚を並列生成中 {ref_note}")
+
+            results = [None] * n
+            preview_cols = st.columns(n)
+            col_slots = [col.empty() for col in preview_cols]
+
+            def _gen(item):
+                idx, v = item
+                img = generate_image(v["prompt"], reference_image=reference_image)
+                return idx, v, resize_for_selected_platforms(img, selected_platforms)
+
+            gen_errors = []
+            with ThreadPoolExecutor(max_workers=n) as pool:
+                futures = {pool.submit(_gen, (i, v)): i for i, v in enumerate(variations)}
+                done = 0
+                for fut in as_completed(futures):
+                    try:
+                        idx, v_res, pimgs = fut.result()
+                    except RuntimeError as e:
+                        gen_errors.append(str(e))
+                        continue
+                    done += 1
+                    results[idx] = (v_res, pimgs)
+                    col_slots[idx].image(
+                        _img_to_bytes(pimgs[0][1]),
+                        caption=f"[{v_res['variation']}] {v_res['label']}",
+                        use_container_width=True,
+                    )
+                    st.write(f"  ✓ [{v_res['variation']}] {v_res['label']} 完了 ({done}/{n})")
+
+            if gen_errors:
+                st.error(f"画像生成エラー:\n\n```\n{gen_errors[0]}\n```")
+                st.stop()
 
             st.write("**Step 3 / 3** — バナーを保存中")
             for v, platform_images in results:
@@ -498,25 +522,48 @@ if generate_btn:
                 st.write("**Step 1 / 3** — 元のプロンプトを使用")
 
             ref_note = "（元バナーをリファレンスに使用）" if ex_ref_image is not None else ""
-            st.write(f"**Step 2 / 3** — gpt-image-2 で画像を生成中 {ref_note}")
-            results   = []
-            suffix    = f"（{sel_part_ex}修正）" if has_revision else "（再生成）"
+            suffix     = f"（{sel_part_ex}修正）" if has_revision else "（再生成）"
             base_label = sel_banner.get("label", "").split("（")[0]
-            for i in range(num_variations_ex):
-                st.write(f"  バリエーション {i + 1} / {num_variations_ex}")
-                try:
-                    base_img = generate_image(base_prompt, reference_image=ex_ref_image)
-                except RuntimeError as e:
-                    st.error(f"画像生成エラー:\n\n```\n{e}\n```")
-                    st.stop()
-                platform_images = resize_for_selected_platforms(base_img, ex_platforms)
+            n_ex = num_variations_ex
+            st.write(f"**Step 2 / 3** — gpt-image-2 で {n_ex} 枚を並列生成中 {ref_note}")
+
+            results = [None] * n_ex
+            preview_cols_ex = st.columns(n_ex)
+            col_slots_ex = [col.empty() for col in preview_cols_ex]
+
+            def _gen_ex(i):
+                img = generate_image(base_prompt, reference_image=ex_ref_image)
+                pimgs = resize_for_selected_platforms(img, ex_platforms)
                 v_dict = {
                     "variation": chr(65 + i),
                     "label": base_label + suffix,
                     "prompt": base_prompt,
                     "rationale": sel_banner.get("rationale", ""),
                 }
-                results.append((v_dict, platform_images))
+                return i, v_dict, pimgs
+
+            gen_errors_ex = []
+            with ThreadPoolExecutor(max_workers=n_ex) as pool:
+                futures_ex = {pool.submit(_gen_ex, i): i for i in range(n_ex)}
+                done_ex = 0
+                for fut in as_completed(futures_ex):
+                    try:
+                        idx, v_dict_res, pimgs = fut.result()
+                    except RuntimeError as e:
+                        gen_errors_ex.append(str(e))
+                        continue
+                    done_ex += 1
+                    results[idx] = (v_dict_res, pimgs)
+                    col_slots_ex[idx].image(
+                        _img_to_bytes(pimgs[0][1]),
+                        caption=f"[{v_dict_res['variation']}] {v_dict_res['label']}",
+                        use_container_width=True,
+                    )
+                    st.write(f"  ✓ バリエーション {idx + 1} 完了 ({done_ex}/{n_ex})")
+
+            if gen_errors_ex:
+                st.error(f"画像生成エラー:\n\n```\n{gen_errors_ex[0]}\n```")
+                st.stop()
 
             st.write("**Step 3 / 3** — バナーを保存中")
             for v, platform_images in results:
