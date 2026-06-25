@@ -405,10 +405,14 @@ with st.sidebar:
         'letter-spacing:0.1em;margin-bottom:10px">使い方フロー</div>'
         '<div style="font-size:0.8rem;color:#94a3b8;line-height:1.9">'
         '<span style="color:#3b82f6;font-weight:700">①</span>'
+        ' <span style="color:#cbd5e1">商品登録</span><br>'
+        '<span style="color:#475569;font-size:0.73rem;margin-left:14px">'
+        '商品情報を登録</span><br>'
+        '<span style="color:#3b82f6;font-weight:700">②</span>'
         ' <span style="color:#cbd5e1">訴求軸生成</span><br>'
         '<span style="color:#475569;font-size:0.73rem;margin-left:14px">'
-        '商品URLを入力して分析</span><br>'
-        '<span style="color:#3b82f6;font-weight:700">②</span>'
+        '商品を選択して3C分析</span><br>'
+        '<span style="color:#3b82f6;font-weight:700">③</span>'
         ' <span style="color:#cbd5e1">バナー生成</span><br>'
         '<span style="color:#475569;font-size:0.73rem;margin-left:14px">'
         '訴求軸を選んで画像生成</span>'
@@ -417,6 +421,7 @@ with st.sidebar:
     )
 
 pg = st.navigation([
+    st.Page("pages/product.py",       title="商品登録",       icon="📦"),
     st.Page("pages/analysis.py",      title="訴求軸生成",     icon="🎯"),
     st.Page("pages/banner.py",        title="バナー生成",     icon="🖼️"),
     st.Page("pages/saved_axes.py",    title="保存済み訴求軸", icon="📋"),

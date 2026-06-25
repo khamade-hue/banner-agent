@@ -10,7 +10,7 @@ import streamlit as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import analyze_product, generate_more_axes, refine_copy_part
-from state import add_axis, delete_axis, load_axes
+from state import add_axis, delete_axis, load_axes, load_products
 
 
 def _fetch_page_content(url: str) -> str:
@@ -127,7 +127,7 @@ st.markdown(
     '<h1 style="color:#e2e8f0;margin:0 0 10px;font-size:2rem;font-weight:800;'
     'line-height:1.15;letter-spacing:-0.02em">訴求軸生成</h1>'
     '<p style="color:#93c5fd;margin:0;font-size:0.9rem;line-height:1.6;max-width:560px">'
-    '商品URLをもとに Claude が 3C 分析を実施し、SNS広告の最適な訴求軸とコピー候補を提案します'
+    '登録済みの商品を選択し、Claude が 3C 分析を実施して SNS 広告の最適な訴求軸とコピー候補を提案します'
     '</p></div>',
     unsafe_allow_html=True,
 )
@@ -141,7 +141,7 @@ mode = st.radio(
 )
 st.markdown(
     f'<div style="color:#64748b;font-size:0.78rem;margin:2px 0 20px;padding-left:2px">'
-    f'{"商品URLを入力して 3C 分析と訴求軸を自動生成します" if mode == "新規作成" else "保存済みの訴求軸のコピーを手動またはAIで磨きこみます"}'
+    f'{"登録済みの商品を選択して 3C 分析と訴求軸を自動生成します" if mode == "新規作成" else "保存済みの訴求軸のコピーを手動またはAIで磨きこみます"}'
     f'</div>',
     unsafe_allow_html=True,
 )
@@ -150,52 +150,104 @@ st.markdown(
 # MODE A: 新規作成
 # ══════════════════════════════════════════════════════════════════════════════
 if mode == "新規作成":
+    products = load_products()
 
-    with st.form("analysis_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            product_name = st.text_input("商品名 *", placeholder="例: Craftin for Company")
-        with col2:
-            product_url = st.text_input("商品URL *", placeholder="https://example.com/product")
-        competitor_url = st.text_input(
-            "競合商品URL（任意）",
-            placeholder="空欄の場合は Claude が自動でリサーチします",
+    if not products:
+        st.markdown(
+            '<div style="background:linear-gradient(145deg,#1e293b,#162032);border:1px dashed #334155;'
+            'border-radius:14px;padding:48px;text-align:center">'
+            '<div style="font-size:2.5rem;margin-bottom:14px">📦</div>'
+            '<div style="color:#f1f5f9;font-size:1.05rem;font-weight:700;margin-bottom:8px">'
+            '商品がまだ登録されていません</div>'
+            '<div style="color:#64748b;font-size:0.85rem;margin-bottom:20px">'
+            '先に「商品登録」ページで商品情報を登録してください</div>'
+            '</div>',
+            unsafe_allow_html=True,
         )
-        submitted = st.form_submit_button(
-            "3C分析・訴求軸を生成",
-            type="primary",
-            use_container_width=True,
-        )
+        if st.button("商品を登録する →", type="primary"):
+            st.switch_page("pages/product.py")
+        st.stop()
 
-    if submitted:
-        if not product_name or not product_url:
-            st.error("商品名と商品URLは必須です")
-            st.stop()
+    # ── ① 商品選択 ────────────────────────────────────────────────────────────
+    st.markdown(
+        '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+        'letter-spacing:0.1em;margin-bottom:8px">① 商品選択</div>',
+        unsafe_allow_html=True,
+    )
+    product_opts = {p["product_name"]: p for p in reversed(products)}
+    sel_product_name = st.selectbox(
+        "商品を選択 *",
+        list(product_opts.keys()),
+        label_visibility="collapsed",
+        key="sel_product",
+    )
+    sel_product = product_opts[sel_product_name]
 
-        with st.status("分析中...", expanded=True) as status:
-            st.write("自社ページを取得中...")
-            page_content = _fetch_page_content(product_url)
-            st.write(
-                f"✓ 取得完了（{len(page_content)} 文字）"
-                if page_content else "⚠ ページ取得失敗（URL情報のみで分析）"
+    col_prev, col_url = st.columns([3, 2])
+    with col_prev:
+        if sel_product.get("product_info"):
+            st.markdown(
+                f'<div style="background:rgba(255,255,255,0.03);border:1px solid #334155;'
+                f'border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#94a3b8;'
+                f'line-height:1.6;margin-top:8px">'
+                f'{sel_product["product_info"][:200]}{"…" if len(sel_product["product_info"])>200 else ""}'
+                f'</div>',
+                unsafe_allow_html=True,
             )
+    with col_url:
+        st.markdown(
+            f'<div style="margin-top:8px">'
+            f'<div style="font-size:0.7rem;color:#64748b;margin-bottom:3px">商品URL</div>'
+            f'<div style="font-size:0.75rem;color:#93c5fd;word-break:break-all">'
+            f'{sel_product.get("product_url","—")}</div>'
+            f'{"<div style=\\"font-size:0.7rem;color:#64748b;margin-top:6px\\">競合情報あり ✓</div>" if sel_product.get("competitor_info") else ""}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-            competitor_content = ""
-            if competitor_url.strip():
-                st.write("競合ページを取得中...")
-                competitor_content = _fetch_page_content(competitor_url.strip())
-                st.write(
-                    f"✓ 競合ページ取得完了（{len(competitor_content)} 文字）"
-                    if competitor_content else "⚠ 競合ページ取得失敗"
-                )
+    # ── ② フリーコメント ──────────────────────────────────────────────────────
+    st.markdown(
+        '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+        'letter-spacing:0.1em;margin:20px 0 8px">② フリーコメント（任意）</div>',
+        unsafe_allow_html=True,
+    )
+    free_comment = st.text_area(
+        "フリーコメント",
+        placeholder="例: 30代女性がメインターゲット / 今月は認知拡大を優先したい / 競合との差別化はスピードと価格",
+        height=90,
+        label_visibility="collapsed",
+        key="free_comment",
+    )
+
+    st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+    if st.button("3C分析・訴求軸を生成", type="primary", use_container_width=True, key="gen_analysis"):
+        with st.status("分析中...", expanded=True) as status:
+            page_content = sel_product.get("product_info", "")
+            if page_content:
+                st.write(f"✓ 商品情報を使用（{len(page_content)} 文字）")
             else:
-                st.write("競合URLなし → Claude が自動リサーチします")
+                st.write("自社ページを取得中...")
+                page_content = _fetch_page_content(sel_product.get("product_url", ""))
+                st.write(
+                    f"✓ 取得完了（{len(page_content)} 文字）"
+                    if page_content else "⚠ ページ取得失敗（URL情報のみで分析）"
+                )
+
+            if free_comment.strip():
+                page_content += f"\n\n[追加情報・コメント]: {free_comment.strip()}"
+
+            competitor_content = sel_product.get("competitor_info", "")
+            if competitor_content:
+                st.write("✓ 競合情報あり → 使用します")
+            else:
+                st.write("競合情報なし → Claude が自動リサーチします")
 
             st.write("Claude が3C分析・訴求軸を生成中...")
             try:
                 analysis = analyze_product(
-                    product_name, product_url, page_content,
-                    competitor_url=competitor_url.strip(),
+                    sel_product["product_name"],
+                    sel_product.get("product_url", ""),
+                    page_content,
                     competitor_content=competitor_content,
                 )
             except Exception as e:
@@ -209,8 +261,8 @@ if mode == "新規作成":
             status.update(label="分析完了！", state="complete", expanded=False)
 
         st.session_state["analysis"] = analysis
-        st.session_state["analysis_product_name"] = product_name
-        st.session_state["analysis_product_url"] = product_url
+        st.session_state["analysis_product_name"] = sel_product["product_name"]
+        st.session_state["analysis_product_url"]  = sel_product.get("product_url", "")
 
     if "analysis" in st.session_state:
         analysis = st.session_state["analysis"]

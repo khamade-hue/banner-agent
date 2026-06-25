@@ -114,6 +114,76 @@ def save_banner_entry(
     return entry
 
 
+# ── Products ──────────────────────────────────────────────────────────────────
+
+def load_products() -> list[dict]:
+    res = _client().table("products").select("*").order("created_at").execute()
+    return res.data or []
+
+
+def save_product(
+    product_name: str,
+    product_info: str,
+    product_url: str,
+    product_image: bytes | None,
+    product_image_ext: str,
+    logo: bytes | None,
+    logo_ext: str,
+    competitor_info: str,
+) -> dict:
+    product_id = str(uuid.uuid4())
+    client = _client()
+
+    product_image_url = ""
+    product_image_path = ""
+    logo_url = ""
+    logo_path = ""
+
+    if product_image:
+        product_image_path = f"products/{product_id}/product_image.{product_image_ext}"
+        client.storage.from_(_BUCKET).upload(
+            product_image_path,
+            product_image,
+            {"content-type": f"image/{product_image_ext}", "upsert": "true"},
+        )
+        product_image_url = client.storage.from_(_BUCKET).get_public_url(product_image_path)
+
+    if logo:
+        logo_path = f"products/{product_id}/logo.{logo_ext}"
+        client.storage.from_(_BUCKET).upload(
+            logo_path,
+            logo,
+            {"content-type": f"image/{logo_ext}", "upsert": "true"},
+        )
+        logo_url = client.storage.from_(_BUCKET).get_public_url(logo_path)
+
+    entry = {
+        "id": product_id,
+        "product_name": product_name,
+        "product_info": product_info,
+        "product_url": product_url,
+        "product_image_url": product_image_url,
+        "product_image_path": product_image_path,
+        "logo_url": logo_url,
+        "logo_path": logo_path,
+        "competitor_info": competitor_info,
+        "created_at": datetime.now().isoformat(),
+    }
+    client.table("products").insert(entry).execute()
+    return entry
+
+
+def delete_product(product_id: str) -> None:
+    client = _client()
+    products = load_products()
+    target = next((p for p in products if p["id"] == product_id), None)
+    if target:
+        paths = [p for p in [target.get("product_image_path"), target.get("logo_path")] if p]
+        if paths:
+            client.storage.from_(_BUCKET).remove(paths)
+    client.table("products").delete().eq("id", product_id).execute()
+
+
 def delete_banner(banner_id: str) -> None:
     client = _client()
     banners = load_banners()
