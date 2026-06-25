@@ -388,6 +388,25 @@ hr {
     border-radius: 8px !important;
 }
 [data-testid="stCode"] code { color: #94a3b8 !important; }
+
+/* ═══════════════════════════════════════════════
+   FILE UPLOADER
+═══════════════════════════════════════════════ */
+[data-testid="stFileUploader"] section,
+[data-testid="stFileUploaderDropzone"] {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+}
+[data-testid="stFileUploaderDropzone"]:hover {
+    border-color: #475569 !important;
+    background: #243447 !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] > div,
+[data-testid="stFileUploaderDropzoneInstructions"] span,
+[data-testid="stFileUploaderDropzoneInstructions"] small {
+    color: #64748b !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
