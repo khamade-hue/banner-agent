@@ -482,6 +482,7 @@ For each variation, deliver a complete brief covering every section listed in yo
 
 _BANNER_PART_DESC = {
     "ビジュアル":     "VISUAL ZONE section (cinematic photo subject, setting, lighting, color grading, mood — everything about the image itself)",
+    "トンマナ":       "overall tone and manner — update ALL color-related fields to match the new style: background colors, gradient hex values, accent colors, CTA bar colors, overlay colors, lighting description, color grading style, and overall mood. Keep layout zones and text copy unchanged.",
     "メインキャッチ": "Main Headline text (the large Japanese headline copy shown on the banner)",
     "オファー・CTA":  "Offer/CTA section (the offer text and CTA button/bar design and wording)",
     "特徴・アイコン": "Feature Badges section (the icon bullet point texts and icon styles)",

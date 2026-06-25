@@ -1,5 +1,6 @@
 """Page 2: バナー画像生成エージェント"""
 
+import hashlib
 import io
 import os
 import sys
@@ -14,7 +15,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import generate_banner_prompts, refine_banner_prompt, refine_banner_part
-from image_gen import generate_image
+from image_gen import generate_image, generate_images_batch
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_axes, load_banners, save_banner_entry
 
@@ -334,13 +335,13 @@ else:
     )
 
     # ── パーツ別修正指示 ──────────────────────────────────────────────────────
-    _section("修正指示（任意）")
+    _section("修正指示")
     st.markdown(
         '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:6px">'
         '① 修正するパーツ</div>',
         unsafe_allow_html=True,
     )
-    EX_REVISION_PARTS = ["なし（そのまま再生成）", "ビジュアル", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
+    EX_REVISION_PARTS = ["ビジュアル", "トンマナ", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
     sel_part_ex = st.radio(
         "修正するパーツ",
         EX_REVISION_PARTS,
@@ -349,10 +350,24 @@ else:
         label_visibility="collapsed",
     )
 
-    target_elem_ex    = None
+    target_elem_ex      = None
     rev_instructions_ex = ""
 
-    if sel_part_ex != "なし（そのまま再生成）":
+    if sel_part_ex == "トンマナ":
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+            '② 新しいトンマナを選択</div>',
+            unsafe_allow_html=True,
+        )
+        tonmana_ex_label = st.selectbox(
+            "新しいトンマナ",
+            list(TONMANA.keys()),
+            key="ex_tonmana_sel",
+            label_visibility="collapsed",
+        )
+        rev_instructions_ex = f"Change the tone and manner to: {TONMANA[tonmana_ex_label]}"
+
+    else:
         st.markdown(
             '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
             '② 修正する要素（任意）</div>',
@@ -401,33 +416,49 @@ if generate_btn:
         objective_desc = OBJECTIVE[objective_label]
 
         with st.status("バナーを生成中...", expanded=True) as status:
-            st.write("**Step 1 / 3** — Claude がクリエイティブプロンプトを生成中")
-            try:
-                features = (
-                    selected_features if features_opts
-                    else [f.strip() for f in features_text.splitlines() if f.strip()]
-                )
-                variations = generate_banner_prompts(
-                    brand_name=selected_axis["product_name"],
-                    product=selected_axis["product_name"],
-                    message=selected_axis["description"],
-                    tonmana=tonmana_desc,
-                    target_audience=selected_axis.get("target_segment", ""),
-                    num_variations=num_variations,
-                    appeal_axis=selected_axis,
-                    product_context=selected_axis.get("product_context"),
-                    objective=objective_desc,
-                    headline_copy=headline_copy.strip(),
-                    offer_copy=offer_copy.strip(),
-                    features=features,
-                )
-                if not variations:
-                    st.error("バリエーションが生成されませんでした。再度「バナーを生成」を押してください。")
+            features = (
+                selected_features if features_opts
+                else [f.strip() for f in features_text.splitlines() if f.strip()]
+            )
+
+            # ⑥ 設計ブリーフキャッシュ — 同一入力なら Claude 呼び出しをスキップ
+            _cache_raw = "|".join([
+                selected_axis.get("id", ""), selected_axis.get("axis", ""),
+                tonmana_desc, objective_desc, str(num_variations),
+                headline_copy.strip(), offer_copy.strip(),
+                *sorted(features),
+            ])
+            _cache_key = hashlib.md5(_cache_raw.encode()).hexdigest()
+            _brief_cache = st.session_state.setdefault("_brief_cache", {})
+
+            if _cache_key in _brief_cache:
+                variations = _brief_cache[_cache_key]
+                st.write(f"✓ キャッシュ使用 — {len(variations)} バリエーション（Step 1 スキップ）")
+            else:
+                st.write("**Step 1 / 3** — Claude がクリエイティブプロンプトを生成中")
+                try:
+                    variations = generate_banner_prompts(
+                        brand_name=selected_axis["product_name"],
+                        product=selected_axis["product_name"],
+                        message=selected_axis["description"],
+                        tonmana=tonmana_desc,
+                        target_audience=selected_axis.get("target_segment", ""),
+                        num_variations=num_variations,
+                        appeal_axis=selected_axis,
+                        product_context=selected_axis.get("product_context"),
+                        objective=objective_desc,
+                        headline_copy=headline_copy.strip(),
+                        offer_copy=offer_copy.strip(),
+                        features=features,
+                    )
+                    if not variations:
+                        st.error("バリエーションが生成されませんでした。再度「バナーを生成」を押してください。")
+                        st.stop()
+                    _brief_cache[_cache_key] = variations
+                    st.write(f"✓ {len(variations)} バリエーション確定")
+                except Exception as e:
+                    st.error(f"プロンプト生成エラー: {e}")
                     st.stop()
-                st.write(f"✓ {len(variations)} バリエーション確定")
-            except Exception as e:
-                st.error(f"プロンプト生成エラー: {e}")
-                st.stop()
 
             ref_note = "（リファレンスあり）" if reference_image is not None else ""
             n = len(variations)
@@ -505,7 +536,7 @@ if generate_btn:
             except Exception:
                 pass
 
-        has_revision = sel_part_ex != "なし（そのまま再生成）" and rev_instructions_ex.strip()
+        has_revision = bool(rev_instructions_ex.strip())
 
         with st.status("バナーを生成中...", expanded=True) as status:
             if has_revision:
@@ -525,45 +556,32 @@ if generate_btn:
             suffix     = f"（{sel_part_ex}修正）" if has_revision else "（再生成）"
             base_label = sel_banner.get("label", "").split("（")[0]
             n_ex = num_variations_ex
-            st.write(f"**Step 2 / 3** — gpt-image-2 で {n_ex} 枚を並列生成中 {ref_note}")
+            st.write(f"**Step 2 / 3** — gpt-image-2 で {n_ex} 枚を一括生成中 {ref_note}")
 
-            results = [None] * n_ex
-            preview_cols_ex = st.columns(n_ex)
-            col_slots_ex = [col.empty() for col in preview_cols_ex]
+            try:
+                ex_images = generate_images_batch(base_prompt, n=n_ex, reference_image=ex_ref_image)
+            except RuntimeError as e:
+                st.error(f"画像生成エラー:\n\n```\n{e}\n```")
+                st.stop()
 
-            def _gen_ex(i):
-                img = generate_image(base_prompt, reference_image=ex_ref_image)
+            results = []
+            for i, img in enumerate(ex_images):
                 pimgs = resize_for_selected_platforms(img, ex_platforms)
-                v_dict = {
+                results.append(({
                     "variation": chr(65 + i),
                     "label": base_label + suffix,
                     "prompt": base_prompt,
                     "rationale": sel_banner.get("rationale", ""),
-                }
-                return i, v_dict, pimgs
+                }, pimgs))
 
-            gen_errors_ex = []
-            with ThreadPoolExecutor(max_workers=n_ex) as pool:
-                futures_ex = {pool.submit(_gen_ex, i): i for i in range(n_ex)}
-                done_ex = 0
-                for fut in as_completed(futures_ex):
-                    try:
-                        idx, v_dict_res, pimgs = fut.result()
-                    except RuntimeError as e:
-                        gen_errors_ex.append(str(e))
-                        continue
-                    done_ex += 1
-                    results[idx] = (v_dict_res, pimgs)
-                    col_slots_ex[idx].image(
-                        _img_to_bytes(pimgs[0][1]),
-                        caption=f"[{v_dict_res['variation']}] {v_dict_res['label']}",
-                        use_container_width=True,
-                    )
-                    st.write(f"  ✓ バリエーション {idx + 1} 完了 ({done_ex}/{n_ex})")
-
-            if gen_errors_ex:
-                st.error(f"画像生成エラー:\n\n```\n{gen_errors_ex[0]}\n```")
-                st.stop()
+            preview_cols_ex = st.columns(n_ex)
+            for col, (v_r, pimgs_r) in zip(preview_cols_ex, results):
+                col.image(
+                    _img_to_bytes(pimgs_r[0][1]),
+                    caption=f"[{v_r['variation']}] {v_r['label']}",
+                    use_container_width=True,
+                )
+            st.write(f"  ✓ {n_ex} 枚を一括取得完了")
 
             st.write("**Step 3 / 3** — バナーを保存中")
             for v, platform_images in results:
