@@ -32,6 +32,48 @@ def generate_image(
         raise RuntimeError(f"[gpt-image-2] {e}")
 
 
+def generate_images_batch(
+    prompt: str,
+    n: int = 1,
+    quality: str = "high",
+    reference_image: Image.Image | None = None,
+) -> list[Image.Image]:
+    """Generate n images in a single API call (same prompt). More efficient than n separate calls."""
+    client = OpenAI()
+
+    if reference_image is not None:
+        try:
+            buf = io.BytesIO()
+            reference_image.convert("RGBA").save(buf, "PNG")
+            buf.seek(0)
+            buf.name = "reference.png"
+            response = client.images.edit(
+                model="gpt-image-2",
+                image=buf,
+                prompt=(
+                    "Using the visual style, color palette, composition, and mood of the reference image "
+                    f"as inspiration, create a new professional advertising banner: {prompt}"
+                ),
+                size="1024x1024",
+                n=n,
+            )
+            return [_decode(d) for d in response.data]
+        except Exception as e:
+            raise RuntimeError(f"[gpt-image-2 edit batch] {e}")
+
+    try:
+        response = client.images.generate(
+            model="gpt-image-2",
+            prompt=prompt,
+            size="1024x1024",
+            quality=quality,
+            n=n,
+        )
+        return [_decode(d) for d in response.data]
+    except Exception as e:
+        raise RuntimeError(f"[gpt-image-2 batch] {e}")
+
+
 def _edit_with_reference(client: OpenAI, prompt: str, ref: Image.Image) -> Image.Image:
     buf = io.BytesIO()
     ref.convert("RGBA").save(buf, "PNG")
