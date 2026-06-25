@@ -480,6 +480,60 @@ For each variation, deliver a complete brief covering every section listed in yo
     raise ValueError("バナープロンプトが取得できませんでした")
 
 
+_BANNER_PART_DESC = {
+    "ビジュアル":     "VISUAL ZONE section (cinematic photo subject, setting, lighting, color grading, mood — everything about the image itself)",
+    "メインキャッチ": "Main Headline text (the large Japanese headline copy shown on the banner)",
+    "オファー・CTA":  "Offer/CTA section (the offer text and CTA button/bar design and wording)",
+    "特徴・アイコン": "Feature Badges section (the icon bullet point texts and icon styles)",
+}
+
+
+def refine_banner_part(
+    current_prompt: str,
+    part_label: str,
+    target_element: str | None,
+    instructions: str,
+) -> str:
+    """Revise one specific section of a banner design brief, returning the full updated brief."""
+    client = _claude()
+    part_desc = _BANNER_PART_DESC.get(part_label, part_label)
+
+    if target_element:
+        revision_task = (
+            f"Revise ONLY: {part_desc}\n"
+            f"Current element to replace: 「{target_element}」\n"
+            f"Revision instruction (Japanese): {instructions}"
+        )
+    else:
+        revision_task = (
+            f"Revise ONLY: {part_desc}\n"
+            f"Revision instruction (Japanese): {instructions}"
+        )
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=2000,
+        system=(
+            "You are a senior SNS banner ad art director. "
+            "You receive a complete banner design brief and a targeted revision request. "
+            "Modify ONLY the specified section as instructed — leave all other sections word-for-word unchanged. "
+            "Output ONLY the complete updated design brief. No explanation, no preamble."
+        ),
+        messages=[{
+            "role": "user",
+            "content": (
+                f"REVISION REQUEST:\n{revision_task}\n\n"
+                f"Rules:\n"
+                f"- Change only the specified section/element\n"
+                f"- All other sections (layout zones, other typography, colors, accents, other copy) must be exactly preserved\n"
+                f"- Return the complete brief with the revision applied\n\n"
+                f"---\nCURRENT DESIGN BRIEF:\n{current_prompt}"
+            ),
+        }],
+    )
+    return response.content[0].text.strip()
+
+
 def refine_banner_prompt(original_prompt: str, revision_instructions: str) -> str:
     """Refine a banner image prompt based on user revision instructions."""
     client = _claude()

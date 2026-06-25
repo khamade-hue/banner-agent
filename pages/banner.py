@@ -12,7 +12,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import generate_banner_prompts, refine_banner_prompt
+from agent import generate_banner_prompts, refine_banner_prompt, refine_banner_part
 from image_gen import generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_axes, load_banners, save_banner_entry
@@ -317,6 +317,9 @@ if generate_btn:
     st.session_state["gen_platforms"] = selected_platforms
     st.session_state["gen_tonmana"]   = tonmana_label
     st.session_state["gen_objective"] = objective_label
+    st.session_state["gen_headline"]  = headline_copy.strip()
+    st.session_state["gen_offer"]     = offer_copy.strip()
+    st.session_state["gen_features"]  = features
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -398,23 +401,113 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
                     )
 
         st.divider()
-        st.markdown("**修正指示**")
-        revision_text = st.text_area(
-            "修正指示",
-            placeholder="例: 背景をもっと明るい色に変更して、より爽やかな印象にしてください",
-            key=f"revision_text_{tab_idx}",
+        st.markdown(
+            '<div style="font-size:0.72rem;font-weight:700;color:#8b5cf6;'
+            'text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">'
+            'パーツ別修正</div>',
+            unsafe_allow_html=True,
+        )
+
+        # ① 修正するパーツ
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:6px">'
+            '① 修正するパーツ</div>',
+            unsafe_allow_html=True,
+        )
+        REVISION_PARTS = ["ビジュアル", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
+        sel_part = st.radio(
+            "修正するパーツ",
+            REVISION_PARTS,
+            horizontal=True,
+            key=f"rev_part_{tab_idx}",
             label_visibility="collapsed",
         )
-        if st.button("修正する", key=f"revise_btn_{tab_idx}", type="secondary"):
-            if not revision_text.strip():
-                st.warning("修正指示を入力してください")
+
+        # ② 修正する要素
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+            '② 修正する要素</div>',
+            unsafe_allow_html=True,
+        )
+        gen_headline = st.session_state.get("gen_headline", "")
+        gen_offer    = st.session_state.get("gen_offer", "")
+        gen_features = st.session_state.get("gen_features", [])
+        target_elem  = None
+
+        if sel_part == "ビジュアル":
+            st.markdown(
+                '<div style="color:#475569;font-size:0.78rem;padding:6px 0">'
+                'ビジュアル全体が対象です — ③に修正指示を入力してください</div>',
+                unsafe_allow_html=True,
+            )
+        elif sel_part == "メインキャッチ":
+            if gen_headline:
+                st.markdown(
+                    f'<div style="background:rgba(255,255,255,0.04);border:1px solid #334155;'
+                    f'border-radius:8px;padding:8px 12px;font-size:0.82rem;color:#cbd5e1">'
+                    f'現在: {gen_headline}</div>',
+                    unsafe_allow_html=True,
+                )
+                target_elem = gen_headline
             else:
-                with st.spinner("プロンプトを修正し、画像を再生成中..."):
+                st.caption("メインキャッチが設定されていません")
+        elif sel_part == "オファー・CTA":
+            if gen_offer:
+                st.markdown(
+                    f'<div style="background:rgba(255,255,255,0.04);border:1px solid #334155;'
+                    f'border-radius:8px;padding:8px 12px;font-size:0.82rem;color:#cbd5e1">'
+                    f'現在: {gen_offer}</div>',
+                    unsafe_allow_html=True,
+                )
+                target_elem = gen_offer
+            else:
+                st.caption("オファー・CTAが設定されていません — ③に追加したい内容を指示してください")
+        elif sel_part == "特徴・アイコン":
+            if gen_features:
+                target_elem = st.selectbox(
+                    "修正する特徴を選択",
+                    gen_features,
+                    key=f"rev_feat_{tab_idx}",
+                    label_visibility="collapsed",
+                )
+            else:
+                st.caption("特徴・アイコンが設定されていません")
+
+        # ③ 修正指示
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+            '③ 修正指示</div>',
+            unsafe_allow_html=True,
+        )
+        rev_instructions = st.text_area(
+            "修正指示",
+            placeholder="例: もっとインパクトのある写真に / シアンの光を強調して / 「期間限定」の訴求に変更",
+            key=f"rev_inst_{tab_idx}",
+            label_visibility="collapsed",
+            height=80,
+        )
+
+        if st.button(
+            f"「{sel_part}」を修正して再生成",
+            key=f"rev_part_btn_{tab_idx}",
+            type="primary",
+            use_container_width=True,
+        ):
+            if not rev_instructions.strip():
+                st.warning("③ に修正指示を入力してください")
+            else:
+                with st.spinner(f"「{sel_part}」を修正して再生成中..."):
                     try:
-                        new_prompt    = refine_banner_prompt(v["prompt"], revision_text)
-                        new_base_img  = generate_image(new_prompt, reference_image=reference_image)
-                        new_platform_images = resize_for_selected_platforms(new_base_img, current_platforms)
-                        updated_v = {**v, "prompt": new_prompt, "label": v["label"] + "（修正済）"}
+                        new_prompt = refine_banner_part(
+                            v["prompt"], sel_part, target_elem, rev_instructions
+                        )
+                        new_base_img = generate_image(new_prompt, reference_image=reference_image)
+                        new_platform_images = resize_for_selected_platforms(
+                            new_base_img, current_platforms
+                        )
+                        part_suffix = f" [{sel_part}修正]"
+                        base_label  = v["label"].split(" [")[0]  # strip previous suffixes
+                        updated_v   = {**v, "prompt": new_prompt, "label": base_label + part_suffix}
                         save_banner_entry(
                             product_name=current_axis.get("product_name", ""),
                             axis_label=current_axis.get("axis", ""),
