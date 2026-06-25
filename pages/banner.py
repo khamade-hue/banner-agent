@@ -265,7 +265,11 @@ if mode == "新規作成":
 # ════════════════════════════════════════════
 else:
     all_saved = load_banners()
-    if not all_saved:
+    banners_with_img = [
+        b for b in sorted(all_saved, key=lambda x: x["created_at"], reverse=True)
+        if b.get("platforms")
+    ]
+    if not banners_with_img:
         st.markdown(
             '<div style="background:rgba(255,255,255,0.03);border:1px dashed #334155;'
             'border-radius:12px;padding:32px;text-align:center;color:#64748b">'
@@ -274,33 +278,52 @@ else:
         )
         st.stop()
 
-    # ── ベースバナー選択 ──────────────────────────────────────────────────────
-    _section("ベースにするバナー", margin_top="0")
-    ex_banner_opts: dict[str, dict] = {}
-    for b in sorted(all_saved, key=lambda x: x["created_at"], reverse=True):
-        if b.get("platforms"):
-            lbl = (
-                f"[{b.get('variation','')}] {b.get('label','')} — "
-                f"{b.get('product_name','')} ({b.get('created_at','')[:10]})"
-            )
-            ex_banner_opts[lbl] = b
-    ex_sel_label = st.selectbox(
-        "ベースバナーを選択 *",
-        list(ex_banner_opts.keys()),
-        label_visibility="collapsed",
-        key="ex_sel_banner",
-    )
-    sel_banner = ex_banner_opts[ex_sel_label]
+    # 選択インデックスを初期化・クランプ
+    if ("ex_selected_idx" not in st.session_state
+            or st.session_state["ex_selected_idx"] >= len(banners_with_img)):
+        st.session_state["ex_selected_idx"] = 0
+    sel_idx = st.session_state["ex_selected_idx"]
 
-    ex_ref_image: Image.Image | None = None
-    first_url = sel_banner["platforms"][0].get("public_url", "") if sel_banner.get("platforms") else ""
-    if first_url:
-        try:
-            ex_img_bytes = requests.get(first_url, timeout=10).content
-            ex_ref_image = Image.open(io.BytesIO(ex_img_bytes)).convert("RGB")
-            st.image(ex_ref_image, caption="選択中のバナー", width=200)
-        except Exception:
-            st.warning("プレビュー画像の読み込みに失敗しました")
+    # ── バナーギャラリー ──────────────────────────────────────────────────────
+    _section("ベースにするバナーを選択", margin_top="0")
+
+    st.markdown(
+        "<style>"
+        "[data-testid='stColumn']:has(.ex-sel-marker){"
+        "outline:3px solid #8b5cf6;border-radius:12px;padding:4px !important}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
+
+    n_cols = 3
+    for row_start in range(0, len(banners_with_img), n_cols):
+        row  = banners_with_img[row_start:row_start + n_cols]
+        cols = st.columns(n_cols)
+        for c_idx, (col, b) in enumerate(zip(cols, row)):
+            idx    = row_start + c_idx
+            is_sel = sel_idx == idx
+            with col:
+                if is_sel:
+                    st.markdown('<div class="ex-sel-marker" style="display:none"></div>',
+                                unsafe_allow_html=True)
+                img_url = b["platforms"][0].get("public_url", "")
+                if img_url:
+                    st.image(img_url, use_container_width=True)
+                short_lbl = f"[{b.get('variation','')}] {b.get('label','')}"
+                st.caption(short_lbl[:32] + ("…" if len(short_lbl) > 32 else ""))
+                if is_sel:
+                    st.markdown(
+                        '<div style="text-align:center;color:#8b5cf6;font-size:0.72rem;'
+                        'font-weight:700;margin-bottom:4px">✓ 選択中</div>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    if st.button("選択", key=f"ex_sel_{idx}",
+                                 use_container_width=True, type="secondary"):
+                        st.session_state["ex_selected_idx"] = idx
+                        st.rerun()
+
+    sel_banner = banners_with_img[sel_idx]
 
     # ── バリエーション数 ──────────────────────────────────────────────────────
     _section("バリエーション数")
@@ -309,15 +332,58 @@ else:
         label_visibility="collapsed", key="ex_num_var",
     )
 
-    # ── 修正指示（任意） ──────────────────────────────────────────────────────
+    # ── パーツ別修正指示 ──────────────────────────────────────────────────────
     _section("修正指示（任意）")
-    modification_text = st.text_area(
-        "修正指示",
-        placeholder="例: 背景色をもっと明るく / CTAボタンを赤にして / 女性向けのビジュアルに変更",
-        height=90,
-        label_visibility="collapsed",
-        key="ex_mod_text",
+    st.markdown(
+        '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:6px">'
+        '① 修正するパーツ</div>',
+        unsafe_allow_html=True,
     )
+    EX_REVISION_PARTS = ["なし（そのまま再生成）", "ビジュアル", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
+    sel_part_ex = st.radio(
+        "修正するパーツ",
+        EX_REVISION_PARTS,
+        horizontal=True,
+        key="ex_rev_part",
+        label_visibility="collapsed",
+    )
+
+    target_elem_ex    = None
+    rev_instructions_ex = ""
+
+    if sel_part_ex != "なし（そのまま再生成）":
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+            '② 修正する要素（任意）</div>',
+            unsafe_allow_html=True,
+        )
+        if sel_part_ex == "ビジュアル":
+            st.markdown(
+                '<div style="color:#475569;font-size:0.78rem;padding:6px 0">'
+                'ビジュアル全体が対象です — ③に修正指示を入力してください</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            raw_elem = st.text_input(
+                "修正する要素",
+                placeholder="例: 「5万円」→ 変更先の金額、または現在のコピーテキスト（空欄可）",
+                key="ex_target_elem",
+                label_visibility="collapsed",
+            )
+            target_elem_ex = raw_elem.strip() or None
+
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+            '③ 修正指示</div>',
+            unsafe_allow_html=True,
+        )
+        rev_instructions_ex = st.text_area(
+            "修正指示",
+            placeholder="例: もっとインパクトのある写真に / シアンの光を強調して / 「期間限定」の訴求に変更",
+            key="ex_rev_inst",
+            label_visibility="collapsed",
+            height=80,
+        )
 
 # ── 生成ボタン ────────────────────────────────────────────────────────────────
 st.markdown("<div style='margin-top:24px'></div>", unsafe_allow_html=True)
@@ -398,7 +464,6 @@ if generate_btn:
         st.session_state["gen_features"]  = features
 
     else:  # 既存のバナーから作成
-        # Determine platform from saved banner (fallback to first)
         ex_platform_name = (
             sel_banner["platforms"][0].get("platform_name", PLATFORMS[0].name)
             if sel_banner.get("platforms") else PLATFORMS[0].name
@@ -406,11 +471,25 @@ if generate_btn:
         ex_platforms = [p for p in PLATFORMS if p.name == ex_platform_name] or [PLATFORMS[0]]
         base_prompt  = sel_banner.get("prompt", "")
 
+        # 元バナーをリファレンス画像として読み込み
+        ex_ref_image: Image.Image | None = None
+        first_url = sel_banner["platforms"][0].get("public_url", "") if sel_banner.get("platforms") else ""
+        if first_url:
+            try:
+                ex_img_bytes = requests.get(first_url, timeout=10).content
+                ex_ref_image = Image.open(io.BytesIO(ex_img_bytes)).convert("RGB")
+            except Exception:
+                pass
+
+        has_revision = sel_part_ex != "なし（そのまま再生成）" and rev_instructions_ex.strip()
+
         with st.status("バナーを生成中...", expanded=True) as status:
-            if modification_text.strip():
-                st.write("**Step 1 / 3** — Claude がプロンプトを修正中")
+            if has_revision:
+                st.write(f"**Step 1 / 3** — Claude が「{sel_part_ex}」を修正中")
                 try:
-                    base_prompt = refine_banner_prompt(base_prompt, modification_text)
+                    base_prompt = refine_banner_part(
+                        base_prompt, sel_part_ex, target_elem_ex, rev_instructions_ex
+                    )
                     st.write("✓ プロンプト修正完了")
                 except Exception as e:
                     st.error(f"プロンプト修正エラー: {e}")
@@ -420,8 +499,8 @@ if generate_btn:
 
             ref_note = "（元バナーをリファレンスに使用）" if ex_ref_image is not None else ""
             st.write(f"**Step 2 / 3** — gpt-image-2 で画像を生成中 {ref_note}")
-            results = []
-            suffix = "（修正）" if modification_text.strip() else "（再生成）"
+            results   = []
+            suffix    = f"（{sel_part_ex}修正）" if has_revision else "（再生成）"
             base_label = sel_banner.get("label", "").split("（")[0]
             for i in range(num_variations_ex):
                 st.write(f"  バリエーション {i + 1} / {num_variations_ex}")
