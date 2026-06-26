@@ -102,7 +102,7 @@ button[aria-label="Open sidebar"] {
 
 /* ── ロゴエリア (stSidebarHeader: flex・height:3.75rem・space-between) ── */
 [data-testid="stSidebarHeader"] {
-    padding: 0 16px !important;
+    padding: 16px 0 14px !important;
     background: #1e293b !important;
     display: flex !important;
     flex-direction: column !important;
