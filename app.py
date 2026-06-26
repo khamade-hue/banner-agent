@@ -3,6 +3,7 @@
 import base64
 import os
 import streamlit as st
+import streamlit.components.v1 as components
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -470,6 +471,28 @@ hr {
 """, unsafe_allow_html=True)
 
 st.logo(_LOGO_URL)
+
+# CSS では Streamlit 内部の emotion クラスに勝てないため JS でインラインスタイルを強制
+components.html(
+    '<script>'
+    '!function f(){'
+    'try{'
+    'var imgs=parent.document.querySelectorAll(\'[data-testid="stLogoSidebar"] img\');'
+    'if(!imgs.length){setTimeout(f,150);return;}'
+    'imgs.forEach(function(el){'
+    'el.style.setProperty("height","44px","important");'
+    'el.style.setProperty("max-height","44px","important");'
+    'el.style.setProperty("min-height","44px","important");'
+    'el.style.setProperty("width","auto","important");'
+    'el.style.setProperty("max-width","none","important");'
+    '});'
+    '}catch(e){}'
+    '}'
+    'f();setTimeout(f,500);setTimeout(f,1500);'
+    '</script>',
+    height=0,
+    scrolling=False,
+)
 
 missing = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY") if not os.getenv(k)]
 if missing:
