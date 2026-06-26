@@ -339,6 +339,8 @@ def generate_banner_prompts(
     headline_copy: str = "",
     offer_copy: str = "",
     features: list[str] | None = None,
+    use_product_image: bool = True,
+    use_people: bool = True,
 ) -> list[dict]:
     """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
     client = _claude()
@@ -368,6 +370,17 @@ BRAND/SERVICE DETAILS:
     features_section = ""
     if features:
         features_section = "Feature Badges:\n" + "\n".join(f"• {f}" for f in features)
+
+    _vc: list[str] = []
+    if use_product_image:
+        _vc.append("• PRODUCT IMAGE: Feature the product as a prominent visual element in every variation.")
+    else:
+        _vc.append("• PRODUCT IMAGE: Do NOT depict the physical product. Use lifestyle, abstract, or thematic imagery instead.")
+    if use_people:
+        _vc.append("• PEOPLE: Include human models or characters as the main visual subject where appropriate.")
+    else:
+        _vc.append("• PEOPLE: Do NOT include any people or human figures (no models, faces, hands, silhouettes). Use objects, scenery, or abstract visuals only.")
+    visual_constraints_section = "\nVISUAL CONSTRAINTS — must apply to ALL variations:\n" + "\n".join(_vc)
 
     variation_labels = [chr(65 + i) for i in range(num_variations)]
 
@@ -459,6 +472,7 @@ COPY TO EMBED VERBATIM IN THE IMAGE:
 {headline_section}
 {offer_section}
 {features_section}
+{visual_constraints_section}
 
 For each variation, deliver a complete brief covering every section listed in your instructions (canvas, layout zones, visual zone, typography for every element, accent elements, color palette). Be specific and exhaustive — this brief goes directly to the image renderer.""",
         }],
