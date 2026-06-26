@@ -328,7 +328,7 @@ else:
     sel_banner = banners_with_img[sel_idx]
 
     # 選択バナーのコピー要素を抽出（Haiku で 1 バナーにつき 1 回だけ実行、以降はキャッシュ）
-    _copy_cache_key = f"_banner_copy_{sel_banner['id']}"
+    _copy_cache_key = f"_banner_copy_v2_{sel_banner['id']}"
     if _copy_cache_key not in st.session_state:
         with st.spinner("テキスト要素を解析中..."):
             try:

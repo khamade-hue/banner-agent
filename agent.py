@@ -536,57 +536,171 @@ def refine_banner_part(
 
 
 def extract_banner_copy(prompt: str) -> dict:
-    """Extract Japanese copy elements (headline, offer, features) from a banner design brief."""
+    """Extract Japanese copy elements from a banner design brief.
+
+    Stage 1: regex (instant, no API).
+    Stage 2: Haiku fallback if regex finds nothing.
+    """
     if not prompt.strip():
         return {"headlines": [], "offers": [], "features": []}
 
+    result = _regex_extract_copy(prompt)
+    if any(result[k] for k in result):
+        return result
+    return _haiku_extract_copy(prompt)
+
+
+def _has_jp(s: str) -> bool:
+    return any("぀" <= c <= "鿿" or "＀" <= c <= "￯" for c in s)
+
+
+def _regex_extract_copy(prompt: str) -> dict:
+    import re
+
+    headlines, offers, features = [], [], []
+    lines = prompt.split("\n")
+    in_feature = False
+
+    for i, line in enumerate(lines):
+        s = line.strip()
+
+        # Track feature-badge section boundaries
+        if re.search(r"feature\s+badge|feature\s+icon|icon\s+badge|badge[s]?\s*:", s, re.I):
+            in_feature = True
+        elif re.match(r"^#{1,3}\s+\S|^[A-Z][A-Z\s]{4,}$|^##", s) and i > 0:
+            in_feature = False  # new major section
+
+        # "Exact text: 「テキスト」" — most reliable
+        m = re.match(r".*?exact\s+(?:japanese\s+)?text\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*$", s, re.I)
+        if m:
+            t = m.group(1).strip()
+            if _has_jp(t):
+                ctx = "\n".join(lines[max(0, i - 8):i]).lower()
+                if any(k in ctx for k in ["headline", "catch", "main text", "primary"]):
+                    if t not in headlines:
+                        headlines.append(t)
+                elif any(k in ctx for k in ["offer", "cta", "button", "action"]):
+                    if t not in offers:
+                        offers.append(t)
+                elif len(t) <= 30 and t not in features:
+                    features.append(t)
+            continue
+
+        # "Main Headline: テキスト"
+        m = re.match(r"[-•\s]*main\s+headline\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(].*)?$", s, re.I)
+        if m:
+            t = m.group(1).strip()
+            if _has_jp(t) and t not in headlines:
+                headlines.append(t)
+            continue
+
+        # "Offer/CTA: テキスト" / "CTA: テキスト"
+        m = re.match(r"[-•\s]*(?:offer[/／])?cta(?:\s+text|\s+button|\s+copy)?\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(].*)?$", s, re.I)
+        if m:
+            t = m.group(1).strip()
+            if _has_jp(t) and t not in offers:
+                offers.append(t)
+            continue
+
+        # "Feature Badge: テキスト" / "Feature Badge — テキスト"
+        m = re.match(r"[-•\s]*feature\s+badge\s*[：:—–]\s*[「\"""]?(.+?)[」\"""]?\s*$", s, re.I)
+        if m:
+            t = m.group(1).strip()
+            if _has_jp(t) and len(t) <= 30 and t not in features:
+                features.append(t)
+            continue
+
+        # Bullet points inside feature section
+        if in_feature:
+            m = re.match(r"^[•・\-\*✓★◆⊕]\s*(.+)", s)
+            if m:
+                t = re.sub(r"\s*[\(\（（].*", "", m.group(1)).strip()
+                t = re.sub(r"\s+(?:icon|badge|symbol|—|–).*$", "", t, flags=re.I).strip()
+                if t and _has_jp(t) and len(t) <= 30 and t not in features:
+                    features.append(t)
+
+    # Sweep 「」 quoted strings and classify by surrounding context
+    for q in re.findall(r"「([^」]{2,40})」", prompt):
+        if not _has_jp(q):
+            continue
+        q = q.strip()
+        pos = prompt.find("「" + q + "」")
+        if pos == -1:
+            continue
+        ctx = prompt[max(0, pos - 150):pos].lower()
+        if any(k in ctx for k in ["headline", "main", "catch", "キャッチ"]):
+            if q not in headlines:
+                headlines.append(q)
+        elif any(k in ctx for k in ["offer", "cta", "button"]):
+            if q not in offers:
+                offers.append(q)
+        elif len(q) <= 25 and q not in features:
+            features.append(q)
+
+    return {
+        "headlines": headlines[:3],
+        "offers": offers[:2],
+        "features": features[:8],
+    }
+
+
+def _haiku_extract_copy(prompt: str) -> dict:
     tool = {
-        "name": "submit_copy_elements",
-        "description": "Submit Japanese copy text elements extracted from the banner design brief",
+        "name": "submit_copy",
+        "description": "Submit extracted Japanese ad copy from the design brief",
         "input_schema": {
             "type": "object",
             "required": ["headlines", "offers", "features"],
             "properties": {
                 "headlines": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Main Japanese headline/キャッチコピー text(s) verbatim from the brief",
+                    "type": "array", "items": {"type": "string"},
+                    "description": (
+                        "Primary Japanese headline texts. "
+                        "Find after 'Main Headline:', 'Exact text:' near headline sections, "
+                        "or quoted Japanese text 「」 near the word headline/catch."
+                    ),
                 },
                 "offers": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Offer/CTA Japanese text(s) verbatim from the brief",
+                    "type": "array", "items": {"type": "string"},
+                    "description": (
+                        "Japanese CTA/offer texts on buttons or CTA bars. "
+                        "Find after 'Offer/CTA:', 'CTA:', or on CTA button elements."
+                    ),
                 },
                 "features": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Feature badge Japanese short phrases verbatim from the brief",
+                    "type": "array", "items": {"type": "string"},
+                    "description": (
+                        "Short Japanese feature badge phrases (5–20 chars). "
+                        "Find as bullet points in Feature Badges sections. "
+                        "Return each badge text separately."
+                    ),
                 },
             },
         },
     }
-
-    response = _claude().messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=400,
-        tools=[tool],
-        tool_choice={"type": "tool", "name": "submit_copy_elements"},
-        system=(
-            "You extract Japanese advertising copy elements verbatim from banner design briefs. "
-            "Return only text that appears explicitly in the brief as Japanese copy."
-        ),
-        messages=[{
-            "role": "user",
-            "content": (
-                "Extract all Japanese copy text elements from this banner design brief:\n\n"
-                + prompt[:3000]
+    try:
+        response = _claude().messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            tools=[tool],
+            tool_choice={"type": "tool", "name": "submit_copy"},
+            system=(
+                "Extract Japanese advertising copy verbatim from English banner design briefs.\n"
+                "- headlines: large primary Japanese text (catch copy / main headline)\n"
+                "- offers: Japanese text on CTA buttons or offer lines\n"
+                "- features: short Japanese badge phrases (typically bullets under Feature Badges)\n"
+                "Return ONLY the Japanese text itself, never English descriptions or specs."
             ),
-        }],
-    )
-
-    for block in response.content:
-        if block.type == "tool_use":
-            return block.input
+            messages=[{
+                "role": "user",
+                "content": "Extract Japanese copy from this design brief:\n\n" + prompt[:4000],
+            }],
+        )
+        for block in response.content:
+            if block.type == "tool_use":
+                return block.input
+    except Exception:
+        pass
     return {"headlines": [], "offers": [], "features": []}
 
 
