@@ -13,14 +13,14 @@ if hasattr(st, "secrets"):
             os.environ[k] = st.secrets[k]
 
 _LOGO_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 50">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 50">'
     '<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">'
     '<stop offset="30%" stop-color="#f1f5f9"/>'
     '<stop offset="100%" stop-color="#93c5fd"/>'
     '</linearGradient></defs>'
     '<text x="2" y="30" '
     'font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',system-ui,sans-serif" '
-    'font-weight="800" font-size="22" fill="url(#g)" letter-spacing="-0.5">'
+    'font-weight="800" font-size="20" fill="url(#g)" letter-spacing="0">'
     'Raku Raku Banner</text>'
     '<rect x="2" y="41" width="32" height="3" rx="1.5" fill="#3b82f6"/>'
     '<rect x="36" y="41" width="11" height="3" rx="1.5" fill="#3b82f6" fill-opacity="0.45"/>'
@@ -104,11 +104,11 @@ button[aria-label="Open sidebar"] {
 [data-testid="stLogoSidebar"] {
     padding: 18px 16px 14px !important;
     background: #1e293b !important;
-    line-height: 0 !important;
+    overflow: visible !important;
 }
 [data-testid="stLogoSidebar"] a {
     display: block !important;
-    line-height: 0 !important;
+    overflow: visible !important;
 }
 [data-testid="stLogoSidebar"] img,
 [data-testid="stLogoSidebar"] a img {
@@ -116,6 +116,7 @@ button[aria-label="Open sidebar"] {
     min-height: 44px !important;
     max-height: 44px !important;
     width: auto !important;
+    max-width: none !important;
     object-fit: contain !important;
 }
 
