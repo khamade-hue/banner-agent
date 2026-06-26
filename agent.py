@@ -535,6 +535,61 @@ def refine_banner_part(
     return response.content[0].text.strip()
 
 
+def extract_banner_copy(prompt: str) -> dict:
+    """Extract Japanese copy elements (headline, offer, features) from a banner design brief."""
+    if not prompt.strip():
+        return {"headlines": [], "offers": [], "features": []}
+
+    tool = {
+        "name": "submit_copy_elements",
+        "description": "Submit Japanese copy text elements extracted from the banner design brief",
+        "input_schema": {
+            "type": "object",
+            "required": ["headlines", "offers", "features"],
+            "properties": {
+                "headlines": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Main Japanese headline/キャッチコピー text(s) verbatim from the brief",
+                },
+                "offers": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Offer/CTA Japanese text(s) verbatim from the brief",
+                },
+                "features": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Feature badge Japanese short phrases verbatim from the brief",
+                },
+            },
+        },
+    }
+
+    response = _claude().messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=400,
+        tools=[tool],
+        tool_choice={"type": "tool", "name": "submit_copy_elements"},
+        system=(
+            "You extract Japanese advertising copy elements verbatim from banner design briefs. "
+            "Return only text that appears explicitly in the brief as Japanese copy."
+        ),
+        messages=[{
+            "role": "user",
+            "content": (
+                "Extract all Japanese copy text elements from this banner design brief:\n\n"
+                + prompt[:3000]
+            ),
+        }],
+    )
+
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input
+    return {"headlines": [], "offers": [], "features": []}
+
+
 def refine_banner_prompt(original_prompt: str, revision_instructions: str) -> str:
     """Refine a banner image prompt based on user revision instructions."""
     client = _claude()

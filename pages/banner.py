@@ -14,7 +14,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import generate_banner_prompts, refine_banner_prompt, refine_banner_part
+from agent import generate_banner_prompts, refine_banner_prompt, refine_banner_part, extract_banner_copy
 from image_gen import generate_image, generate_images_batch
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_axes, load_banners, save_banner_entry
@@ -327,6 +327,18 @@ else:
 
     sel_banner = banners_with_img[sel_idx]
 
+    # 選択バナーのコピー要素を抽出（Haiku で 1 バナーにつき 1 回だけ実行、以降はキャッシュ）
+    _copy_cache_key = f"_banner_copy_{sel_banner['id']}"
+    if _copy_cache_key not in st.session_state:
+        with st.spinner("テキスト要素を解析中..."):
+            try:
+                st.session_state[_copy_cache_key] = extract_banner_copy(
+                    sel_banner.get("prompt", "")
+                )
+            except Exception:
+                st.session_state[_copy_cache_key] = {"headlines": [], "offers": [], "features": []}
+    _banner_copy = st.session_state[_copy_cache_key]
+
     # ── バリエーション数 ──────────────────────────────────────────────────────
     _section("バリエーション数")
     num_variations_ex = st.selectbox(
@@ -385,16 +397,7 @@ else:
                 "オファー・CTA":  "offers",
                 "特徴・アイコン": "features",
             }
-            _matching_axis = next(
-                (a for a in axes
-                 if a["product_name"] == sel_banner.get("product_name", "")
-                 and a["axis"] == sel_banner.get("axis", "")),
-                None,
-            )
-            _copy_opts = (
-                _matching_axis.get("copy_suggestions", {}).get(_part_key_map.get(sel_part_ex, ""), [])
-                if _matching_axis else []
-            )
+            _copy_opts = _banner_copy.get(_part_key_map.get(sel_part_ex, ""), [])
             if _copy_opts:
                 target_elem_ex = st.selectbox(
                     "修正する要素",
