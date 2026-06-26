@@ -353,7 +353,7 @@ else:
         '① 修正するパーツ</div>',
         unsafe_allow_html=True,
     )
-    EX_REVISION_PARTS = ["トンマナ", "ビジュアル", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
+    EX_REVISION_PARTS = ["トンマナ", "ビジュアル", "テキスト"]
     sel_part_ex = st.radio(
         "修正するパーツ",
         EX_REVISION_PARTS,
@@ -364,6 +364,7 @@ else:
 
     target_elem_ex      = None
     rev_instructions_ex = ""
+    rev_part_label_ex   = sel_part_ex  # actual label passed to refine_banner_part
 
     if sel_part_ex == "トンマナ":
         st.markdown(
@@ -379,40 +380,64 @@ else:
         )
         rev_instructions_ex = f"Change the tone and manner to: {TONMANA[tonmana_ex_label]}"
 
-    else:
+    elif sel_part_ex == "ビジュアル":
         st.markdown(
             '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
             '② 修正する要素（任意）</div>',
             unsafe_allow_html=True,
         )
-        if sel_part_ex == "ビジュアル":
-            st.markdown(
-                '<div style="color:#475569;font-size:0.78rem;padding:6px 0">'
-                'ビジュアル全体が対象です — ③に修正指示を入力してください</div>',
-                unsafe_allow_html=True,
+        st.markdown(
+            '<div style="color:#475569;font-size:0.78rem;padding:6px 0">'
+            'ビジュアル全体が対象です — ③に修正指示を入力してください</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+            '③ 修正指示</div>',
+            unsafe_allow_html=True,
+        )
+        rev_instructions_ex = st.text_area(
+            "修正指示",
+            placeholder="例: もっとインパクトのある写真に / シアンの光を強調して / 「期間限定」の訴求に変更",
+            key="ex_rev_inst",
+            label_visibility="collapsed",
+            height=80,
+        )
+
+    else:  # テキスト
+        _text_items: list[tuple[str, str]] = []
+        for _h in _banner_copy.get("headlines", []):
+            _text_items.append(("メインキャッチ", _h))
+        for _o in _banner_copy.get("offers", []):
+            _text_items.append(("オファー・CTA", _o))
+        for _f in _banner_copy.get("features", []):
+            _text_items.append(("特徴・アイコン", _f))
+
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+            '② 修正する要素（任意）</div>',
+            unsafe_allow_html=True,
+        )
+        if _text_items:
+            _sel_text = st.selectbox(
+                "修正する要素",
+                [t for _, t in _text_items],
+                key="ex_target_elem_sel",
+                label_visibility="collapsed",
             )
+            rev_part_label_ex = next(
+                (cat for cat, txt in _text_items if txt == _sel_text),
+                "テキスト",
+            )
+            target_elem_ex = _sel_text
         else:
-            _part_key_map = {
-                "メインキャッチ": "headlines",
-                "オファー・CTA":  "offers",
-                "特徴・アイコン": "features",
-            }
-            _copy_opts = _banner_copy.get(_part_key_map.get(sel_part_ex, ""), [])
-            if _copy_opts:
-                target_elem_ex = st.selectbox(
-                    "修正する要素",
-                    _copy_opts,
-                    key="ex_target_elem_sel",
-                    label_visibility="collapsed",
-                )
-            else:
-                raw_elem = st.text_input(
-                    "修正する要素",
-                    placeholder="テキストを入力（空欄可）",
-                    key="ex_target_elem",
-                    label_visibility="collapsed",
-                )
-                target_elem_ex = raw_elem.strip() or None
+            raw_elem = st.text_input(
+                "修正する要素",
+                placeholder="テキストを入力（空欄可）",
+                key="ex_target_elem",
+                label_visibility="collapsed",
+            )
+            target_elem_ex = raw_elem.strip() or None
 
         st.markdown(
             '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
@@ -566,10 +591,10 @@ if generate_btn:
 
         with st.status("バナーを生成中...", expanded=True) as status:
             if has_revision:
-                st.write(f"**Step 1 / 3** — Claude が「{sel_part_ex}」を修正中")
+                st.write(f"**Step 1 / 3** — Claude が「{rev_part_label_ex}」を修正中")
                 try:
                     base_prompt = refine_banner_part(
-                        base_prompt, sel_part_ex, target_elem_ex, rev_instructions_ex
+                        base_prompt, rev_part_label_ex, target_elem_ex, rev_instructions_ex
                     )
                     st.write("✓ プロンプト修正完了")
                 except Exception as e:

@@ -486,6 +486,7 @@ _BANNER_PART_DESC = {
     "メインキャッチ": "Main Headline text (the large Japanese headline copy shown on the banner)",
     "オファー・CTA":  "Offer/CTA section (the offer text and CTA button/bar design and wording)",
     "特徴・アイコン": "Feature Badges section (the icon bullet point texts and icon styles)",
+    "テキスト":       "the specified text element — update ONLY the exact text identified in target_element; keep all other text, layout, colors, and visual elements unchanged.",
 }
 
 
