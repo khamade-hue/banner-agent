@@ -380,13 +380,36 @@ else:
                 unsafe_allow_html=True,
             )
         else:
-            raw_elem = st.text_input(
-                "修正する要素",
-                placeholder="例: 「5万円」→ 変更先の金額、または現在のコピーテキスト（空欄可）",
-                key="ex_target_elem",
-                label_visibility="collapsed",
+            _part_key_map = {
+                "メインキャッチ": "headlines",
+                "オファー・CTA":  "offers",
+                "特徴・アイコン": "features",
+            }
+            _matching_axis = next(
+                (a for a in axes
+                 if a["product_name"] == sel_banner.get("product_name", "")
+                 and a["axis"] == sel_banner.get("axis", "")),
+                None,
             )
-            target_elem_ex = raw_elem.strip() or None
+            _copy_opts = (
+                _matching_axis.get("copy_suggestions", {}).get(_part_key_map.get(sel_part_ex, ""), [])
+                if _matching_axis else []
+            )
+            if _copy_opts:
+                target_elem_ex = st.selectbox(
+                    "修正する要素",
+                    _copy_opts,
+                    key="ex_target_elem_sel",
+                    label_visibility="collapsed",
+                )
+            else:
+                raw_elem = st.text_input(
+                    "修正する要素",
+                    placeholder="テキストを入力（空欄可）",
+                    key="ex_target_elem",
+                    label_visibility="collapsed",
+                )
+                target_elem_ex = raw_elem.strip() or None
 
         st.markdown(
             '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
