@@ -13,18 +13,18 @@ if hasattr(st, "secrets"):
             os.environ[k] = st.secrets[k]
 
 _LOGO_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 44">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 50">'
     '<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">'
     '<stop offset="30%" stop-color="#f1f5f9"/>'
     '<stop offset="100%" stop-color="#93c5fd"/>'
     '</linearGradient></defs>'
-    '<text x="2" y="26" '
+    '<text x="2" y="30" '
     'font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',system-ui,sans-serif" '
-    'font-weight="800" font-size="18" fill="url(#g)" letter-spacing="-0.5">'
+    'font-weight="800" font-size="22" fill="url(#g)" letter-spacing="-0.5">'
     'Raku Raku Banner</text>'
-    '<rect x="2" y="35" width="30" height="2.5" rx="1" fill="#3b82f6"/>'
-    '<rect x="34" y="35" width="10" height="2.5" rx="1" fill="#3b82f6" fill-opacity="0.45"/>'
-    '<rect x="46" y="35" width="5" height="2.5" rx="1" fill="#3b82f6" fill-opacity="0.2"/>'
+    '<rect x="2" y="41" width="32" height="3" rx="1.5" fill="#3b82f6"/>'
+    '<rect x="36" y="41" width="11" height="3" rx="1.5" fill="#3b82f6" fill-opacity="0.45"/>'
+    '<rect x="49" y="41" width="6" height="3" rx="1.5" fill="#3b82f6" fill-opacity="0.2"/>'
     '</svg>'
 )
 _LOGO_URL = "data:image/svg+xml;base64," + base64.b64encode(_LOGO_SVG.encode()).decode()
@@ -102,12 +102,21 @@ button[aria-label="Open sidebar"] {
 
 /* ── ロゴエリア（st.logo が注入する要素）── */
 [data-testid="stLogoSidebar"] {
-    padding: 16px 16px 12px !important;
+    padding: 18px 16px 14px !important;
     background: #1e293b !important;
+    line-height: 0 !important;
 }
-[data-testid="stLogoSidebar"] img {
+[data-testid="stLogoSidebar"] a {
+    display: block !important;
+    line-height: 0 !important;
+}
+[data-testid="stLogoSidebar"] img,
+[data-testid="stLogoSidebar"] a img {
+    height: 44px !important;
+    min-height: 44px !important;
     max-height: 44px !important;
     width: auto !important;
+    object-fit: contain !important;
 }
 
 [data-testid="stSidebar"] {
