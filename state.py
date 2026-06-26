@@ -173,6 +173,43 @@ def save_product(
     return entry
 
 
+def update_product(
+    product_id: str,
+    product_name: str,
+    product_info: str,
+    product_url: str,
+    competitor_info: str,
+    product_image: bytes | None = None,
+    product_image_ext: str = "png",
+    logo: bytes | None = None,
+    logo_ext: str = "png",
+) -> None:
+    client = _client()
+    data: dict = {
+        "product_name": product_name,
+        "product_info": product_info,
+        "product_url": product_url,
+        "competitor_info": competitor_info,
+    }
+    if product_image:
+        img_path = f"products/{product_id}/product_image.{product_image_ext}"
+        client.storage.from_(_BUCKET).upload(
+            img_path, product_image,
+            {"content-type": f"image/{product_image_ext}", "upsert": "true"},
+        )
+        data["product_image_url"] = client.storage.from_(_BUCKET).get_public_url(img_path)
+        data["product_image_path"] = img_path
+    if logo:
+        logo_path = f"products/{product_id}/logo.{logo_ext}"
+        client.storage.from_(_BUCKET).upload(
+            logo_path, logo,
+            {"content-type": f"image/{logo_ext}", "upsert": "true"},
+        )
+        data["logo_url"] = client.storage.from_(_BUCKET).get_public_url(logo_path)
+        data["logo_path"] = logo_path
+    client.table("products").update(data).eq("id", product_id).execute()
+
+
 def delete_product(product_id: str) -> None:
     client = _client()
     products = load_products()
