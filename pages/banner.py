@@ -185,54 +185,127 @@ if mode == "新規作成":
     # ── コピー ────────────────────────────────────────────────────────────────
     _section("バナーに入れるコピー")
 
-    copy_s         = selected_axis.get("copy_suggestions", {})
-    headlines_opts = copy_s.get("headlines", [])
-    offers_opts    = copy_s.get("offers", [])
-    features_opts  = copy_s.get("features", [])
+    copy_sets = selected_axis.get("copy_sets", [])
+    copy_s    = selected_axis.get("copy_suggestions", {})
 
-    col_hl, col_of = st.columns(2)
-    with col_hl:
-        st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">メインキャッチ</div>', unsafe_allow_html=True)
-        if headlines_opts:
-            hl_sel = st.selectbox("メインキャッチ", headlines_opts + ["カスタム入力..."],
-                                  key="hl_sel", label_visibility="collapsed")
-            headline_copy = st.text_input("キャッチを入力", key="hl_custom",
-                                          label_visibility="collapsed") if hl_sel == "カスタム入力..." else hl_sel
-        else:
-            headline_copy = st.text_input("メインキャッチ（任意）",
-                                          placeholder="例: 制作費、10分の1でいい。",
-                                          label_visibility="collapsed")
-
-    with col_of:
-        st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">オファー / CTA</div>', unsafe_allow_html=True)
-        if offers_opts:
-            of_sel = st.selectbox("オファー / CTA", ["なし"] + offers_opts + ["カスタム入力..."],
-                                  key="of_sel", label_visibility="collapsed")
-            if of_sel == "カスタム入力...":
-                offer_copy = st.text_input("オファーを入力", key="of_custom", label_visibility="collapsed")
-            elif of_sel == "なし":
-                offer_copy = ""
-            else:
-                offer_copy = of_sel
-        else:
-            offer_copy = st.text_input("オファー / CTA（任意）",
-                                       placeholder="例: 今なら1件まるごと無料",
-                                       label_visibility="collapsed")
-
-    st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:10px 0 4px">特徴・アイコン</div>', unsafe_allow_html=True)
-    if features_opts:
-        selected_features = st.multiselect("特徴・アイコン", features_opts,
-                                           default=features_opts, key="feat_sel",
-                                           label_visibility="collapsed")
-        features_text = ""
-    else:
-        selected_features = []
-        features_text = st.text_area(
-            "特徴・アイコン（1行1項目、任意）",
-            placeholder="最短3営業日で納品\n修正回数無制限\nプロのディレクター監修\n著作権譲渡・商用利用OK",
-            height=90,
+    if copy_sets:
+        # ── 新形式: セット選択 UI ─────────────────────────────────────────────
+        st.markdown(
+            '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:6px">'
+            'コピーセットを選択</div>',
+            unsafe_allow_html=True,
+        )
+        set_labels = [f"セット {i + 1}　「{cs['headline']}」" for i, cs in enumerate(copy_sets)]
+        sel_set_idx = st.radio(
+            "コピーセット",
+            range(len(copy_sets)),
+            format_func=lambda i: set_labels[i],
+            key="copy_set_sel",
             label_visibility="collapsed",
         )
+        sel_set = copy_sets[sel_set_idx]
+
+        feat_pills = "".join(
+            f'<span style="background:rgba(139,92,246,0.15);color:#c4b5fd;'
+            f'border:1px solid rgba(139,92,246,0.4);border-radius:14px;padding:3px 10px;'
+            f'font-size:0.75rem;margin:2px 3px 2px 0;display:inline-block">{f}</span>'
+            for f in sel_set.get("features", [])
+        )
+        st.markdown(
+            f'<div style="background:rgba(255,255,255,0.03);border:1px solid #334155;'
+            f'border-radius:10px;padding:11px 14px;margin:6px 0 10px">'
+            f'<div style="margin-bottom:5px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:8px">キャッチ</span>'
+            f'<span style="color:#93c5fd;font-size:0.85rem;font-weight:600">'
+            f'{sel_set.get("headline","")}</span></div>'
+            f'<div style="margin-bottom:8px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:8px">CTA</span>'
+            f'<span style="color:#6ee7b7;font-size:0.82rem">{sel_set.get("offer","")}</span></div>'
+            f'<div><span style="font-size:0.63rem;font-weight:700;color:#64748b;'
+            f'text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px">'
+            f'特徴</span>{feat_pills}</div></div>',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
+            '特徴・アイコン（使用するものを選択）</div>',
+            unsafe_allow_html=True,
+        )
+        selected_features = st.multiselect(
+            "特徴・アイコン",
+            sel_set.get("features", []),
+            default=sel_set.get("features", []),
+            key=f"feat_sel_{sel_set_idx}",
+            label_visibility="collapsed",
+        )
+        features_text = ""
+
+        with st.expander("コピーを手動で上書き（任意）"):
+            hl_override = st.text_input(
+                "キャッチコピー",
+                placeholder=sel_set.get("headline", ""),
+                key=f"hl_override_{sel_set_idx}",
+            )
+            of_override = st.text_input(
+                "オファー / CTA",
+                placeholder=sel_set.get("offer", ""),
+                key=f"of_override_{sel_set_idx}",
+            )
+        headline_copy = hl_override.strip() if hl_override.strip() else sel_set.get("headline", "")
+        offer_copy    = of_override.strip() if of_override.strip() else sel_set.get("offer", "")
+
+    else:
+        # ── 旧形式: copy_suggestions ──────────────────────────────────────────
+        headlines_opts = copy_s.get("headlines", [])
+        offers_opts    = copy_s.get("offers", [])
+        features_opts  = copy_s.get("features", [])
+
+        col_hl, col_of = st.columns(2)
+        with col_hl:
+            st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">メインキャッチ</div>', unsafe_allow_html=True)
+            if headlines_opts:
+                hl_sel = st.selectbox("メインキャッチ", headlines_opts + ["カスタム入力..."],
+                                      key="hl_sel", label_visibility="collapsed")
+                headline_copy = st.text_input("キャッチを入力", key="hl_custom",
+                                              label_visibility="collapsed") if hl_sel == "カスタム入力..." else hl_sel
+            else:
+                headline_copy = st.text_input("メインキャッチ（任意）",
+                                              placeholder="例: 制作費、10分の1でいい。",
+                                              label_visibility="collapsed")
+
+        with col_of:
+            st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">オファー / CTA</div>', unsafe_allow_html=True)
+            if offers_opts:
+                of_sel = st.selectbox("オファー / CTA", ["なし"] + offers_opts + ["カスタム入力..."],
+                                      key="of_sel", label_visibility="collapsed")
+                if of_sel == "カスタム入力...":
+                    offer_copy = st.text_input("オファーを入力", key="of_custom", label_visibility="collapsed")
+                elif of_sel == "なし":
+                    offer_copy = ""
+                else:
+                    offer_copy = of_sel
+            else:
+                offer_copy = st.text_input("オファー / CTA（任意）",
+                                           placeholder="例: 今なら1件まるごと無料",
+                                           label_visibility="collapsed")
+
+        st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:10px 0 4px">特徴・アイコン</div>', unsafe_allow_html=True)
+        if features_opts:
+            selected_features = st.multiselect("特徴・アイコン", features_opts,
+                                               default=features_opts, key="feat_sel",
+                                               label_visibility="collapsed")
+            features_text = ""
+        else:
+            selected_features = []
+            features_text = st.text_area(
+                "特徴・アイコン（1行1項目、任意）",
+                placeholder="最短3営業日で納品\n修正回数無制限\nプロのディレクター監修\n著作権譲渡・商用利用OK",
+                height=90,
+                label_visibility="collapsed",
+            )
 
     # ── プラットフォーム ──────────────────────────────────────────────────────
     _section("プラットフォーム")

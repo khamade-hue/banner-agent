@@ -25,7 +25,12 @@ def _client() -> Client:
 
 def load_axes() -> list[dict]:
     res = _client().table("appeal_axes").select("*").order("created_at").execute()
-    return res.data or []
+    axes = res.data or []
+    for ax in axes:
+        cs = ax.get("copy_suggestions") or {}
+        if "_sets" in cs:
+            ax["copy_sets"] = cs["_sets"]
+    return axes
 
 
 def add_axis(
@@ -34,6 +39,18 @@ def add_axis(
     axis: dict,
     product_context: dict | None = None,
 ) -> dict:
+    copy_sets = axis.get("copy_sets", [])
+    if copy_sets:
+        # Derive flat lists for backward compat, embed copy_sets inside copy_suggestions
+        cs_merged: dict = {
+            "headlines": [cs.get("headline", "") for cs in copy_sets],
+            "offers":    [cs.get("offer", "") for cs in copy_sets],
+            "features":  list(dict.fromkeys(f for cs in copy_sets for f in cs.get("features", []))),
+            "_sets":     copy_sets,
+        }
+    else:
+        cs_merged = axis.get("copy_suggestions", {})
+
     entry = {
         "id": str(uuid.uuid4()),
         "product_name": product_name,
@@ -42,7 +59,7 @@ def add_axis(
         "description": axis.get("description", ""),
         "target_segment": axis.get("target_segment", ""),
         "rationale": axis.get("rationale", ""),
-        "copy_suggestions": axis.get("copy_suggestions", {}),
+        "copy_suggestions": cs_merged,
         "product_context": product_context or {},
         "created_at": datetime.now().isoformat(),
     }

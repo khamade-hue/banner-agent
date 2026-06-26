@@ -23,30 +23,34 @@ def _parse_json(text: str, is_array: bool = False):
 # ── Shared schema for a single appeal axis (used by both tools) ───────────────
 _AXIS_ITEM_SCHEMA = {
     "type": "object",
-    "required": ["axis", "description", "target_segment", "rationale", "copy_suggestions"],
+    "required": ["axis", "description", "target_segment", "rationale", "copy_sets"],
     "properties": {
         "axis": {"type": "string"},
         "description": {"type": "string"},
         "target_segment": {"type": "string"},
         "rationale": {"type": "string"},
-        "copy_suggestions": {
-            "type": "object",
-            "required": ["headlines", "offers", "features"],
-            "properties": {
-                "headlines": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "キャッチコピー候補 3つ（各20文字以内）",
-                },
-                "offers": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "オファー・CTA候補 2つ",
-                },
-                "features": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "バナー用特徴・ベネフィット 4〜6項目",
+        "copy_sets": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "3パターンのコピーセット（各セットはキャッチ1本・CTA1本・特徴4〜6項目）",
+            "items": {
+                "type": "object",
+                "required": ["headline", "offer", "features"],
+                "properties": {
+                    "headline": {
+                        "type": "string",
+                        "description": "キャッチコピー（20文字以内、強いインパクト）",
+                    },
+                    "offer": {
+                        "type": "string",
+                        "description": "オファー・CTA（例: 今なら1件まるごと無料）",
+                    },
+                    "features": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "バナー用特徴・ベネフィット 4〜6項目（短く簡潔に）",
+                    },
                 },
             },
         },
@@ -116,10 +120,17 @@ _AXES_TOOL = {
 }
 
 _COPY_INSTRUCTIONS = """
-各訴求軸の copy_suggestions を必ず生成してください:
-- headlines: その訴求軸に合ったキャッチコピー候補を3つ（各20文字以内、インパクト重視）
-- offers: バナーで使えるオファー・CTA候補を2つ（「今なら○○無料」「限定○○」など）
-- features: バナーのアイコン行で使える特徴・ベネフィットを4〜6項目（短く簡潔に）"""
+各訴求軸の copy_sets を必ず3セット生成してください。
+プロのコピーライターとしてバナーの完成形をイメージし、
+headline・offer・features が1枚のバナー上で統一感を持って機能するよう設計してください。
+
+各セットの構成:
+- headline: キャッチコピー1本（20文字以内、強いインパクト）
+- offer: オファー・CTA1本（「今なら○○無料」「限定○○」「無料○日トライアル」など）
+- features: バナーのアイコン行に使う特徴・ベネフィット 4〜6項目（短く簡潔に）
+
+3セットはクリエイティブコンセプト（例: 感情訴求 / 機能訴求 / 社会的証明）を
+それぞれ変えて作成し、多様なバナー表現を可能にしてください。"""
 
 
 def analyze_product(
@@ -157,8 +168,9 @@ def analyze_product(
         tools=[_ANALYSIS_TOOL],
         tool_choice={"type": "tool", "name": "submit_analysis"},
         system=(
-            "あなたはデジタル広告に精通したシニアマーケティングストラテジストです。"
-            "3C分析（顧客・競合・自社）を実施し、効果的な訴求軸を導き出すことを得意としています。"
+            "あなたはデジタル広告に精通したシニアマーケティングストラテジスト兼プロのコピーライターです。"
+            "3C分析（顧客・競合・自社）を実施し、バナーの完成形をイメージしながら"
+            "訴求軸と刺さるコピーセットを生成することを得意としています。"
         ),
         messages=[{
             "role": "user",
@@ -202,7 +214,10 @@ def generate_more_axes(
         max_tokens=3000,
         tools=[_AXES_TOOL],
         tool_choice={"type": "tool", "name": "submit_axes"},
-        system="あなたはデジタル広告に精通したシニアマーケティングストラテジストです。",
+        system=(
+            "あなたはデジタル広告に精通したシニアマーケティングストラテジスト兼プロのコピーライターです。"
+            "バナーの完成形をイメージしながら、刺さるコピーセットを生成することを得意としています。"
+        ),
         messages=[{
             "role": "user",
             "content": f"""商品「{product_name}」について、以下の既存の訴求軸とは異なる新しい訴求軸を2〜3パターン追加提案してください。

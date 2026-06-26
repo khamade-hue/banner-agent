@@ -87,7 +87,54 @@ def _copy_html(copy_s: dict) -> str:
     )
 
 
+_SET_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899"]
+
+
+def _copy_sets_html(copy_sets: list) -> str:
+    if not copy_sets:
+        return ""
+    cards = ""
+    for i, cs in enumerate(copy_sets):
+        color = _SET_COLORS[i % len(_SET_COLORS)]
+        feat_pills = _pills(
+            cs.get("features", []),
+            "rgba(139,92,246,0.12)", "#c4b5fd", "rgba(139,92,246,0.35)",
+        )
+        cards += (
+            f'<div style="border:1px solid rgba(255,255,255,0.06);border-radius:10px;'
+            f'padding:11px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02)">'
+            f'<div style="font-size:0.63rem;font-weight:700;color:{color};text-transform:uppercase;'
+            f'letter-spacing:0.12em;margin-bottom:8px">セット {i + 1}</div>'
+            f'<div style="margin-bottom:5px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:6px">キャッチ</span>'
+            f'<span style="background:rgba(59,130,246,0.15);color:#93c5fd;'
+            f'border:1px solid rgba(59,130,246,0.4);border-radius:14px;'
+            f'padding:3px 11px;font-size:0.82rem;font-weight:600">{cs.get("headline","")}</span>'
+            f'</div>'
+            f'<div style="margin-bottom:8px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:6px">CTA</span>'
+            f'<span style="background:rgba(16,185,129,0.12);color:#6ee7b7;'
+            f'border:1px solid rgba(16,185,129,0.35);border-radius:14px;'
+            f'padding:3px 11px;font-size:0.8rem">{cs.get("offer","")}</span>'
+            f'</div>'
+            f'<div><span style="font-size:0.63rem;font-weight:700;color:#64748b;'
+            f'text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px">'
+            f'特徴</span>{feat_pills}</div>'
+            f'</div>'
+        )
+    return (
+        f'<div style="border-top:1px solid #334155;margin-top:14px;padding-top:14px">{cards}</div>'
+    )
+
+
 def _axis_card_body(ax: dict) -> str:
+    copy_html = (
+        _copy_sets_html(ax["copy_sets"])
+        if ax.get("copy_sets")
+        else _copy_html(ax.get("copy_suggestions", {}))
+    )
     return (
         f'<p style="color:#94a3b8;font-size:0.85rem;line-height:1.65;margin:8px 0 10px">'
         f'{ax.get("description","")}</p>'
@@ -102,7 +149,7 @@ def _axis_card_body(ax: dict) -> str:
         f'<span style="color:#64748b;font-weight:600">💡 根拠</span>'
         f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("rationale","—")}</span>'
         f'</div></div>'
-        f'{_copy_html(ax.get("copy_suggestions", {}))}'
+        f'{copy_html}'
     )
 
 
@@ -445,6 +492,18 @@ else:
         key="refine_axis_select",
     )
     selected_ax = axis_options[selected_label]
+
+    # 新形式 (copy_sets) の axis でも refine UI が動くよう copy_suggestions を導出
+    if selected_ax.get("copy_sets") and not selected_ax.get("copy_suggestions", {}).get("headlines"):
+        _sets = selected_ax["copy_sets"]
+        selected_ax = {
+            **selected_ax,
+            "copy_suggestions": {
+                "headlines": [cs.get("headline", "") for cs in _sets],
+                "offers":    [cs.get("offer", "") for cs in _sets],
+                "features":  list(dict.fromkeys(f for cs in _sets for f in cs.get("features", []))),
+            },
+        }
 
     # ── 現在の訴求軸（読み取り専用）──────────────────────────────────────────
     st.markdown(
