@@ -87,14 +87,17 @@ button[aria-label="Open sidebar"] {
     display: flex !important;
     flex-direction: column !important;
 }
-[data-testid="stSidebarContent"] > nav {
-    order: 2 !important;
-    border-top: 1px solid #1e293b !important;
-    margin-top: 4px !important;
-    padding-top: 4px !important;
+/* ユーザーコンテンツを最上部に引き上げ */
+[data-testid="stSidebarUserContent"] {
+    order: -1 !important;
 }
-[data-testid="stSidebarContent"] > div {
-    order: 1 !important;
+/* ナビコンテナ（NavContainer / SidebarNav 両方に対応）*/
+[data-testid="stSidebarNavContainer"],
+[data-testid="stSidebarNav"] {
+    order: 0 !important;
+    border-top: 1px solid #1e293b !important;
+    padding-top: 6px !important;
+    margin-top: 2px !important;
 }
 
 [data-testid="stSidebar"] {
