@@ -19,6 +19,8 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&display=swap');
+
 /* ═══════════════════════════════════════════════
    BASE
 ═══════════════════════════════════════════════ */
@@ -64,6 +66,37 @@ header button:hover svg {
 /* ═══════════════════════════════════════════════
    SIDEBAR
 ═══════════════════════════════════════════════ */
+
+/* ── 固定幅 ── */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div:first-child {
+    width: 224px !important;
+    min-width: 224px !important;
+}
+
+/* ── 折りたたみボタン & ヘッダーハンバーガーを非表示 ── */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarNavToggle"],
+button[aria-label="Close sidebar"],
+button[aria-label="Open sidebar"] {
+    display: none !important;
+}
+
+/* ── ロゴをナビリンクの上に表示（flex order） ── */
+[data-testid="stSidebarContent"] {
+    display: flex !important;
+    flex-direction: column !important;
+}
+[data-testid="stSidebarContent"] > nav {
+    order: 2 !important;
+    border-top: 1px solid #1e293b !important;
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+}
+[data-testid="stSidebarContent"] > div {
+    order: 1 !important;
+}
+
 [data-testid="stSidebar"] {
     background: #1e293b !important;
     border-right: 1px solid #334155 !important;
@@ -420,6 +453,21 @@ if missing:
     st.stop()
 
 with st.sidebar:
+    st.markdown(
+        '<div style="padding:20px 4px 16px;border-bottom:1px solid #1e293b;margin-bottom:16px">'
+        '<div style="'
+        "font-family:'Space Grotesk','Inter',system-ui,-apple-system,sans-serif;"
+        'font-size:1.15rem;font-weight:800;letter-spacing:-0.025em;line-height:1;'
+        'background:linear-gradient(120deg,#f1f5f9 30%,#93c5fd 100%);'
+        '-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text'
+        '">Raku Raku Banner</div>'
+        '<div style="display:flex;gap:3px;margin-top:7px">'
+        '<div style="height:2px;width:32px;background:#3b82f6;border-radius:1px"></div>'
+        '<div style="height:2px;width:10px;background:rgba(59,130,246,0.4);border-radius:1px"></div>'
+        '<div style="height:2px;width:5px;background:rgba(59,130,246,0.15);border-radius:1px"></div>'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(
         '<div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);'
         'border-radius:10px;padding:12px 14px;margin-bottom:4px">'
