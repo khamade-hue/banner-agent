@@ -100,14 +100,14 @@ button[aria-label="Open sidebar"] {
     display: none !important;
 }
 
-/* ── ロゴエリア — img を非表示にして ::before でテキスト描画 ── */
+/* ── ロゴエリア — 子要素全隠し + ::before でテキスト描画 ── */
 [data-testid="stLogoSidebar"] {
-    padding: 20px 16px 16px !important;
+    padding: 20px 16px 14px !important;
     background: #1e293b !important;
-    display: block !important;
+    min-height: 68px !important;
+    box-sizing: border-box !important;
 }
-[data-testid="stLogoSidebar"] img,
-[data-testid="stLogoSidebar"] a img {
+[data-testid="stLogoSidebar"] * {
     display: none !important;
 }
 [data-testid="stLogoSidebar"]::before {
@@ -115,13 +115,11 @@ button[aria-label="Open sidebar"] {
     display: block !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
     font-weight: 800 !important;
-    font-size: 18px !important;
+    font-size: 20px !important;
+    color: #e2e8f0 !important;
     letter-spacing: -0.3px !important;
     line-height: 1.3 !important;
-    background: linear-gradient(90deg, #f1f5f9 30%, #93c5fd 100%) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    white-space: nowrap !important;
 }
 [data-testid="stLogoSidebar"]::after {
     content: '' !important;
@@ -130,7 +128,7 @@ button[aria-label="Open sidebar"] {
     height: 3px !important;
     background: #3b82f6 !important;
     border-radius: 1.5px !important;
-    margin-top: 5px !important;
+    margin-top: 6px !important;
 }
 
 [data-testid="stSidebar"] {
