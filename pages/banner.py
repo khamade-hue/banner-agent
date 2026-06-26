@@ -234,10 +234,11 @@ if mode == "新規作成":
             '特徴・アイコン（使用するものを選択）</div>',
             unsafe_allow_html=True,
         )
+        features_opts = sel_set.get("features", [])
         selected_features = st.multiselect(
             "特徴・アイコン",
-            sel_set.get("features", []),
-            default=sel_set.get("features", []),
+            features_opts,
+            default=features_opts,
             key=f"feat_sel_{sel_set_idx}",
             label_visibility="collapsed",
         )
