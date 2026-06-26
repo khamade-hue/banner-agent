@@ -3,7 +3,6 @@
 import base64
 import os
 import streamlit as st
-import streamlit.components.v1 as components
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -101,24 +100,37 @@ button[aria-label="Open sidebar"] {
     display: none !important;
 }
 
-/* ── ロゴエリア（st.logo が注入する要素）── */
+/* ── ロゴエリア — img を非表示にして ::before でテキスト描画 ── */
 [data-testid="stLogoSidebar"] {
-    padding: 18px 16px 14px !important;
+    padding: 20px 16px 16px !important;
     background: #1e293b !important;
-    overflow: visible !important;
-}
-[data-testid="stLogoSidebar"] a {
     display: block !important;
-    overflow: visible !important;
 }
 [data-testid="stLogoSidebar"] img,
 [data-testid="stLogoSidebar"] a img {
-    height: 44px !important;
-    min-height: 44px !important;
-    max-height: 44px !important;
-    width: auto !important;
-    max-width: none !important;
-    object-fit: contain !important;
+    display: none !important;
+}
+[data-testid="stLogoSidebar"]::before {
+    content: 'Raku Raku Banner' !important;
+    display: block !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 18px !important;
+    letter-spacing: -0.3px !important;
+    line-height: 1.3 !important;
+    background: linear-gradient(90deg, #f1f5f9 30%, #93c5fd 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+[data-testid="stLogoSidebar"]::after {
+    content: '' !important;
+    display: block !important;
+    width: 28px !important;
+    height: 3px !important;
+    background: #3b82f6 !important;
+    border-radius: 1.5px !important;
+    margin-top: 5px !important;
 }
 
 [data-testid="stSidebar"] {
@@ -471,28 +483,6 @@ hr {
 """, unsafe_allow_html=True)
 
 st.logo(_LOGO_URL)
-
-# CSS では Streamlit 内部の emotion クラスに勝てないため JS でインラインスタイルを強制
-components.html(
-    '<script>'
-    '!function f(){'
-    'try{'
-    'var imgs=parent.document.querySelectorAll(\'[data-testid="stLogoSidebar"] img\');'
-    'if(!imgs.length){setTimeout(f,150);return;}'
-    'imgs.forEach(function(el){'
-    'el.style.setProperty("height","44px","important");'
-    'el.style.setProperty("max-height","44px","important");'
-    'el.style.setProperty("min-height","44px","important");'
-    'el.style.setProperty("width","auto","important");'
-    'el.style.setProperty("max-width","none","important");'
-    '});'
-    '}catch(e){}'
-    '}'
-    'f();setTimeout(f,500);setTimeout(f,1500);'
-    '</script>',
-    height=0,
-    scrolling=False,
-)
 
 missing = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY") if not os.getenv(k)]
 if missing:
