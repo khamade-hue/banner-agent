@@ -1,5 +1,6 @@
 """SNS Banner Ad Generator — entry point."""
 
+import base64
 import os
 import streamlit as st
 from dotenv import load_dotenv
@@ -10,6 +11,23 @@ if hasattr(st, "secrets"):
     for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY"):
         if k in st.secrets and not os.getenv(k):
             os.environ[k] = st.secrets[k]
+
+_LOGO_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 44">'
+    '<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">'
+    '<stop offset="30%" stop-color="#f1f5f9"/>'
+    '<stop offset="100%" stop-color="#93c5fd"/>'
+    '</linearGradient></defs>'
+    '<text x="2" y="26" '
+    'font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',system-ui,sans-serif" '
+    'font-weight="800" font-size="18" fill="url(#g)" letter-spacing="-0.5">'
+    'Raku Raku Banner</text>'
+    '<rect x="2" y="35" width="30" height="2.5" rx="1" fill="#3b82f6"/>'
+    '<rect x="34" y="35" width="10" height="2.5" rx="1" fill="#3b82f6" fill-opacity="0.45"/>'
+    '<rect x="46" y="35" width="5" height="2.5" rx="1" fill="#3b82f6" fill-opacity="0.2"/>'
+    '</svg>'
+)
+_LOGO_URL = "data:image/svg+xml;base64," + base64.b64encode(_LOGO_SVG.encode()).decode()
 
 st.set_page_config(
     page_title="Banner Ad Generator",
@@ -82,22 +100,14 @@ button[aria-label="Open sidebar"] {
     display: none !important;
 }
 
-/* ── ロゴをナビリンクの上に表示（flex order） ── */
-[data-testid="stSidebarContent"] {
-    display: flex !important;
-    flex-direction: column !important;
+/* ── ロゴエリア（st.logo が注入する要素）── */
+[data-testid="stLogoSidebar"] {
+    padding: 16px 16px 12px !important;
+    background: #1e293b !important;
 }
-/* ユーザーコンテンツを最上部に引き上げ */
-[data-testid="stSidebarUserContent"] {
-    order: -1 !important;
-}
-/* ナビコンテナ（NavContainer / SidebarNav 両方に対応）*/
-[data-testid="stSidebarNavContainer"],
-[data-testid="stSidebarNav"] {
-    order: 0 !important;
-    border-top: 1px solid #1e293b !important;
-    padding-top: 6px !important;
-    margin-top: 2px !important;
+[data-testid="stLogoSidebar"] img {
+    max-height: 44px !important;
+    width: auto !important;
 }
 
 [data-testid="stSidebar"] {
@@ -449,6 +459,8 @@ hr {
 </style>
 """, unsafe_allow_html=True)
 
+st.logo(_LOGO_URL)
+
 missing = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY") if not os.getenv(k)]
 if missing:
     st.error(f"APIキーが設定されていません: `{', '.join(missing)}`")
@@ -456,21 +468,6 @@ if missing:
     st.stop()
 
 with st.sidebar:
-    st.markdown(
-        '<div style="padding:20px 4px 16px;border-bottom:1px solid #1e293b;margin-bottom:16px">'
-        '<div style="'
-        "font-family:'Space Grotesk','Inter',system-ui,-apple-system,sans-serif;"
-        'font-size:1.15rem;font-weight:800;letter-spacing:-0.025em;line-height:1;'
-        'background:linear-gradient(120deg,#f1f5f9 30%,#93c5fd 100%);'
-        '-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text'
-        '">Raku Raku Banner</div>'
-        '<div style="display:flex;gap:3px;margin-top:7px">'
-        '<div style="height:2px;width:32px;background:#3b82f6;border-radius:1px"></div>'
-        '<div style="height:2px;width:10px;background:rgba(59,130,246,0.4);border-radius:1px"></div>'
-        '<div style="height:2px;width:5px;background:rgba(59,130,246,0.15);border-radius:1px"></div>'
-        '</div></div>',
-        unsafe_allow_html=True,
-    )
     st.markdown(
         '<div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);'
         'border-radius:10px;padding:12px 14px;margin-bottom:4px">'
