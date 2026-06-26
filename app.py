@@ -100,17 +100,21 @@ button[aria-label="Open sidebar"] {
     display: none !important;
 }
 
-/* ── ロゴエリア — 子要素全隠し + ::before でテキスト描画 ── */
-[data-testid="stLogoSidebar"] {
-    padding: 20px 16px 14px !important;
+/* ── ロゴエリア (stSidebarHeader: flex・height:3.75rem・space-between) ── */
+[data-testid="stSidebarHeader"] {
+    padding: 0 16px !important;
     background: #1e293b !important;
-    min-height: 68px !important;
-    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    height: auto !important;
+    min-height: 52px !important;
 }
-[data-testid="stLogoSidebar"] * {
+[data-testid="stSidebarHeader"] * {
     display: none !important;
 }
-[data-testid="stLogoSidebar"]::before {
+[data-testid="stSidebarHeader"]::before {
     content: 'Raku Raku Banner' !important;
     display: block !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
@@ -118,17 +122,17 @@ button[aria-label="Open sidebar"] {
     font-size: 20px !important;
     color: #e2e8f0 !important;
     letter-spacing: -0.3px !important;
-    line-height: 1.3 !important;
+    line-height: 1.2 !important;
     white-space: nowrap !important;
 }
-[data-testid="stLogoSidebar"]::after {
+[data-testid="stSidebarHeader"]::after {
     content: '' !important;
     display: block !important;
     width: 28px !important;
     height: 3px !important;
     background: #3b82f6 !important;
     border-radius: 1.5px !important;
-    margin-top: 6px !important;
+    margin-top: 5px !important;
 }
 
 [data-testid="stSidebar"] {
