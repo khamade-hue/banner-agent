@@ -60,13 +60,20 @@ for row in rows:
             platforms = banner.get("platforms", [])
             first_url = platforms[0].get("public_url", "") if platforms else ""
 
-            # メイン画像
+            # メイン画像（固定高さ＋object-fit:cover で縦幅を統一）
             if first_url:
-                st.image(first_url, use_container_width=True)
+                st.markdown(
+                    f'<div style="height:220px;overflow:hidden;border-radius:8px;'
+                    f'border:1px solid #334155">'
+                    f'<img src="{first_url}" style="width:100%;height:100%;'
+                    f'object-fit:cover;display:block"></div>',
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown(
-                    '<div style="background:#1e293b;border:1px dashed #334155;border-radius:8px;'
-                    'padding:32px 0;text-align:center;color:#475569;font-size:0.78rem">No image</div>',
+                    '<div style="height:220px;background:#1e293b;border:1px dashed #334155;'
+                    'border-radius:8px;display:flex;align-items:center;justify-content:center;'
+                    'color:#475569;font-size:0.78rem">No image</div>',
                     unsafe_allow_html=True,
                 )
 
