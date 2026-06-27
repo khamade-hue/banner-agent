@@ -60,55 +60,50 @@ for row in rows:
             platforms = banner.get("platforms", [])
             first_url = platforms[0].get("public_url", "") if platforms else ""
 
-            # メイン画像（固定高さ＋object-fit:cover で縦幅を統一）
-            if first_url:
-                st.markdown(
-                    f'<div style="height:220px;overflow:hidden;border-radius:8px;'
-                    f'border:1px solid #334155">'
-                    f'<img src="{first_url}" style="width:100%;height:100%;'
-                    f'object-fit:cover;display:block"></div>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<div style="height:220px;background:#1e293b;border:1px dashed #334155;'
-                    'border-radius:8px;display:flex;align-items:center;justify-content:center;'
-                    'color:#475569;font-size:0.78rem">No image</div>',
-                    unsafe_allow_html=True,
-                )
-
-            # ラベル・軸・日付
-            st.markdown(
-                f'<div style="margin:6px 0 2px">'
-                f'<span style="color:#e2e8f0;font-weight:700;font-size:0.8rem">'
-                f'[{banner["variation"]}] {banner["label"]}</span>'
-                f'</div>'
-                f'<div style="color:#64748b;font-size:0.72rem;margin-bottom:6px">'
-                f'{banner.get("axis","—")} · {banner["created_at"][:10]}'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-
-            # 全プラットフォーム DL リンク
+            # DL リンク HTML を先に組み立て
             if len(platforms) > 1:
-                dl_links = " · ".join(
+                dl_html = "↓ " + " · ".join(
                     f'<a href="{p["public_url"]}?download={p.get("filename","banner.png")}" '
                     f'target="_blank" style="color:#3b82f6;font-size:0.72rem;font-weight:600;'
                     f'text-decoration:none">{p.get("platform_name","").replace("_"," ")}</a>'
                     for p in platforms if p.get("public_url")
                 )
-                st.markdown(
-                    f'<div style="margin-bottom:6px">↓ {dl_links}</div>',
-                    unsafe_allow_html=True,
-                )
             elif first_url:
                 fname = platforms[0].get("filename", "banner.png")
-                st.markdown(
+                dl_html = (
                     f'<a href="{first_url}?download={fname}" target="_blank" '
                     f'style="color:#3b82f6;font-size:0.72rem;font-weight:600;text-decoration:none">'
-                    f'↓ ダウンロード</a>',
-                    unsafe_allow_html=True,
+                    f'↓ ダウンロード</a>'
                 )
+            else:
+                dl_html = ""
+
+            img_html = (
+                f'<img src="{first_url}" style="width:100%;height:100%;'
+                f'object-fit:cover;display:block">'
+                if first_url else
+                '<div style="width:100%;height:100%;display:flex;align-items:center;'
+                'justify-content:center;color:#475569;font-size:0.78rem">No image</div>'
+            )
+
+            # カード全体を固定高さで包む（画像220px＋テキスト100px＝320px）
+            st.markdown(
+                f'<div style="background:#1e293b;border:1px solid #334155;border-radius:10px;'
+                f'overflow:hidden;height:320px;display:flex;flex-direction:column;margin-bottom:8px">'
+                f'<div style="height:220px;flex-shrink:0">{img_html}</div>'
+                f'<div style="padding:10px 12px;flex:1;overflow:hidden;display:flex;'
+                f'flex-direction:column;gap:4px">'
+                f'<div style="font-weight:700;font-size:0.8rem;color:#e2e8f0;'
+                f'overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;'
+                f'-webkit-box-orient:vertical;line-height:1.4">'
+                f'[{banner["variation"]}] {banner["label"]}</div>'
+                f'<div style="color:#64748b;font-size:0.72rem;flex-shrink:0">'
+                f'{banner.get("axis","—")} · {banner["created_at"][:10]}</div>'
+                f'<div style="margin-top:auto;flex-shrink:0">{dl_html}</div>'
+                f'</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
             # 削除ボタン
             if st.button("🗑 削除", key=f"del_banner_{banner['id']}", type="secondary",
