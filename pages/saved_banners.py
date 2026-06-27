@@ -49,70 +49,64 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Gallery CSS (hover overlay DL button)
-st.markdown(
-    '<style>'
-    '.bn-gallery{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}'
-    '.bn-item{position:relative;width:130px;flex-shrink:0}'
-    '.bn-item img{width:100%;height:auto;border-radius:8px;display:block;'
-    'border:1px solid #334155}'
-    '.bn-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.55);'
-    'display:flex;align-items:center;justify-content:center;'
-    'border-radius:8px;opacity:0;transition:opacity 0.18s ease}'
-    '.bn-item:hover .bn-overlay{opacity:1}'
-    '.bn-dl-btn{color:#fff;font-size:0.78rem;font-weight:700;text-decoration:none;'
-    'background:rgba(59,130,246,0.75);border:1px solid rgba(99,149,255,0.6);'
-    'border-radius:6px;padding:5px 10px}'
-    '.bn-dl-btn:hover{background:rgba(59,130,246,0.95)}'
-    '</style>',
-    unsafe_allow_html=True,
-)
+# 3カラムグリッドで表示
+COLS = 3
+rows = [banners_sorted[i:i + COLS] for i in range(0, len(banners_sorted), COLS)]
 
-for banner in banners_sorted:
-    platforms = banner.get("platforms", [])
+for row in rows:
+    cols = st.columns(COLS)
+    for col, banner in zip(cols, row):
+        with col:
+            platforms = banner.get("platforms", [])
+            first_url = platforms[0].get("public_url", "") if platforms else ""
 
-    # Group header: label + axis + date + delete
-    col_info, col_del = st.columns([9, 1])
-    with col_info:
-        st.markdown(
-            f'<div style="margin-bottom:4px">'
-            f'<span style="color:#e2e8f0;font-weight:700;font-size:0.85rem">'
-            f'[{banner["variation"]}] {banner["label"]}</span>'
-            f'<span style="color:#475569;font-size:0.75rem;margin-left:8px">'
-            f'{banner.get("axis","—")} · {banner["created_at"][:10]}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-    with col_del:
-        if st.button("🗑", key=f"del_banner_{banner['id']}", type="secondary",
-                     use_container_width=True):
-            delete_banner(banner["id"])
-            st.rerun()
-
-    # Image gallery with hover DL overlay
-    if platforms:
-        imgs_html = '<div class="bn-gallery">'
-        for p in platforms:
-            url = p.get("public_url", "")
-            if url:
-                filename = p.get("filename", "banner.png")
-                dl_url = f"{url}?download={filename}"
-                imgs_html += (
-                    f'<div class="bn-item">'
-                    f'<img src="{url}" />'
-                    f'<div class="bn-overlay">'
-                    f'<a href="{dl_url}" target="_blank" class="bn-dl-btn">↓ DL</a>'
-                    f'</div>'
-                    f'</div>'
+            # メイン画像
+            if first_url:
+                st.image(first_url, use_container_width=True)
+            else:
+                st.markdown(
+                    '<div style="background:#1e293b;border:1px dashed #334155;border-radius:8px;'
+                    'padding:32px 0;text-align:center;color:#475569;font-size:0.78rem">No image</div>',
+                    unsafe_allow_html=True,
                 )
-        imgs_html += '</div>'
-        st.markdown(imgs_html, unsafe_allow_html=True)
-    else:
-        st.markdown(
-            '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);'
-            'border-radius:8px;padding:12px 16px;font-size:0.82rem;color:#fbbf24;margin:8px 0">'
-            '⚠ 画像が見つかりません</div>',
-            unsafe_allow_html=True,
-        )
 
-    st.markdown("<div style='margin-bottom:16px'></div>", unsafe_allow_html=True)
+            # ラベル・軸・日付
+            st.markdown(
+                f'<div style="margin:6px 0 2px">'
+                f'<span style="color:#e2e8f0;font-weight:700;font-size:0.8rem">'
+                f'[{banner["variation"]}] {banner["label"]}</span>'
+                f'</div>'
+                f'<div style="color:#64748b;font-size:0.72rem;margin-bottom:6px">'
+                f'{banner.get("axis","—")} · {banner["created_at"][:10]}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            # 全プラットフォーム DL リンク
+            if len(platforms) > 1:
+                dl_links = " · ".join(
+                    f'<a href="{p["public_url"]}?download={p.get("filename","banner.png")}" '
+                    f'target="_blank" style="color:#3b82f6;font-size:0.72rem;font-weight:600;'
+                    f'text-decoration:none">{p.get("platform_name","").replace("_"," ")}</a>'
+                    for p in platforms if p.get("public_url")
+                )
+                st.markdown(
+                    f'<div style="margin-bottom:6px">↓ {dl_links}</div>',
+                    unsafe_allow_html=True,
+                )
+            elif first_url:
+                fname = platforms[0].get("filename", "banner.png")
+                st.markdown(
+                    f'<a href="{first_url}?download={fname}" target="_blank" '
+                    f'style="color:#3b82f6;font-size:0.72rem;font-weight:600;text-decoration:none">'
+                    f'↓ ダウンロード</a>',
+                    unsafe_allow_html=True,
+                )
+
+            # 削除ボタン
+            if st.button("🗑 削除", key=f"del_banner_{banner['id']}", type="secondary",
+                         use_container_width=True):
+                delete_banner(banner["id"])
+                st.rerun()
+
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
