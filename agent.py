@@ -468,7 +468,7 @@ BRAND/SERVICE DETAILS:
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=8000,
+        max_tokens=16000,
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
         system="""You are a senior SNS banner art director writing design briefs for gpt-image-2.
@@ -574,14 +574,15 @@ For each variation: layout zones → visual zone → typography (each element) �
 
     for block in response.content:
         if block.type == "tool_use":
-            raw = block.input.get("variations", [])
+            raw = block.input.get("variations") or []
             # Claude occasionally returns a dict {0: {...}, 1: {...}} instead of a list
             if isinstance(raw, dict):
                 raw = list(raw.values())
-            variations = [v for v in raw if isinstance(v, dict) and "prompt" in v]
+            # Keep only dicts; drop strings/nulls that would cause TypeError downstream
+            variations = [v for v in raw if isinstance(v, dict)]
             if not variations:
                 raise ValueError(
-                    f"Claudeがバリエーションを生成しませんでした (stop_reason={response.stop_reason})"
+                    f"Claudeがバリエーションを生成しませんでした。再度「バナーを生成」を押してください。"
                 )
             return variations
     raise ValueError("バナープロンプトが取得できませんでした")
