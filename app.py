@@ -516,10 +516,11 @@ with st.sidebar:
     )
 
 pg = st.navigation([
-    st.Page("pages/product.py",       title="商品登録",       icon="📦"),
-    st.Page("pages/analysis.py",      title="訴求軸生成",     icon="🎯"),
-    st.Page("pages/banner.py",        title="バナー生成",     icon="🖼️"),
-    st.Page("pages/saved_axes.py",    title="保存済み訴求軸", icon="📋"),
-    st.Page("pages/saved_banners.py", title="保存済みバナー", icon="📁"),
+    st.Page("pages/product.py",         title="商品登録",       icon="📦"),
+    st.Page("pages/analysis.py",        title="訴求軸生成",     icon="🎯"),
+    st.Page("pages/banner.py",          title="バナー生成",     icon="🖼️"),
+    st.Page("pages/saved_products.py",  title="登録済み商品",   icon="🏷️"),
+    st.Page("pages/saved_axes.py",      title="保存済み訴求軸", icon="📋"),
+    st.Page("pages/saved_banners.py",   title="保存済みバナー", icon="📁"),
 ])
 pg.run()
