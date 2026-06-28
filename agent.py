@@ -139,12 +139,19 @@ def analyze_product(
     page_content: str,
     competitor_url: str = "",
     competitor_content: str = "",
+    free_comment: str = "",
 ) -> dict:
     """3C analysis and appeal axis generation."""
     client = _claude()
 
     content_section = (
         f"\n自社ページ内容（抜粋）:\n{page_content[:3000]}" if page_content.strip() else ""
+    )
+
+    free_comment_section = (
+        f"\n\n【クライアントからの追加指示・優先事項】\n"
+        f"※ 以下の指示を最優先で訴求軸・コピーに反映してください:\n{free_comment.strip()}"
+        if free_comment.strip() else ""
     )
 
     if competitor_url and competitor_content.strip():
@@ -178,7 +185,7 @@ def analyze_product(
 
 商品名: {product_name}
 商品URL: {product_url}{content_section}
-{competitor_section}
+{competitor_section}{free_comment_section}
 
 appeal_axesは必ず3つ以上5つ以内で生成してください。各訴求軸は以下の観点で差別化してください:
 - 感情訴求 vs 機能訴求

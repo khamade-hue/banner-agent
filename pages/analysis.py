@@ -283,9 +283,6 @@ if mode == "新規作成":
                     if page_content else "⚠ ページ取得失敗（URL情報のみで分析）"
                 )
 
-            if free_comment.strip():
-                page_content += f"\n\n[追加情報・コメント]: {free_comment.strip()}"
-
             competitor_content = sel_product.get("competitor_info", "")
             if competitor_content:
                 st.write("✓ 競合情報あり → 使用します")
@@ -299,6 +296,7 @@ if mode == "新規作成":
                     sel_product.get("product_url", ""),
                     page_content,
                     competitor_content=competitor_content,
+                    free_comment=free_comment,
                 )
             except Exception as e:
                 err = str(e)
