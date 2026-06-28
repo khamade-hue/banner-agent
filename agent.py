@@ -482,6 +482,11 @@ Every Japanese character MUST sit on a flat solid-color panel. NEVER place text 
 - CTA button text: ≤14 characters
 Shorter strings render crisper. Long strings compress and distort.
 
+### RULE 6 — UNIFORM TYPEFACE FOR ALL CHARACTERS (CRITICAL)
+Arabic numerals (0–9), symbols (¥ ・ 。), and Japanese characters within the SAME text element MUST render in the SAME typeface and weight — Noto Sans JP Bold or Black.
+NEVER allow the renderer to apply a Western/serif numeral inside a Japanese text string.
+In every typography spec write explicitly: "all characters including numbers and symbols: Noto Sans JP [weight]".
+
 ### RULE 3 — MINIMAL TEXT ELEMENTS
 Maximum elements per banner: 1 headline (1–2 lines) + 1 sub-line + 1 price/offer + 4 badges + 1 CTA.
 Fewer elements = sharper output. Do not add decorative text or secondary headlines.
@@ -518,8 +523,9 @@ One clean commercial photo in the photo zone:
 Each text element — specify ALL:
 - Exact verbatim Japanese text (must match the copy provided exactly)
 - Zone + absolute position in px from zone edges
-- Font: Noto Sans JP, size in px, weight (Bold or Black only for headlines)
-- Color hex, line-height (1.1–1.3 for headlines)
+- Font: "Noto Sans JP [Bold/Black], all characters including Arabic numerals and symbols use the same typeface and weight — no mixed fonts within a single text element"
+- Size in px, color hex, line-height (1.1–1.3 for headlines)
+- If a numeral appears (e.g. "3万円"), explicitly state: "numeral '3' rendered in Noto Sans JP Black, identical style to surrounding Japanese characters"
 
 ## CTA BAR
 Full-width bar: height in px, solid color hex, centered CTA text with all specs.
@@ -537,6 +543,7 @@ IMPORTANT BEFORE WRITING:
 - If the headline copy is longer than 10 Japanese characters, split it into 2 lines of ≤10 chars each
 - Use maximum 4 feature badges, each ≤8 characters
 - All text goes on solid-color panels only
+- MIXED-FONT PREVENTION: Whenever a numeral (0-9) or symbol (¥・。%) appears inside a Japanese string, explicitly specify "Noto Sans JP [weight] — ALL characters including numerals use the same typeface; no Western/serif numerals" in the typography section for that element
 
 BRAND: {brand_name}
 {product_section}
