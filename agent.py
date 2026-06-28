@@ -512,18 +512,20 @@ Add a 4–6px vertical accent bar in the brand accent color along the inner edge
 
 ## VISUAL ZONE
 Choose the most appropriate approach for the brand/product:
-- SCENE (lifestyle product, service, B2B): commercial photo — subject + setting + action; 5500K daylight; f/2.8; slightly desaturated
+- SCENE (lifestyle product, service, B2B): commercial photo — subject + setting + action; 5500K daylight; f/2.8; slightly desaturated. GAZE DIRECTION: subject's eyes and body must face toward the text panel — this pulls the viewer's attention from photo into the copy. Specify: "subject facing [left/right] toward text panel, gaze directed inward".
 - CUTOUT (product-centric, e-commerce, app): subject or product isolated on pure white (#FFFFFF), soft drop shadow (0 8px 24px rgba(0,0,0,0.12)), no background
 - FLAT (tech, SaaS, abstract service): flat geometric shapes + brand-colored backgrounds + simple outlined icons (64×64px grid) — no photography
 State which approach you chose and why (one sentence in the rationale field).
 
 ## TYPOGRAPHY
 Strict hierarchy — for each element specify ALL:
-- Headline: 64–80px / Noto Sans JP Black / line-height 1.1 / letter-spacing -0.02em
+- Eyebrow label (above headline): 12–14px / Noto Sans JP Medium / accent color / letter-spacing 0.15em — short service category word (e.g. "動画制作" or "VIDEO PRODUCTION"). Placed 12–16px above headline line 1.
+- Headline line 1 (category / context): 54–64px / Noto Sans JP Black / white or light color
+- Headline line 2 (key proposition — price, benefit, or hook): 72–84px / Noto Sans JP Black / white or accent color — larger than line 1 to emphasize the most impactful phrase
 - Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5
 - Badge text: 14–16px / Noto Sans JP Bold
 - CTA: 18–22px / Noto Sans JP Black
-Headline ÷ sub-copy size ratio ≥ 3:1.
+Headline line 2 ÷ sub-copy size ratio ≥ 3:1.
 Per element: verbatim text + position in px from zone edge + font + size + color hex + line-height.
 For any numeral in Japanese text: "numeral 'X' rendered in Noto Sans JP [weight] — same typeface as surrounding characters".
 
@@ -554,10 +556,12 @@ Each must use a DIFFERENT 2-zone layout chosen from: left-text/right-photo | rig
 
 CHECKLIST before writing each brief:
 - Headline >10 chars? → split into 2 lines of ≤10 chars
+- Headline line 2 = most impactful phrase (price/hook)? → make it 72–84px, larger than line 1
+- Eyebrow label added above headline? → short service category, 12–14px, accent color, wide letter-spacing
 - Badge text >8 chars? → shorten
 - Text panel color = pure black? → replace with deep brand-derived dark
 - Accent elements included? → thin rule + small color bar in text panel
-- Numerals in Japanese text? → specify same Noto Sans JP weight as surrounding chars
+- SCENE style chosen? → specify subject gaze/body facing toward the text panel
 - Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
 - Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
 - MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
