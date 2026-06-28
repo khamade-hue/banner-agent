@@ -476,35 +476,29 @@ BRAND/SERVICE DETAILS:
 ## NON-NEGOTIABLE RULES (violations cause text distortion and AI artifacts)
 
 ### RULE 1 — SOLID BACKGROUNDS UNDER ALL TEXT
-Every Japanese character MUST sit on a flat solid-color panel. NEVER place text over photos, gradients, or textures. A dedicated solid-color zone must exist for all headline, sub-copy, badges, and CTA text.
+Every Japanese character MUST sit on a flat solid-color panel. NEVER place text over photos, gradients, or textures.
 
 ### RULE 2 — SHORT TEXT STRINGS
 - Headline: split into lines of ≤10 Japanese characters each (2 lines max)
 - Sub-copy: ≤18 characters per line
 - Feature badges: ≤8 characters each, maximum 4 badges total
 - CTA button text: ≤14 characters
-Shorter strings render crisper. Long strings compress and distort.
-
-### RULE 6 — UNIFORM TYPEFACE FOR ALL CHARACTERS (CRITICAL)
-Arabic numerals (0–9), symbols (¥ ・ 。), and Japanese characters within the SAME text element MUST render in the SAME typeface and weight — Noto Sans JP Bold or Black.
-NEVER allow the renderer to apply a Western/serif numeral inside a Japanese text string.
-In every typography spec write explicitly: "all characters including numbers and symbols: Noto Sans JP [weight]".
 
 ### RULE 3 — MINIMAL TEXT ELEMENTS
-Maximum elements per banner: 1 headline (1–2 lines) + 1 sub-line + 1 price/offer + 4 badges + 1 CTA.
-Fewer elements = sharper output. Do not add decorative text or secondary headlines.
+Maximum: 1 headline (1–2 lines) + 1 sub-line + 1 price/offer + 4 badges + 1 CTA. No decorative text.
 
-### RULE 4 — COMMERCIAL PHOTO QUALITY (NO AI AESTHETIC)
-Photo zone must read like a Getty/Shutterstock editorial image:
-- Soft natural light or clean studio light — NO dramatic colored lighting, no lens flare, no HDR
-- Neutral or slightly desaturated color grading — NO oversaturated "AI palette"
-- Clean, uncluttered setting — NO fantasy/abstract backgrounds
-- Subjects: realistic, natural expressions and poses
-- Style keyword to include: "clean commercial photography, shallow depth of field, white softbox, editorial"
+### RULE 4 — COMMERCIAL QUALITY VISUALS
+PHOTO ZONE: "clean commercial photography, shallow depth of field, white softbox, editorial" — soft natural light, neutral color grading, realistic subjects. NO dramatic lighting, lens flare, oversaturated AI palette.
+CUTOUT ZONE (when chosen): isolated subject on pure white (#FFFFFF) with soft drop shadow — no backdrop.
+FLAT/ICON ZONE (when chosen): geometric shapes + outlined icons in brand colors — no photography.
 
 ### RULE 5 — CLEAN LAYOUT STRUCTURE
-Use 2-zone layouts only: one PHOTO ZONE + one TEXT ZONE (solid color). Optional CTA bar at bottom.
-Avoid: diagonal cuts, complex multi-zone layouts, overlapping zones, glass morphism.
+2-zone layouts only: VISUAL ZONE + TEXT ZONE (solid color). Optional full-width CTA bar at bottom.
+Avoid diagonal cuts, multi-zone complexity, glass morphism, overlapping zones.
+
+### RULE 6 — UNIFORM TYPEFACE (CRITICAL)
+ALL characters in the same text element — Japanese + numerals + symbols — MUST use the same Noto Sans JP weight.
+NEVER mix Western/serif numerals with Japanese text. Write explicitly: "all characters including numerals/symbols: Noto Sans JP [weight]".
 
 ---
 
@@ -512,44 +506,61 @@ Avoid: diagonal cuts, complex multi-zone layouts, overlapping zones, glass morph
 1080×1080px, SNS ad.
 
 ## LAYOUT ZONES
-Name each zone with exact pixel dimensions and solid hex background.
-Example: "LEFT TEXT PANEL: 480×1080px, solid #0A1628" / "RIGHT PHOTO ZONE: 600×1080px"
+Name each zone with exact pixel dimensions and hex background.
+TEXT PANEL: NEVER use pure black (#000000). Use a deep brand-derived color — deep navy, dark teal, dark charcoal, or the darkest shade of the provided LP brand color. Specify as: "LEFT TEXT PANEL: 480×1080px, solid #0F1E35".
+Add a 4–6px vertical accent bar in the brand accent color along the inner edge of the text panel (between panel and visual zone).
 
 ## VISUAL ZONE
-One clean commercial photo in the photo zone:
-- Subject, setting, action (concrete and specific)
-- Lighting: soft, even, natural — specify color temperature (e.g. 5500K daylight)
-- Depth of field: moderate (f/2.8), clean bokeh background
-- Color: realistic, slightly desaturated mids
+Choose the most appropriate approach for the brand/product:
+- SCENE (lifestyle product, service, B2B): commercial photo — subject + setting + action; 5500K daylight; f/2.8; slightly desaturated
+- CUTOUT (product-centric, e-commerce, app): subject or product isolated on pure white (#FFFFFF), soft drop shadow (0 8px 24px rgba(0,0,0,0.12)), no background
+- FLAT (tech, SaaS, abstract service): flat geometric shapes + brand-colored backgrounds + simple outlined icons (64×64px grid) — no photography
+State which approach you chose and why (one sentence in the rationale field).
 
 ## TYPOGRAPHY
-Each text element — specify ALL:
-- Exact verbatim Japanese text (must match the copy provided exactly)
-- Zone + absolute position in px from zone edges
-- Font: "Noto Sans JP [Bold/Black], all characters including Arabic numerals and symbols use the same typeface and weight — no mixed fonts within a single text element"
-- Size in px, color hex, line-height (1.1–1.3 for headlines)
-- If a numeral appears (e.g. "3万円"), explicitly state: "numeral '3' rendered in Noto Sans JP Black, identical style to surrounding Japanese characters"
+Strict hierarchy — for each element specify ALL:
+- Headline: 64–80px / Noto Sans JP Black / line-height 1.1 / letter-spacing -0.02em
+- Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5
+- Badge text: 14–16px / Noto Sans JP Bold
+- CTA: 18–22px / Noto Sans JP Black
+Headline ÷ sub-copy size ratio ≥ 3:1.
+Per element: verbatim text + position in px from zone edge + font + size + color hex + line-height.
+For any numeral in Japanese text: "numeral 'X' rendered in Noto Sans JP [weight] — same typeface as surrounding characters".
+
+## ACCENT ELEMENTS (include in EVERY brief)
+Inside the text panel, add BOTH:
+1. Thin horizontal rule — 1–2px, accent color at 60% opacity, 60–75% of panel width — placed between headline and badge row
+2. Small color bar — 4px × 28–36px, solid accent color — placed as visual anchor immediately above the headline
+
+## BADGE DESIGN
+Choose based on product type and tone:
+- TEXT-ONLY outline (clean/minimal): 2px solid accent-color border, corner-radius 4–6px, transparent or ≤12% tint fill, text in accent color. NO solid fills.
+- ICON + TEXT (energetic/feature-rich): Unicode symbol prefix (✓ for feature/quality, → for action, ★ for premium, ■ for category) + badge text. Same border/fill rules.
+State your choice in the typography spec.
 
 ## CTA BAR
-Full-width bar: height in px, solid color hex, centered CTA text with all specs.
+Full-width, height 72–96px, solid accent or contrasting brand color, centered CTA text with full typography spec.
 
 ## COLOR PALETTE
-If "LP Brand Colors" are provided in the brief, build the entire palette from those hex values.
-Adapt as needed for contrast and readability, but stay true to the brand colors.
-If no LP colors are provided, infer an appropriate palette from the brand/message.
-List 4–5 hex codes: primary-bg / headline-text / accent / cta-bg / cta-text
+Base on LP Brand Colors if provided. Stay true to brand — adapt only for contrast/readability.
+NEVER use pure #000000 as the text panel color — use a deep brand-derived dark.
+List 4–5 hex codes: panel-bg / headline-text / accent / cta-bg / cta-text
 
-Keep each brief under 450 words. Clarity over exhaustiveness.""",
+Keep each brief under 600 words. Precision over exhaustiveness.""",
         messages=[{
             "role": "user",
             "content": f"""Write {num_variations} SNS banner design briefs (labeled {', '.join(variation_labels)}).
-Each must use a DIFFERENT 2-zone layout concept chosen from: left-text/right-photo | right-text/left-photo | top-text/bottom-photo | bottom-CTA-bar with photo background behind upper solid panel.
+Each must use a DIFFERENT 2-zone layout chosen from: left-text/right-photo | right-text/left-photo | top-text/bottom-photo | bottom-CTA-bar with upper solid text panel.
 
-IMPORTANT BEFORE WRITING:
-- If the headline copy is longer than 10 Japanese characters, split it into 2 lines of ≤10 chars each
-- Use maximum 4 feature badges, each ≤8 characters
-- All text goes on solid-color panels only
-- MIXED-FONT PREVENTION: Whenever a numeral (0-9) or symbol (¥・。%) appears inside a Japanese string, explicitly specify "Noto Sans JP [weight] — ALL characters including numerals use the same typeface; no Western/serif numerals" in the typography section for that element
+CHECKLIST before writing each brief:
+- Headline >10 chars? → split into 2 lines of ≤10 chars
+- Badge text >8 chars? → shorten
+- Text panel color = pure black? → replace with deep brand-derived dark
+- Accent elements included? → thin rule + small color bar in text panel
+- Numerals in Japanese text? → specify same Noto Sans JP weight as surrounding chars
+- Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
+- Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
+- MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
 
 BRAND: {brand_name}
 {product_section}
@@ -557,13 +568,13 @@ KEY MESSAGE: {message}
 TONE & MANNER: {tonmana}
 TARGET AUDIENCE: {target_audience}{axis_section}{objective_section}
 
-COPY — embed these verbatim:
+COPY — embed verbatim:
 {headline_section}
 {offer_section}
 {features_section}
 {visual_constraints_section}
 
-For each variation: layout zones → visual zone → typography (each element) → CTA bar → color palette. Under 450 words per brief.""",
+Output per variation: layout zones (with accent bar) → visual zone (state SCENE/CUTOUT/FLAT choice) → typography with size hierarchy → accent elements → badge row (state TEXT-ONLY/ICON+TEXT choice) → CTA bar → color palette. Under 600 words per brief.""",
         }],
     )
 
