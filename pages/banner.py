@@ -646,7 +646,7 @@ if generate_btn:
                     col_slots[idx].image(
                         _img_to_bytes(pimgs[0][1]),
                         caption=f"[{v_res['variation']}] {v_res['label']}",
-                        width=300,
+                        use_container_width=True,
                     )
                     st.write(f"  ✓ [{v_res['variation']}] {v_res['label']} 完了 ({done}/{n})")
 
@@ -737,7 +737,7 @@ if generate_btn:
                 col.image(
                     _img_to_bytes(pimgs_r[0][1]),
                     caption=f"[{v_r['variation']}] {v_r['label']}",
-                    width=300,
+                    use_container_width=True,
                 )
             st.write(f"  ✓ {n_ex} 枚を一括取得完了")
 
@@ -828,13 +828,19 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
         chunk = 4
         for row_start in range(0, len(platform_images), chunk):
             row  = platform_images[row_start: row_start + chunk]
-            cols = st.columns(len(row))
-            for col, (platform, img) in zip(cols, row):
+            n_row = len(row)
+            # 1枚のときは中央カラムに収めて過剰な横幅を防ぐ
+            if n_row == 1:
+                _lc, _mc, _rc = st.columns([1, 2, 1])
+                render_cols = [_mc]
+            else:
+                render_cols = st.columns(n_row)
+            for col, (platform, img) in zip(render_cols, row):
                 with col:
                     st.image(
                         img,
                         caption=f"{platform.name}\n{platform.width}×{platform.height}",
-                        width=260,
+                        use_container_width=True,
                     )
                     st.download_button(
                         f"↓ {platform.filename}_{platform.width}x{platform.height}.png",
