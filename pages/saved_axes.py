@@ -1,4 +1,4 @@
-"""Page 3: 保存済み訴求軸"""
+"""Page: 保存済み訴求軸"""
 
 import os
 import sys
@@ -7,29 +7,124 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from state import load_axes, delete_axis
+from state import delete_axis, load_axes
+
+# ── Copy helpers (same as analysis.py) ───────────────────────────────────────
+
+_SET_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899"]
 
 
 def _pills(items: list, bg: str, color: str, border: str) -> str:
     return "".join(
         f'<span style="display:inline-block;background:{bg};color:{color};'
-        f'border:1px solid {border};border-radius:20px;padding:4px 12px;'
-        f'font-size:0.78rem;margin:3px 4px 3px 0;line-height:1.3;font-weight:500">{item}</span>'
+        f'border:1px solid {border};border-radius:20px;padding:5px 13px;'
+        f'font-size:0.8rem;margin:3px 4px 3px 0;line-height:1.3;font-weight:500">{item}</span>'
         for item in items
     )
 
 
-def _copy_section(label: str, items: list, bg: str, color: str, border: str) -> str:
-    if not items:
+def _copy_sets_html(copy_sets: list) -> str:
+    if not copy_sets:
         return ""
+    cards = ""
+    for i, cs in enumerate(copy_sets):
+        color = _SET_COLORS[i % len(_SET_COLORS)]
+        feat_pills = _pills(
+            cs.get("features", []),
+            "rgba(139,92,246,0.12)", "#c4b5fd", "rgba(139,92,246,0.35)",
+        )
+        cards += (
+            f'<div style="border:1px solid rgba(255,255,255,0.06);border-radius:10px;'
+            f'padding:11px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02)">'
+            f'<div style="font-size:0.63rem;font-weight:700;color:{color};text-transform:uppercase;'
+            f'letter-spacing:0.12em;margin-bottom:8px">セット {i + 1}</div>'
+            f'<div style="margin-bottom:5px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:6px">キャッチ</span>'
+            f'<span style="background:rgba(59,130,246,0.15);color:#93c5fd;'
+            f'border:1px solid rgba(59,130,246,0.4);border-radius:14px;'
+            f'padding:3px 11px;font-size:0.82rem;font-weight:600">{cs.get("headline","")}</span>'
+            f'</div>'
+            f'<div style="margin-bottom:8px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:6px">CTA</span>'
+            f'<span style="background:rgba(16,185,129,0.12);color:#6ee7b7;'
+            f'border:1px solid rgba(16,185,129,0.35);border-radius:14px;'
+            f'padding:3px 11px;font-size:0.8rem">{cs.get("offer","")}</span>'
+            f'</div>'
+            f'<div><span style="font-size:0.63rem;font-weight:700;color:#64748b;'
+            f'text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px">'
+            f'特徴</span>{feat_pills}</div>'
+            f'</div>'
+        )
     return (
-        f'<div style="margin-bottom:8px">'
-        f'<div style="font-size:0.67rem;font-weight:700;color:#64748b;text-transform:uppercase;'
-        f'letter-spacing:0.1em;margin-bottom:5px">{label}</div>'
-        f'{_pills(items, bg, color, border)}'
-        f'</div>'
+        f'<div style="border-top:1px solid #334155;margin-top:14px;padding-top:14px">{cards}</div>'
     )
 
+
+def _copy_flat_html(copy_s: dict) -> str:
+    """Fallback for old-format axes without copy_sets."""
+    def _section(label, items, bg, color, border):
+        if not items:
+            return ""
+        return (
+            f'<div style="margin-bottom:8px">'
+            f'<div style="font-size:0.67rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-bottom:5px">{label}</div>'
+            f'{_pills(items, bg, color, border)}'
+            f'</div>'
+        )
+    sections = (
+        _section("キャッチコピー", copy_s.get("headlines", []),
+                 "rgba(59,130,246,0.15)", "#93c5fd", "rgba(59,130,246,0.4)") +
+        _section("オファー・CTA", copy_s.get("offers", []),
+                 "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.4)") +
+        _section("特徴・アイコン", copy_s.get("features", []),
+                 "rgba(139,92,246,0.15)", "#c4b5fd", "rgba(139,92,246,0.4)")
+    )
+    if not sections:
+        return ""
+    return (
+        f'<div style="border-top:1px solid #334155;margin-top:14px;padding-top:14px">'
+        f'{sections}</div>'
+    )
+
+
+def _axis_card_body(ax: dict) -> str:
+    copy_html = (
+        _copy_sets_html(ax["copy_sets"])
+        if ax.get("copy_sets")
+        else _copy_flat_html(ax.get("copy_suggestions", {}))
+    )
+    return (
+        f'<p style="color:#94a3b8;font-size:0.85rem;line-height:1.65;margin:8px 0 10px">'
+        f'{ax.get("description","")}</p>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:6px">'
+        f'<div style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
+        f'border-radius:8px;padding:4px 11px;font-size:0.76rem">'
+        f'<span style="color:#64748b;font-weight:600">🎯 ターゲット</span>'
+        f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>'
+        f'</div>'
+        f'<div style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
+        f'border-radius:8px;padding:4px 11px;font-size:0.76rem">'
+        f'<span style="color:#64748b;font-weight:600">📦 商品</span>'
+        f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("product_name","—")}</span>'
+        f'</div>'
+        f'<div style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
+        f'border-radius:8px;padding:4px 11px;font-size:0.76rem;color:#64748b">'
+        f'{ax.get("created_at","")[:10]}'
+        f'</div></div>'
+        f'{copy_html}'
+    )
+
+
+# ── Page header ───────────────────────────────────────────────────────────────
+
+BADGE_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"]
+BADGE_GLOWS  = [
+    "rgba(59,130,246,0.35)", "rgba(139,92,246,0.35)",
+    "rgba(236,72,153,0.35)", "rgba(245,158,11,0.35)", "rgba(16,185,129,0.35)",
+]
 
 st.markdown(
     '<div style="background:linear-gradient(135deg,#0f2744 0%,#1e3a5f 60%,#0f4c75 100%);'
@@ -46,7 +141,6 @@ st.markdown(
 
 saved_axes = load_axes()
 
-# CTA: proceed to banner generation
 if saved_axes:
     col_cta, col_refine, _ = st.columns([2, 2, 3])
     with col_cta:
@@ -80,75 +174,43 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-BADGE_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"]
-BADGE_GLOWS  = [
-    "rgba(59,130,246,0.3)", "rgba(139,92,246,0.3)",
-    "rgba(236,72,153,0.3)", "rgba(245,158,11,0.3)", "rgba(16,185,129,0.3)",
-]
+# ── Axis cards ────────────────────────────────────────────────────────────────
 
 for idx, ax in enumerate(reversed(saved_axes)):
     color  = BADGE_COLORS[idx % len(BADGE_COLORS)]
     glow   = BADGE_GLOWS[idx % len(BADGE_GLOWS)]
-    copy_s = ax.get("copy_suggestions", {})
     marker = f"saved-axis-{idx}"
 
-    # Build copy pills inline (no blank lines — blank lines in markdown = code blocks)
-    sections = (
-        _copy_section("キャッチコピー", copy_s.get("headlines", []),
-                      "rgba(59,130,246,0.12)", "#93c5fd", "rgba(59,130,246,0.35)") +
-        _copy_section("オファー・CTA", copy_s.get("offers", []),
-                      "rgba(16,185,129,0.12)", "#6ee7b7", "rgba(16,185,129,0.35)") +
-        _copy_section("特徴・アイコン", copy_s.get("features", []),
-                      "rgba(139,92,246,0.12)", "#c4b5fd", "rgba(139,92,246,0.35)")
-    ) if copy_s else ""
-    copy_html = (
-        f'<div style="border-top:1px solid #334155;margin-top:12px;padding-top:12px">{sections}</div>'
-        if sections else ""
-    )
-
-    # Per-card CSS: colored left border + glow on expander
     st.markdown(
-        f"<style>[data-testid='stExpander']:has(.{marker}){{"
+        f"<style>[data-testid='stVerticalBlockBorderWrapper']:has(.{marker}){{"
         f"border-left:4px solid {color} !important;"
+        f"border-radius:16px !important;"
         f"box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow} !important;"
         f"}}</style>",
         unsafe_allow_html=True,
     )
 
-    col_exp, col_del = st.columns([11, 1])
-    with col_exp:
-        with st.expander(f"[{idx+1}]  {ax['axis']}", expanded=False):
-            st.markdown(f'<div class="{marker}" style="display:none"></div>',
-                        unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(f'<div class="{marker}" style="display:none"></div>',
+                    unsafe_allow_html=True)
 
-            # Meta tags
+        col_title, col_del = st.columns([9, 1])
+        with col_title:
             st.markdown(
-                f'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">'
-                f'<span style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
-                f'border-radius:6px;padding:2px 9px;font-size:0.73rem;color:#64748b">'
-                f'📦 {ax.get("product_name","")}</span>'
-                f'<span style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
-                f'border-radius:6px;padding:2px 9px;font-size:0.73rem;color:#64748b">'
-                f'{ax.get("created_at","")[:10]}</span>'
+                f'<div style="display:flex;align-items:center;gap:10px">'
+                f'<div style="display:inline-flex;align-items:center;justify-content:center;'
+                f'width:28px;height:28px;border-radius:50%;background:{color};'
+                f'color:white;font-weight:800;font-size:12px;flex-shrink:0;'
+                f'box-shadow:0 2px 8px {glow}">{idx + 1}</div>'
+                f'<span style="font-size:1.0rem;font-weight:800;color:#f1f5f9;'
+                f'letter-spacing:-0.01em">{ax["axis"]}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
+        with col_del:
+            if st.button("🗑", key=f"del_axis_{ax['id']}", type="secondary",
+                         use_container_width=True, help="削除"):
+                delete_axis(ax["id"])
+                st.rerun()
 
-            # Description + target + pills
-            st.markdown(
-                f'<p style="color:#94a3b8;font-size:0.85rem;line-height:1.6;margin:0 0 8px">'
-                f'{ax.get("description","")}</p>'
-                f'<div style="background:rgba(255,255,255,0.04);border:1px solid #334155;'
-                f'border-radius:8px;padding:5px 11px;font-size:0.76rem;display:inline-block;margin-bottom:4px">'
-                f'<span style="color:#64748b;font-weight:600">🎯 ターゲット</span>'
-                f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>'
-                f'</div>'
-                f'{copy_html}',
-                unsafe_allow_html=True,
-            )
-
-    with col_del:
-        if st.button("🗑", key=f"del_axis_{ax['id']}", type="secondary",
-                     use_container_width=True, help="削除"):
-            delete_axis(ax["id"])
-            st.rerun()
+        st.markdown(_axis_card_body(ax), unsafe_allow_html=True)
