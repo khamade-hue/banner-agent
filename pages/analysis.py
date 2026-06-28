@@ -25,6 +25,31 @@ def _fetch_page_content(url: str) -> str:
         return ""
 
 
+def _extract_lp_colors(url: str) -> list[str]:
+    """Fetch LP and extract dominant brand colors from CSS / inline styles."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            html = r.read().decode("utf-8", errors="replace")
+    except Exception:
+        return []
+
+    css_chunks    = re.findall(r"<style[^>]*>([\s\S]*?)</style>", html, re.IGNORECASE)
+    inline_chunks = re.findall(r'style="([^"]*)"', html)
+    target = " ".join(css_chunks + inline_chunks)
+
+    counts: dict[str, int] = {}
+    for m in re.finditer(r"#([0-9a-fA-F]{6})\b", target):
+        h = m.group(1).upper()
+        r_val, g_val, b_val = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        lum = (r_val + g_val + b_val) / 3
+        if lum < 20 or lum > 235:  # skip near-black / near-white
+            continue
+        counts[f"#{h}"] = counts.get(f"#{h}", 0) + 1
+
+    return sorted(counts, key=lambda c: counts[c], reverse=True)[:6]
+
+
 def _c3_card(title: str, color: str, gradient: str, icon: str, items: list) -> str:
     rows = "".join(
         f'<div style="margin-bottom:12px">'
@@ -289,6 +314,18 @@ if mode == "新規作成":
             else:
                 st.write("競合情報なし → Claude が自動リサーチします")
 
+            # LPブランドカラーを抽出（分析テキストとは別にURLから取得）
+            _product_url_for_colors = sel_product.get("product_url", "")
+            if _product_url_for_colors:
+                st.write("LPブランドカラーを抽出中...")
+                lp_colors = _extract_lp_colors(_product_url_for_colors)
+                st.write(
+                    f"✓ ブランドカラー {len(lp_colors)} 色を取得: {' '.join(lp_colors)}"
+                    if lp_colors else "⚠ カラー取得できず（スキップ）"
+                )
+            else:
+                lp_colors = []
+
             st.write("Claude が3C分析・訴求軸を生成中...")
             try:
                 analysis = analyze_product(
@@ -308,7 +345,8 @@ if mode == "新規作成":
 
             status.update(label="分析完了！", state="complete", expanded=False)
 
-        st.session_state["analysis"] = analysis
+        st.session_state["analysis"]          = analysis
+        st.session_state["analysis_lp_colors"] = lp_colors
         st.session_state["analysis_product_name"] = sel_product["product_name"]
         st.session_state["analysis_product_url"]  = sel_product.get("product_url", "")
 
@@ -330,6 +368,7 @@ if mode == "新規作成":
             "customer_needs": cust.get("needs",""),
             "pain_points": cust.get("pain_points",""),
             "differentiation": comp.get("differentiation",""),
+            "lp_colors": st.session_state.get("analysis_lp_colors", []),
         }
 
         # ── 提案訴求軸（最初に表示）──────────────────────────────────────────

@@ -407,13 +407,16 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
 
     product_section = ""
     if ctx:
+        lp_colors_line = ""
+        if ctx.get("lp_colors"):
+            lp_colors_line = f"\n- LP Brand Colors: {' / '.join(ctx['lp_colors'])} ← USE THESE as the base palette"
         product_section = f"""
 BRAND/SERVICE DETAILS:
 - Value Proposition: {ctx.get('value_proposition', '')}
 - Key Strengths: {ctx.get('strengths', '')}
 - Customer Needs: {ctx.get('customer_needs', '')}
 - Pain Points Solved: {ctx.get('pain_points', '')}
-- vs Competitors: {ctx.get('differentiation', '')}"""
+- vs Competitors: {ctx.get('differentiation', '')}{lp_colors_line}"""
 
     objective_section = f"\nCampaign Objective: {objective}" if objective else ""
 
@@ -531,7 +534,10 @@ Each text element — specify ALL:
 Full-width bar: height in px, solid color hex, centered CTA text with all specs.
 
 ## COLOR PALETTE
-4–5 hex codes: primary-bg / headline-text / accent / cta-bg / cta-text
+If "LP Brand Colors" are provided in the brief, build the entire palette from those hex values.
+Adapt as needed for contrast and readability, but stay true to the brand colors.
+If no LP colors are provided, infer an appropriate palette from the brand/message.
+List 4–5 hex codes: primary-bg / headline-text / accent / cta-bg / cta-text
 
 Keep each brief under 450 words. Clarity over exhaustiveness.""",
         messages=[{
