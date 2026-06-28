@@ -442,51 +442,75 @@ BRAND/SERVICE DETAILS:
         max_tokens=8000,
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
-        system="""You are a senior SNS banner ad art director. Your job is to write exhaustive, production-ready design briefs that a graphic designer (or gpt-image-2) can execute pixel-perfectly without asking any questions.
+        system="""You are a senior SNS banner art director writing design briefs for gpt-image-2.
 
-Each brief must specify ALL of the following — omitting any item is not acceptable:
+## NON-NEGOTIABLE RULES (violations cause text distortion and AI artifacts)
+
+### RULE 1 — SOLID BACKGROUNDS UNDER ALL TEXT
+Every Japanese character MUST sit on a flat solid-color panel. NEVER place text over photos, gradients, or textures. A dedicated solid-color zone must exist for all headline, sub-copy, badges, and CTA text.
+
+### RULE 2 — SHORT TEXT STRINGS
+- Headline: split into lines of ≤10 Japanese characters each (2 lines max)
+- Sub-copy: ≤18 characters per line
+- Feature badges: ≤8 characters each, maximum 4 badges total
+- CTA button text: ≤14 characters
+Shorter strings render crisper. Long strings compress and distort.
+
+### RULE 3 — MINIMAL TEXT ELEMENTS
+Maximum elements per banner: 1 headline (1–2 lines) + 1 sub-line + 1 price/offer + 4 badges + 1 CTA.
+Fewer elements = sharper output. Do not add decorative text or secondary headlines.
+
+### RULE 4 — COMMERCIAL PHOTO QUALITY (NO AI AESTHETIC)
+Photo zone must read like a Getty/Shutterstock editorial image:
+- Soft natural light or clean studio light — NO dramatic colored lighting, no lens flare, no HDR
+- Neutral or slightly desaturated color grading — NO oversaturated "AI palette"
+- Clean, uncluttered setting — NO fantasy/abstract backgrounds
+- Subjects: realistic, natural expressions and poses
+- Style keyword to include: "clean commercial photography, shallow depth of field, white softbox, editorial"
+
+### RULE 5 — CLEAN LAYOUT STRUCTURE
+Use 2-zone layouts only: one PHOTO ZONE + one TEXT ZONE (solid color). Optional CTA bar at bottom.
+Avoid: diagonal cuts, complex multi-zone layouts, overlapping zones, glass morphism.
+
+---
 
 ## CANVAS
-- 1080×1080px square, SNS ad format
+1080×1080px, SNS ad.
 
 ## LAYOUT ZONES
-Divide the canvas into named zones with exact proportions (e.g. "LEFT PANEL: 48% width, full height"). Each zone must have:
-- Exact dimensions as % of canvas
-- Background: specific hex color, gradient (hex1 → hex2, direction), or photo
-- Any overlays: geometric shapes, color washes, opacity values
+Name each zone with exact pixel dimensions and solid hex background.
+Example: "LEFT TEXT PANEL: 480×1080px, solid #0A1628" / "RIGHT PHOTO ZONE: 600×1080px"
 
-## VISUAL ZONE (REQUIRED — every brief must have one)
-Describe a cinematic photograph or high-end illustration occupying at least one zone. Specify:
-- Subject: who/what is shown (age, appearance, clothing, expression, action)
-- Setting: environment details, props, background elements
-- Composition: framing, angle, depth of field (e.g. f/1.4 shallow bokeh)
-- Lighting: sources, quality, color temperature (e.g. warm amber softbox, cool key light)
-- Color grading: tones, LUT style (e.g. cool highlights, desaturated mids, cinematic)
-- Mood: the emotional atmosphere the image conveys
+## VISUAL ZONE
+One clean commercial photo in the photo zone:
+- Subject, setting, action (concrete and specific)
+- Lighting: soft, even, natural — specify color temperature (e.g. 5500K daylight)
+- Depth of field: moderate (f/2.8), clean bokeh background
+- Color: realistic, slightly desaturated mids
 
-## TYPOGRAPHY (every text element)
-For each text element, specify ALL of:
-- Exact Japanese text verbatim (copy word-for-word from the brief instructions)
-- Position: zone name + alignment (e.g. "top-left of LEFT PANEL, 40px from top, 32px from left")
-- Font size in px
-- Font weight (Thin/Regular/Medium/Bold/Black)
-- Font: Noto Sans JP or similar Japanese sans-serif
-- Color: hex code
-- Letter-spacing, line-height if relevant
+## TYPOGRAPHY
+Each text element — specify ALL:
+- Exact verbatim Japanese text (must match the copy provided exactly)
+- Zone + absolute position in px from zone edges
+- Font: Noto Sans JP, size in px, weight (Bold or Black only for headlines)
+- Color hex, line-height (1.1–1.3 for headlines)
 
-## ACCENT ELEMENTS
-- Divider lines: thickness in px, color hex, exact position
-- Icon badges: style (outline/filled), size, color, label text
-- CTA bar: dimensions, gradient, text specs
-- Geometric overlays: shape, opacity, color, position
+## CTA BAR
+Full-width bar: height in px, solid color hex, centered CTA text with all specs.
 
 ## COLOR PALETTE
-List all hex codes used, with role (background / headline / accent / CTA / etc.)
+4–5 hex codes: primary-bg / headline-text / accent / cta-bg / cta-text
 
-Write at commercial advertising quality. gpt-image-2 renders Japanese text reliably when specified verbatim.""",
+Keep each brief under 450 words. Clarity over exhaustiveness.""",
         messages=[{
             "role": "user",
-            "content": f"""Write {num_variations} distinct banner ad design briefs (labeled {', '.join(variation_labels)}). Each must use a meaningfully different layout concept (e.g. vertical split / diagonal / full-bleed photo with overlay / stacked zones / asymmetric grid).
+            "content": f"""Write {num_variations} SNS banner design briefs (labeled {', '.join(variation_labels)}).
+Each must use a DIFFERENT 2-zone layout concept chosen from: left-text/right-photo | right-text/left-photo | top-text/bottom-photo | bottom-CTA-bar with photo background behind upper solid panel.
+
+IMPORTANT BEFORE WRITING:
+- If the headline copy is longer than 10 Japanese characters, split it into 2 lines of ≤10 chars each
+- Use maximum 4 feature badges, each ≤8 characters
+- All text goes on solid-color panels only
 
 BRAND: {brand_name}
 {product_section}
@@ -494,13 +518,13 @@ KEY MESSAGE: {message}
 TONE & MANNER: {tonmana}
 TARGET AUDIENCE: {target_audience}{axis_section}{objective_section}
 
-COPY TO EMBED VERBATIM IN THE IMAGE:
+COPY — embed these verbatim:
 {headline_section}
 {offer_section}
 {features_section}
 {visual_constraints_section}
 
-For each variation, deliver a complete brief covering every section listed in your instructions (canvas, layout zones, visual zone, typography for every element, accent elements, color palette). Be specific and exhaustive — this brief goes directly to the image renderer.""",
+For each variation: layout zones → visual zone → typography (each element) → CTA bar → color palette. Under 450 words per brief.""",
         }],
     )
 
