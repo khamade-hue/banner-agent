@@ -115,39 +115,40 @@ for idx, ax in enumerate(reversed(saved_axes)):
         unsafe_allow_html=True,
     )
 
-    with st.expander(f"[{idx+1}]  {ax['axis']}", expanded=False):
-        st.markdown(f'<div class="{marker}" style="display:none"></div>',
-                    unsafe_allow_html=True)
+    col_exp, col_del = st.columns([11, 1])
+    with col_exp:
+        with st.expander(f"[{idx+1}]  {ax['axis']}", expanded=False):
+            st.markdown(f'<div class="{marker}" style="display:none"></div>',
+                        unsafe_allow_html=True)
 
-        # Meta tags
-        st.markdown(
-            f'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">'
-            f'<span style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
-            f'border-radius:6px;padding:2px 9px;font-size:0.73rem;color:#64748b">'
-            f'📦 {ax.get("product_name","")}</span>'
-            f'<span style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
-            f'border-radius:6px;padding:2px 9px;font-size:0.73rem;color:#64748b">'
-            f'{ax.get("created_at","")[:10]}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+            # Meta tags
+            st.markdown(
+                f'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">'
+                f'<span style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
+                f'border-radius:6px;padding:2px 9px;font-size:0.73rem;color:#64748b">'
+                f'📦 {ax.get("product_name","")}</span>'
+                f'<span style="background:rgba(255,255,255,0.05);border:1px solid #334155;'
+                f'border-radius:6px;padding:2px 9px;font-size:0.73rem;color:#64748b">'
+                f'{ax.get("created_at","")[:10]}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
-        # Description + target + pills
-        st.markdown(
-            f'<p style="color:#94a3b8;font-size:0.85rem;line-height:1.6;margin:0 0 8px">'
-            f'{ax.get("description","")}</p>'
-            f'<div style="background:rgba(255,255,255,0.04);border:1px solid #334155;'
-            f'border-radius:8px;padding:5px 11px;font-size:0.76rem;display:inline-block;margin-bottom:4px">'
-            f'<span style="color:#64748b;font-weight:600">🎯 ターゲット</span>'
-            f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>'
-            f'</div>'
-            f'{copy_html}',
-            unsafe_allow_html=True,
-        )
+            # Description + target + pills
+            st.markdown(
+                f'<p style="color:#94a3b8;font-size:0.85rem;line-height:1.6;margin:0 0 8px">'
+                f'{ax.get("description","")}</p>'
+                f'<div style="background:rgba(255,255,255,0.04);border:1px solid #334155;'
+                f'border-radius:8px;padding:5px 11px;font-size:0.76rem;display:inline-block;margin-bottom:4px">'
+                f'<span style="color:#64748b;font-weight:600">🎯 ターゲット</span>'
+                f'<span style="color:#cbd5e1;margin-left:5px">{ax.get("target_segment","—")}</span>'
+                f'</div>'
+                f'{copy_html}',
+                unsafe_allow_html=True,
+            )
 
-        _, col_del = st.columns([8, 2])
-        with col_del:
-            if st.button("🗑 削除", key=f"del_axis_{ax['id']}", type="secondary",
-                         use_container_width=True):
-                delete_axis(ax["id"])
-                st.rerun()
+    with col_del:
+        if st.button("🗑", key=f"del_axis_{ax['id']}", type="secondary",
+                     use_container_width=True, help="削除"):
+            delete_axis(ax["id"])
+            st.rerun()
