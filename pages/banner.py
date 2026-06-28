@@ -646,7 +646,7 @@ if generate_btn:
                     col_slots[idx].image(
                         _img_to_bytes(pimgs[0][1]),
                         caption=f"[{v_res['variation']}] {v_res['label']}",
-                        use_container_width=True,
+                        width=300,
                     )
                     st.write(f"  ✓ [{v_res['variation']}] {v_res['label']} 完了 ({done}/{n})")
 
@@ -737,7 +737,7 @@ if generate_btn:
                 col.image(
                     _img_to_bytes(pimgs_r[0][1]),
                     caption=f"[{v_r['variation']}] {v_r['label']}",
-                    use_container_width=True,
+                    width=300,
                 )
             st.write(f"  ✓ {n_ex} 枚を一括取得完了")
 
@@ -834,7 +834,7 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
                     st.image(
                         img,
                         caption=f"{platform.name}\n{platform.width}×{platform.height}",
-                        use_container_width=True,
+                        width=260,
                     )
                     st.download_button(
                         f"↓ {platform.filename}_{platform.width}x{platform.height}.png",
