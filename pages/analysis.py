@@ -491,18 +491,6 @@ else:
     )
     selected_ax = axis_options[selected_label]
 
-    # 新形式 (copy_sets) の axis でも refine UI が動くよう copy_suggestions を導出
-    if selected_ax.get("copy_sets") and not selected_ax.get("copy_suggestions", {}).get("headlines"):
-        _sets = selected_ax["copy_sets"]
-        selected_ax = {
-            **selected_ax,
-            "copy_suggestions": {
-                "headlines": [cs.get("headline", "") for cs in _sets],
-                "offers":    [cs.get("offer", "") for cs in _sets],
-                "features":  list(dict.fromkeys(f for cs in _sets for f in cs.get("features", []))),
-            },
-        }
-
     # ── 現在の訴求軸（読み取り専用）──────────────────────────────────────────
     st.markdown(
         '<div style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;'
@@ -524,70 +512,90 @@ else:
         )
         st.markdown(_axis_card_body(selected_ax), unsafe_allow_html=True)
 
-    # ── 改修指示（3ステップ）────────────────────────────────────────────────
-    PART_OPTIONS = {
-        "キャッチコピー": "headlines",
-        "オファー・CTA":  "offers",
-        "特徴・アイコン": "features",
-    }
-
+    # ── 改修指示 ─────────────────────────────────────────────────────────────
     st.markdown(
         '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.1em;margin:20px 0 16px">改修指示</div>',
         unsafe_allow_html=True,
     )
 
-    # ① パーツの選択
-    st.markdown(
-        '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:6px">'
-        '① パーツの選択</div>',
-        unsafe_allow_html=True,
-    )
-    target_part_label = st.selectbox(
-        "パーツの選択",
-        list(PART_OPTIONS.keys()),
-        label_visibility="collapsed",
-        key="refine_part_select",
-    )
-    part_key      = PART_OPTIONS[target_part_label]
-    current_items = selected_ax.get("copy_suggestions", {}).get(part_key, [])
+    copy_sets = selected_ax.get("copy_sets", [])
 
-    # ② 具体パーツの選択
-    st.markdown(
-        '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 6px">'
-        '② 具体パーツの選択</div>',
-        unsafe_allow_html=True,
-    )
-    if not current_items:
-        st.caption("このパーツにコピー候補がありません")
-        target_items = []
-    elif part_key == "features":
-        target_items = st.multiselect(
-            "修正する項目（複数可）",
-            options=current_items,
-            default=current_items[:1] if current_items else [],
-            label_visibility="collapsed",
-            key="refine_items_multi",
+    if copy_sets:
+        # ══════════════════════════════════════════════════
+        # セット形式フロー: ①セット選択 → ②パーツ選択 → ③修正方法
+        # ══════════════════════════════════════════════════
+
+        # ① セットの選択
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:8px">'
+            '① セットの選択</div>',
+            unsafe_allow_html=True,
         )
-    else:
-        selected_item = st.radio(
-            "修正する項目",
-            options=current_items,
+        set_labels = [f"セット {i + 1}" for i in range(len(copy_sets))]
+        set_sel = st.radio(
+            "セットの選択",
+            set_labels,
+            horizontal=True,
             label_visibility="collapsed",
-            key="refine_items_radio",
+            key="refine_set_select",
         )
-        target_items = [selected_item] if selected_item else []
+        set_idx  = set_labels.index(set_sel)
+        sel_set  = copy_sets[set_idx]
+        _sc      = _SET_COLORS[set_idx % len(_SET_COLORS)]
 
-    # ③ 修正方法
-    st.markdown(
-        '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 6px">'
-        '③ 修正方法</div>',
-        unsafe_allow_html=True,
-    )
+        feat_pills_prev = "".join(
+            f'<span style="display:inline-block;background:rgba(139,92,246,0.12);color:#c4b5fd;'
+            f'border:1px solid rgba(139,92,246,0.35);border-radius:14px;padding:3px 10px;'
+            f'font-size:0.77rem;margin:2px 3px 2px 0">{f}</span>'
+            for f in sel_set.get("features", [])
+        )
+        st.markdown(
+            f'<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);'
+            f'border-left:3px solid {_sc};border-radius:10px;padding:12px 16px;margin:10px 0 20px">'
+            f'<div style="margin-bottom:7px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:8px">キャッチ</span>'
+            f'<span style="background:rgba(59,130,246,0.15);color:#93c5fd;'
+            f'border:1px solid rgba(59,130,246,0.4);border-radius:14px;'
+            f'padding:3px 12px;font-size:0.82rem;font-weight:600">{sel_set.get("headline","")}</span>'
+            f'</div>'
+            f'<div style="margin-bottom:9px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:8px">CTA</span>'
+            f'<span style="background:rgba(16,185,129,0.12);color:#6ee7b7;'
+            f'border:1px solid rgba(16,185,129,0.35);border-radius:14px;'
+            f'padding:3px 12px;font-size:0.8rem">{sel_set.get("offer","")}</span>'
+            f'</div>'
+            f'<div><span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;display:block;margin-bottom:5px">特徴</span>{feat_pills_prev}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-    if not target_items:
-        st.caption("② で修正する項目を選択してください")
-    else:
+        # ② パーツの選択
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:8px">'
+            '② パーツの選択</div>',
+            unsafe_allow_html=True,
+        )
+        PART_MAP = {"キャッチ": "headline", "CTA": "offer", "特徴": "features"}
+        part_label = st.radio(
+            "パーツの選択",
+            list(PART_MAP.keys()),
+            horizontal=True,
+            label_visibility="collapsed",
+            key="refine_part_select",
+        )
+        part_key      = PART_MAP[part_label]
+        current_value = sel_set.get(part_key, [] if part_key == "features" else "")
+
+        # ③ 修正方法
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 8px">'
+            '③ 修正方法</div>',
+            unsafe_allow_html=True,
+        )
         refine_method = st.radio(
             "修正方法",
             ["手動で修正", "AIで修正"],
@@ -597,34 +605,42 @@ else:
         )
 
         if refine_method == "手動で修正":
-            edited_map = {}
-            for idx, item in enumerate(target_items):
-                edited = st.text_area(
-                    f"手動編集 {idx + 1}",
-                    value=item,
-                    height=68,
-                    key=f"manual_edit_{idx}",
+            if part_key == "features":
+                edited_text = st.text_area(
+                    "特徴（1行1つ）",
+                    value="\n".join(current_value),
+                    height=110,
+                    key="manual_feat_edit",
                     label_visibility="collapsed",
                 )
-                edited_map[item] = edited
-            if st.button("上書き保存", type="primary", use_container_width=True, key="manual_save"):
-                new_list = list(current_items)
-                for orig, edited_val in edited_map.items():
-                    if orig in new_list:
-                        new_list[new_list.index(orig)] = edited_val
-                refined_manual = {**selected_ax}
-                refined_manual["copy_suggestions"] = {
-                    **selected_ax.get("copy_suggestions", {}), part_key: new_list
-                }
-                delete_axis(selected_ax["id"])
-                add_axis(
-                    selected_ax.get("product_name", ""),
-                    selected_ax.get("product_url", ""),
-                    refined_manual,
-                    selected_ax.get("product_context", {}),
+                if st.button("上書き保存", type="primary", use_container_width=True,
+                             key="manual_feat_save"):
+                    new_feats = [f.strip() for f in edited_text.split("\n") if f.strip()]
+                    new_sets = [{**s} for s in copy_sets]
+                    new_sets[set_idx]["features"] = new_feats
+                    new_ax = {**selected_ax, "copy_sets": new_sets}
+                    delete_axis(selected_ax["id"])
+                    add_axis(selected_ax.get("product_name", ""),
+                             selected_ax.get("product_url", ""),
+                             new_ax, selected_ax.get("product_context", {}))
+                    st.success("上書き保存しました")
+                    st.rerun()
+            else:
+                edited = st.text_area(
+                    part_label, value=current_value, height=68,
+                    key="manual_single_edit", label_visibility="collapsed",
                 )
-                st.success("上書き保存しました")
-                st.rerun()
+                if st.button("上書き保存", type="primary", use_container_width=True,
+                             key="manual_single_save"):
+                    new_sets = [{**s} for s in copy_sets]
+                    new_sets[set_idx][part_key] = edited.strip()
+                    new_ax = {**selected_ax, "copy_sets": new_sets}
+                    delete_axis(selected_ax["id"])
+                    add_axis(selected_ax.get("product_name", ""),
+                             selected_ax.get("product_url", ""),
+                             new_ax, selected_ax.get("product_context", {}))
+                    st.success("上書き保存しました")
+                    st.rerun()
 
         else:  # AIで修正
             revision_instructions = st.text_area(
@@ -634,93 +650,281 @@ else:
                 label_visibility="collapsed",
                 key="refine_instructions",
             )
-            if st.button("AIで磨きこむ", type="primary", use_container_width=True, key="refine_submit"):
+            flat_key     = {"headline": "headlines", "offer": "offers", "features": "features"}[part_key]
+            target_items = current_value if part_key == "features" else [current_value]
+
+            if st.button("AIで磨きこむ", type="primary", use_container_width=True,
+                         key="refine_submit"):
                 if not revision_instructions.strip():
                     st.error("修正指示を入力してください")
                 else:
-                    with st.spinner(f"「{target_part_label}」を改修中..."):
+                    with st.spinner(f"「{part_label}」を改修中..."):
                         try:
                             new_items = refine_copy_part(
-                                selected_ax, part_key, target_items, revision_instructions
+                                selected_ax, flat_key, target_items, revision_instructions
                             )
-                            refined_ai = {**selected_ax}
-                            refined_ai["copy_suggestions"] = {
-                                **selected_ax.get("copy_suggestions", {}), part_key: new_items
+                            if part_key == "features":
+                                new_value = new_items
+                            else:
+                                orig_vals = {cs.get(part_key, "") for cs in copy_sets}
+                                changed   = [v for v in new_items if v not in orig_vals]
+                                new_value = changed[0] if changed else (
+                                    new_items[set_idx] if set_idx < len(new_items) else current_value
+                                )
+                            st.session_state["refine_result"] = {
+                                "set_idx":   set_idx,
+                                "part_key":  part_key,
+                                "part_label": part_label,
+                                "new_value": new_value,
+                                "original":  current_value,
+                                "source_id": selected_ax["id"],
                             }
-                            st.session_state["refined_axis"]           = refined_ai
-                            st.session_state["refined_part_label"]     = target_part_label
-                            st.session_state["refined_part_key"]       = part_key
-                            st.session_state["refined_source_id"]      = selected_ax["id"]
-                            st.session_state["refined_target_items"]   = list(target_items)
-                            st.session_state["refined_original_items"] = list(
-                                selected_ax.get("copy_suggestions", {}).get(part_key, [])
-                            )
                             st.rerun()
                         except Exception as e:
                             st.error(f"改修エラー: {e}")
 
-    # ── 改修後の訴求軸 ────────────────────────────────────────────────────────
-    if "refined_axis" in st.session_state:
-        refined   = st.session_state["refined_axis"]
-        source_id = st.session_state.get("refined_source_id")
-        p_name    = refined.get("product_name", "")
-        p_url     = refined.get("product_url", "")
-        p_ctx     = refined.get("product_context", {})
+        # ── 改修結果の表示 ────────────────────────────────────────────────────
+        refine_result = st.session_state.get("refine_result", {})
+        if refine_result and refine_result.get("source_id") == selected_ax["id"]:
+            r_set_idx    = refine_result["set_idx"]
+            r_part_key   = refine_result["part_key"]
+            r_part_label = refine_result.get("part_label", r_part_key)
+            r_new_value  = refine_result["new_value"]
+            r_original   = refine_result["original"]
 
-        part_label_display = st.session_state.get("refined_part_label", "")
-        st.markdown(
-            f'<div style="font-size:0.72rem;font-weight:700;color:#10b981;text-transform:uppercase;'
-            f'letter-spacing:0.1em;margin:24px 0 10px">改修後の訴求軸'
-            f'<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.5);'
-            f'border-radius:4px;padding:2px 8px;margin-left:8px;font-size:0.65rem;'
-            f'text-transform:none;letter-spacing:0">「{part_label_display}」を改修</span></div>',
-            unsafe_allow_html=True,
-        )
-        color_r = BADGE_COLORS[2]
-        glow_r  = BADGE_GLOWS[2]
-        st.markdown(
-            f"<style>[data-testid='stVerticalBlockBorderWrapper']:has(.refine-result){{"
-            f"border-left:4px solid {color_r} !important;border-radius:16px !important;"
-            f"box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow_r} !important;"
-            f"}}</style>",
-            unsafe_allow_html=True,
-        )
-        part_key_r     = st.session_state.get("refined_part_key", "")
-        target_items_r = st.session_state.get("refined_target_items", [])
-        original_set   = set(st.session_state.get("refined_original_items", []))
-        all_new_items  = refined.get("copy_suggestions", {}).get(part_key_r, [])
-        changed_items  = [item for item in all_new_items if item not in original_set]
-
-        with st.container(border=True):
-            st.markdown('<div class="refine-result" style="display:none"></div>', unsafe_allow_html=True)
             st.markdown(
-                f'<span style="font-size:0.85rem;color:#64748b">{refined.get("axis","")}</span>',
+                f'<div style="font-size:0.72rem;font-weight:700;color:#10b981;text-transform:uppercase;'
+                f'letter-spacing:0.1em;margin:24px 0 10px">改修後'
+                f'<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.5);'
+                f'border-radius:4px;padding:2px 8px;margin-left:8px;font-size:0.65rem;'
+                f'text-transform:none;letter-spacing:0">'
+                f'セット{r_set_idx + 1}「{r_part_label}」を改修</span></div>',
                 unsafe_allow_html=True,
             )
-            if target_items_r:
+
+            def _disp(val, bg, color, border):
+                if isinstance(val, list):
+                    return "".join(
+                        f'<span style="display:inline-block;background:{bg};color:{color};'
+                        f'border:1px solid {border};border-radius:14px;'
+                        f'padding:3px 10px;font-size:0.8rem;margin:2px 3px 2px 0">{v}</span>'
+                        for v in val
+                    )
+                return (
+                    f'<span style="background:{bg};color:{color};border:1px solid {border};'
+                    f'border-radius:14px;padding:3px 14px;font-size:0.85rem;font-weight:600">{val}</span>'
+                )
+
+            color_r = BADGE_COLORS[2]
+            glow_r  = BADGE_GLOWS[2]
+            st.markdown(
+                f"<style>[data-testid='stVerticalBlockBorderWrapper']:has(.refine-result){{"
+                f"border-left:4px solid {color_r} !important;border-radius:16px !important;"
+                f"box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow_r} !important;"
+                f"}}</style>",
+                unsafe_allow_html=True,
+            )
+            with st.container(border=True):
+                st.markdown('<div class="refine-result" style="display:none"></div>',
+                            unsafe_allow_html=True)
                 st.markdown(
                     '<div style="font-size:0.67rem;font-weight:700;color:#64748b;'
-                    'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正前</div>'
-                    + _pills(target_items_r, "rgba(255,255,255,0.04)", "#64748b", "#334155"),
+                    'text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">修正前</div>'
+                    + _disp(r_original, "rgba(255,255,255,0.04)", "#64748b", "#334155")
+                    + '<div style="font-size:0.67rem;font-weight:700;color:#10b981;'
+                    'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正後</div>'
+                    + _disp(r_new_value, "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.5)"),
                     unsafe_allow_html=True,
                 )
-            st.markdown(
-                '<div style="font-size:0.67rem;font-weight:700;color:#10b981;'
-                'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正後</div>'
-                + _pills(changed_items or all_new_items[:len(target_items_r)],
-                         "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.5)"),
-                unsafe_allow_html=True,
-            )
 
-        col_overwrite, col_discard = st.columns([3, 1])
-        with col_overwrite:
-            if st.button("上書き保存", type="primary", use_container_width=True, key="ai_overwrite"):
-                delete_axis(source_id)
-                add_axis(p_name, p_url, refined, p_ctx)
-                del st.session_state["refined_axis"]
-                st.success("上書き保存しました")
-                st.rerun()
-        with col_discard:
-            if st.button("破棄", type="secondary", use_container_width=True, key="ai_discard"):
-                del st.session_state["refined_axis"]
-                st.rerun()
+            col_overwrite, col_discard = st.columns([3, 1])
+            with col_overwrite:
+                if st.button("上書き保存", type="primary", use_container_width=True,
+                             key="ai_overwrite"):
+                    new_sets = [{**s} for s in copy_sets]
+                    new_sets[r_set_idx][r_part_key] = r_new_value
+                    new_ax = {**selected_ax, "copy_sets": new_sets}
+                    delete_axis(selected_ax["id"])
+                    add_axis(selected_ax.get("product_name", ""),
+                             selected_ax.get("product_url", ""),
+                             new_ax, selected_ax.get("product_context", {}))
+                    del st.session_state["refine_result"]
+                    st.success("上書き保存しました")
+                    st.rerun()
+            with col_discard:
+                if st.button("破棄", type="secondary", use_container_width=True,
+                             key="ai_discard"):
+                    del st.session_state["refine_result"]
+                    st.rerun()
+
+    else:
+        # ── 旧形式フォールバック（copy_sets なし）──────────────────────────────
+        _cs = selected_ax.get("copy_suggestions", {})
+        OLD_PARTS = {
+            "キャッチコピー": "headlines",
+            "オファー・CTA":  "offers",
+            "特徴・アイコン": "features",
+        }
+
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:6px">'
+            '① パーツの選択</div>',
+            unsafe_allow_html=True,
+        )
+        target_part_label = st.selectbox(
+            "パーツの選択", list(OLD_PARTS.keys()),
+            label_visibility="collapsed", key="refine_part_select",
+        )
+        part_key      = OLD_PARTS[target_part_label]
+        current_items = _cs.get(part_key, [])
+
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 6px">'
+            '② 具体パーツの選択</div>',
+            unsafe_allow_html=True,
+        )
+        if not current_items:
+            st.caption("このパーツにコピー候補がありません")
+            target_items = []
+        elif part_key == "features":
+            target_items = st.multiselect(
+                "修正する項目（複数可）", options=current_items,
+                default=current_items[:1] if current_items else [],
+                label_visibility="collapsed", key="refine_items_multi",
+            )
+        else:
+            selected_item = st.radio(
+                "修正する項目", options=current_items,
+                label_visibility="collapsed", key="refine_items_radio",
+            )
+            target_items = [selected_item] if selected_item else []
+
+        st.markdown(
+            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:16px 0 6px">'
+            '③ 修正方法</div>',
+            unsafe_allow_html=True,
+        )
+        if not target_items:
+            st.caption("② で修正する項目を選択してください")
+        else:
+            refine_method = st.radio(
+                "修正方法", ["手動で修正", "AIで修正"],
+                horizontal=True, label_visibility="collapsed", key="refine_method",
+            )
+            if refine_method == "手動で修正":
+                edited_map = {}
+                for idx, item in enumerate(target_items):
+                    edited = st.text_area(
+                        f"手動編集 {idx + 1}", value=item, height=68,
+                        key=f"manual_edit_{idx}", label_visibility="collapsed",
+                    )
+                    edited_map[item] = edited
+                if st.button("上書き保存", type="primary", use_container_width=True,
+                             key="manual_save"):
+                    new_list = list(current_items)
+                    for orig, edited_val in edited_map.items():
+                        if orig in new_list:
+                            new_list[new_list.index(orig)] = edited_val
+                    refined_manual = {**selected_ax, "copy_suggestions": {**_cs, part_key: new_list}}
+                    delete_axis(selected_ax["id"])
+                    add_axis(selected_ax.get("product_name", ""),
+                             selected_ax.get("product_url", ""),
+                             refined_manual, selected_ax.get("product_context", {}))
+                    st.success("上書き保存しました")
+                    st.rerun()
+            else:
+                revision_instructions = st.text_area(
+                    "修正指示",
+                    placeholder="例: もっと感情的に訴えるコピーにして / 価格訴求を前面に出して",
+                    height=90, label_visibility="collapsed", key="refine_instructions",
+                )
+                if st.button("AIで磨きこむ", type="primary", use_container_width=True,
+                             key="refine_submit"):
+                    if not revision_instructions.strip():
+                        st.error("修正指示を入力してください")
+                    else:
+                        with st.spinner(f"「{target_part_label}」を改修中..."):
+                            try:
+                                new_items = refine_copy_part(
+                                    selected_ax, part_key, target_items, revision_instructions
+                                )
+                                refined_ai = {**selected_ax,
+                                              "copy_suggestions": {**_cs, part_key: new_items}}
+                                st.session_state["refined_axis"]           = refined_ai
+                                st.session_state["refined_part_label"]     = target_part_label
+                                st.session_state["refined_part_key"]       = part_key
+                                st.session_state["refined_source_id"]      = selected_ax["id"]
+                                st.session_state["refined_target_items"]   = list(target_items)
+                                st.session_state["refined_original_items"] = list(
+                                    _cs.get(part_key, []))
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"改修エラー: {e}")
+
+            if "refined_axis" in st.session_state:
+                refined   = st.session_state["refined_axis"]
+                source_id = st.session_state.get("refined_source_id")
+                p_name    = refined.get("product_name", "")
+                p_url     = refined.get("product_url", "")
+                p_ctx     = refined.get("product_context", {})
+
+                part_label_display = st.session_state.get("refined_part_label", "")
+                st.markdown(
+                    f'<div style="font-size:0.72rem;font-weight:700;color:#10b981;'
+                    f'text-transform:uppercase;letter-spacing:0.1em;margin:24px 0 10px">改修後の訴求軸'
+                    f'<span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.5);'
+                    f'border-radius:4px;padding:2px 8px;margin-left:8px;font-size:0.65rem;'
+                    f'text-transform:none;letter-spacing:0">「{part_label_display}」を改修</span></div>',
+                    unsafe_allow_html=True,
+                )
+                color_r = BADGE_COLORS[2]
+                glow_r  = BADGE_GLOWS[2]
+                st.markdown(
+                    f"<style>[data-testid='stVerticalBlockBorderWrapper']:has(.refine-result){{"
+                    f"border-left:4px solid {color_r} !important;border-radius:16px !important;"
+                    f"box-shadow:0 4px 20px rgba(0,0,0,0.25),-4px 0 12px {glow_r} !important;"
+                    f"}}</style>",
+                    unsafe_allow_html=True,
+                )
+                part_key_r     = st.session_state.get("refined_part_key", "")
+                target_items_r = st.session_state.get("refined_target_items", [])
+                original_set   = set(st.session_state.get("refined_original_items", []))
+                all_new_items  = refined.get("copy_suggestions", {}).get(part_key_r, [])
+                changed_items  = [item for item in all_new_items if item not in original_set]
+
+                with st.container(border=True):
+                    st.markdown('<div class="refine-result" style="display:none"></div>',
+                                unsafe_allow_html=True)
+                    st.markdown(
+                        f'<span style="font-size:0.85rem;color:#64748b">{refined.get("axis","")}</span>',
+                        unsafe_allow_html=True,
+                    )
+                    if target_items_r:
+                        st.markdown(
+                            '<div style="font-size:0.67rem;font-weight:700;color:#64748b;'
+                            'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正前</div>'
+                            + _pills(target_items_r, "rgba(255,255,255,0.04)", "#64748b", "#334155"),
+                            unsafe_allow_html=True,
+                        )
+                    st.markdown(
+                        '<div style="font-size:0.67rem;font-weight:700;color:#10b981;'
+                        'text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px">修正後</div>'
+                        + _pills(changed_items or all_new_items[:len(target_items_r)],
+                                 "rgba(16,185,129,0.15)", "#6ee7b7", "rgba(16,185,129,0.5)"),
+                        unsafe_allow_html=True,
+                    )
+
+                col_overwrite, col_discard = st.columns([3, 1])
+                with col_overwrite:
+                    if st.button("上書き保存", type="primary", use_container_width=True,
+                                 key="ai_overwrite"):
+                        delete_axis(source_id)
+                        add_axis(p_name, p_url, refined, p_ctx)
+                        del st.session_state["refined_axis"]
+                        st.success("上書き保存しました")
+                        st.rerun()
+                with col_discard:
+                    if st.button("破棄", type="secondary", use_container_width=True,
+                                 key="ai_discard"):
+                        del st.session_state["refined_axis"]
+                        st.rerun()
