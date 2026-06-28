@@ -568,7 +568,11 @@ For each variation: layout zones → visual zone → typography (each element) �
 
     for block in response.content:
         if block.type == "tool_use":
-            variations = list(block.input.get("variations", []))
+            raw = block.input.get("variations", [])
+            # Claude occasionally returns a dict {0: {...}, 1: {...}} instead of a list
+            if isinstance(raw, dict):
+                raw = list(raw.values())
+            variations = [v for v in raw if isinstance(v, dict) and "prompt" in v]
             if not variations:
                 raise ValueError(
                     f"Claudeがバリエーションを生成しませんでした (stop_reason={response.stop_reason})"

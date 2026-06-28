@@ -638,7 +638,7 @@ if generate_btn:
                 for fut in as_completed(futures):
                     try:
                         idx, v_res, pimgs = fut.result()
-                    except RuntimeError as e:
+                    except Exception as e:
                         gen_errors.append(str(e))
                         continue
                     done += 1
@@ -865,7 +865,7 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
             '① 修正するパーツ</div>',
             unsafe_allow_html=True,
         )
-        REVISION_PARTS = ["ビジュアル", "メインキャッチ", "オファー・CTA", "特徴・アイコン"]
+        REVISION_PARTS = ["トンマナ", "ビジュアル", "テキスト"]
         sel_part = st.radio(
             "修正するパーツ",
             REVISION_PARTS,
@@ -874,69 +874,101 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
             label_visibility="collapsed",
         )
 
-        # ② 修正する要素
-        st.markdown(
-            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
-            '② 修正する要素</div>',
-            unsafe_allow_html=True,
-        )
         gen_headline = st.session_state.get("gen_headline", "")
         gen_offer    = st.session_state.get("gen_offer", "")
         gen_features = st.session_state.get("gen_features", [])
-        target_elem  = None
+        target_elem      = None
+        rev_instructions = ""
+        rev_part_label   = sel_part
 
-        if sel_part == "ビジュアル":
+        if sel_part == "トンマナ":
+            st.markdown(
+                '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+                '② 新しいトンマナを選択</div>',
+                unsafe_allow_html=True,
+            )
+            _cur_ton = st.session_state.get("gen_tonmana", list(TONMANA.keys())[0])
+            _ton_idx = list(TONMANA.keys()).index(_cur_ton) if _cur_ton in TONMANA else 0
+            _new_ton = st.selectbox(
+                "新しいトンマナ",
+                list(TONMANA.keys()),
+                index=_ton_idx,
+                key=f"rev_ton_{tab_idx}",
+                label_visibility="collapsed",
+            )
+            rev_instructions = f"Change the tone and manner to: {TONMANA[_new_ton]}"
+
+        elif sel_part == "ビジュアル":
+            st.markdown(
+                '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+                '② 修正する要素</div>',
+                unsafe_allow_html=True,
+            )
             st.markdown(
                 '<div style="color:#475569;font-size:0.78rem;padding:6px 0">'
                 'ビジュアル全体が対象です — ③に修正指示を入力してください</div>',
                 unsafe_allow_html=True,
             )
-        elif sel_part == "メインキャッチ":
+            st.markdown(
+                '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+                '③ 修正指示</div>',
+                unsafe_allow_html=True,
+            )
+            rev_instructions = st.text_area(
+                "修正指示",
+                placeholder="例: もっとインパクトのある写真に / 屋外シーンに変更 / 笑顔の女性モデルを使って",
+                key=f"rev_inst_{tab_idx}",
+                label_visibility="collapsed",
+                height=80,
+            )
+
+        else:  # テキスト
+            _text_items: list[tuple[str, str]] = []
             if gen_headline:
-                st.markdown(
-                    f'<div style="background:rgba(255,255,255,0.04);border:1px solid #334155;'
-                    f'border-radius:8px;padding:8px 12px;font-size:0.82rem;color:#cbd5e1">'
-                    f'現在: {gen_headline}</div>',
-                    unsafe_allow_html=True,
-                )
-                target_elem = gen_headline
-            else:
-                st.caption("メインキャッチが設定されていません")
-        elif sel_part == "オファー・CTA":
+                _text_items.append(("メインキャッチ", gen_headline))
             if gen_offer:
-                st.markdown(
-                    f'<div style="background:rgba(255,255,255,0.04);border:1px solid #334155;'
-                    f'border-radius:8px;padding:8px 12px;font-size:0.82rem;color:#cbd5e1">'
-                    f'現在: {gen_offer}</div>',
-                    unsafe_allow_html=True,
-                )
-                target_elem = gen_offer
-            else:
-                st.caption("オファー・CTAが設定されていません — ③に追加したい内容を指示してください")
-        elif sel_part == "特徴・アイコン":
-            if gen_features:
-                target_elem = st.selectbox(
-                    "修正する特徴を選択",
-                    gen_features,
-                    key=f"rev_feat_{tab_idx}",
+                _text_items.append(("オファー・CTA", gen_offer))
+            for _f in gen_features:
+                _text_items.append(("特徴・アイコン", _f))
+
+            st.markdown(
+                '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+                '② 修正する要素</div>',
+                unsafe_allow_html=True,
+            )
+            if _text_items:
+                _sel_text = st.selectbox(
+                    "修正する要素",
+                    [t for _, t in _text_items],
+                    key=f"rev_elem_{tab_idx}",
                     label_visibility="collapsed",
                 )
+                rev_part_label = next(
+                    (cat for cat, txt in _text_items if txt == _sel_text),
+                    "テキスト",
+                )
+                target_elem = _sel_text
             else:
-                st.caption("特徴・アイコンが設定されていません")
+                _raw_elem = st.text_input(
+                    "修正する要素",
+                    placeholder="テキストを入力（空欄可）",
+                    key=f"rev_elem_raw_{tab_idx}",
+                    label_visibility="collapsed",
+                )
+                target_elem = _raw_elem.strip() or None
 
-        # ③ 修正指示
-        st.markdown(
-            '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
-            '③ 修正指示</div>',
-            unsafe_allow_html=True,
-        )
-        rev_instructions = st.text_area(
-            "修正指示",
-            placeholder="例: もっとインパクトのある写真に / シアンの光を強調して / 「期間限定」の訴求に変更",
-            key=f"rev_inst_{tab_idx}",
-            label_visibility="collapsed",
-            height=80,
-        )
+            st.markdown(
+                '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin:14px 0 6px">'
+                '③ 修正指示</div>',
+                unsafe_allow_html=True,
+            )
+            rev_instructions = st.text_area(
+                "修正指示",
+                placeholder="例: より短く簡潔に / インパクトを強めて / ターゲットに刺さるコピーに",
+                key=f"rev_inst_{tab_idx}",
+                label_visibility="collapsed",
+                height=80,
+            )
 
         if st.button(
             f"「{sel_part}」を修正して再生成",
@@ -944,20 +976,20 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
             type="primary",
             use_container_width=True,
         ):
-            if not rev_instructions.strip():
+            if sel_part != "トンマナ" and not rev_instructions.strip():
                 st.warning("③ に修正指示を入力してください")
             else:
                 with st.spinner(f"「{sel_part}」を修正して再生成中..."):
                     try:
                         new_prompt = refine_banner_part(
-                            v["prompt"], sel_part, target_elem, rev_instructions
+                            v["prompt"], rev_part_label, target_elem, rev_instructions
                         )
                         new_base_img = generate_image(new_prompt, reference_image=reference_image)
                         new_platform_images = resize_for_selected_platforms(
                             new_base_img, current_platforms
                         )
                         part_suffix = f" [{sel_part}修正]"
-                        base_label  = v["label"].split(" [")[0]  # strip previous suffixes
+                        base_label  = v["label"].split(" [")[0]
                         updated_v   = {**v, "prompt": new_prompt, "label": base_label + part_suffix}
                         save_banner_entry(
                             product_name=current_axis.get("product_name", ""),
