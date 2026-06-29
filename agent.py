@@ -511,10 +511,13 @@ TEXT PANEL: NEVER use pure black (#000000). Use a deep brand-derived color — d
 Add a 4–6px vertical accent bar in the brand accent color along the inner edge of the text panel (between panel and visual zone).
 
 ## VISUAL ZONE
-Choose the most appropriate approach for the brand/product:
-- SCENE (lifestyle product, service, B2B): commercial photo — subject + setting + action; 5500K daylight; f/2.8; slightly desaturated. GAZE DIRECTION: subject's eyes and body must face toward the text panel — this pulls the viewer's attention from photo into the copy. Specify: "subject facing [left/right] toward text panel, gaze directed inward".
-- CUTOUT (product-centric, e-commerce, app): subject or product isolated on pure white (#FFFFFF), soft drop shadow (0 8px 24px rgba(0,0,0,0.12)), no background
-- FLAT (tech, SaaS, abstract service): flat geometric shapes + brand-colored backgrounds + simple outlined icons (64×64px grid) — no photography
+Choose the most appropriate approach — DEFAULT to SCENE unless the brand clearly calls for otherwise:
+
+- SCENE [DEFAULT — use for B2B, production services, consulting, HR, finance, education, and most physical-product brands]: commercial photo — subject + setting + action; 5500K daylight; f/2.8; slightly desaturated. GAZE DIRECTION: subject's eyes and body must face toward the text panel. Specify: "subject facing [left/right] toward text panel, gaze directed inward toward copy zone".
+- CUTOUT [use for e-commerce, physical products, food/beverage, consumer apps where showing the product in isolation is the clearest communication]: subject or product isolated on pure white (#FFFFFF), soft drop shadow (0 8px 24px rgba(0,0,0,0.12)), no background.
+- FLAT [use ONLY for pure software/SaaS products with no physical form and no relatable human use-case, e.g. a developer API, data pipeline tool, or abstract B2B platform. Do NOT use for: video production, creative agencies, HR, consulting, education, physical products, or any brand where a real person or real product photo would be more convincing.]: flat geometric shapes + brand-colored backgrounds + simple outlined icons (64×64px grid) — no photography.
+
+When in doubt, choose SCENE. A real person or real product is almost always more persuasive than flat illustration.
 State which approach you chose and why (one sentence in the rationale field).
 
 ## TYPOGRAPHY
