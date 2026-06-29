@@ -525,7 +525,7 @@ Strict hierarchy — for each element specify ALL:
 - Eyebrow label (above headline): 12–14px / Noto Sans JP Medium / accent color / letter-spacing 0.15em — short service category word (e.g. "動画制作" or "VIDEO PRODUCTION"). Placed 12–16px above headline line 1.
 - Headline line 1 (category / context): 54–64px / Noto Sans JP Black / white or light color
 - Headline line 2 (key proposition — price, benefit, or hook): 72–84px / Noto Sans JP Black / white or accent color — larger than line 1 to emphasize the most impactful phrase
-- Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5
+- Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5. UNIQUENESS RULE: sub-copy must state information NOT already in the headline or badges. If the price appears in a badge, do NOT repeat it here. If the quality claim is in the headline, use a different angle (e.g. target audience, use-case, speed). Each element must add new information.
 - Badge text: 14–16px / Noto Sans JP Bold
 - CTA: 18–22px / Noto Sans JP Black
 Headline line 2 ÷ sub-copy size ratio ≥ 3:1.
@@ -540,7 +540,13 @@ Inside the text panel, add BOTH:
 ## BADGE DESIGN
 Choose based on product type and tone:
 - TEXT-ONLY outline (clean/minimal): 2px solid accent-color border, corner-radius 4–6px, transparent or ≤12% tint fill, text in accent color. NO solid fills.
-- ICON + TEXT (energetic/feature-rich): Unicode symbol prefix (✓ for feature/quality, → for action, ★ for premium, ■ for category) + badge text. Same border/fill rules.
+- ICON + TEXT (energetic/feature-rich): Each badge gets its OWN icon matched to that badge's specific meaning — do NOT use the same icon for all badges. Matching rules:
+  - ✓ → quality/certification/guarantee badges (e.g. 品質保証, 実績あり, 対応済)
+  - → → action/process/flow badges (e.g. 単発OK, 簡単発注, すぐ対応)
+  - ★ → premium/value/recommended badges (e.g. 高品質, プロ品質, 人気No.1)
+  - ¥ → price/cost badges (e.g. 30,000円〜, 低コスト, 明確価格)
+  - ∞ → unlimited/no-constraint badges (e.g. 縛りなし, 無制限, 何度でも)
+  Same border/fill rules as TEXT-ONLY.
 State your choice in the typography spec.
 
 ## CTA BAR
@@ -567,6 +573,8 @@ CHECKLIST before writing each brief:
 - SCENE style chosen? → specify subject gaze/body facing toward the text panel
 - Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
 - Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
+- ICON+TEXT chosen? → assign a DIFFERENT icon to each badge matching its specific meaning (✓/→/★/¥/∞)
+- Sub-copy content = unique information? → must NOT repeat price or claims already in headline or badges
 - MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
 
 BRAND: {brand_name}
