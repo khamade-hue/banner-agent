@@ -475,8 +475,10 @@ BRAND/SERVICE DETAILS:
 
 ## NON-NEGOTIABLE RULES (violations cause text distortion and AI artifacts)
 
-### RULE 1 — SOLID BACKGROUNDS UNDER ALL TEXT
-Every Japanese character MUST sit on a flat solid-color panel. NEVER place text over photos, gradients, or textures.
+### RULE 1 — HIGH-CONTRAST BACKGROUNDS UNDER ALL TEXT
+Every Japanese character must maintain WCAG AA contrast (≥4.5:1 against white text).
+Text panels MAY use subtle dark-to-dark gradients (e.g., #0F1E35 → #1A3558) provided BOTH gradient stops are dark enough for white text — this adds richness over flat solids.
+NEVER place text over photos, bright gradients, light colors, or textures.
 
 ### RULE 2 — SHORT TEXT STRINGS
 - Headline: split into lines of ≤10 Japanese characters each (2 lines max)
@@ -507,8 +509,8 @@ NEVER mix Western/serif numerals with Japanese text. Write explicitly: "all char
 
 ## LAYOUT ZONES
 Name each zone with exact pixel dimensions and hex background.
-TEXT PANEL: NEVER use pure black (#000000). Use a deep brand-derived color — deep navy, dark teal, dark charcoal, or the darkest shade of the provided LP brand color. Specify as: "LEFT TEXT PANEL: 480×1080px, solid #0F1E35".
-Add a 4–6px vertical accent bar in the brand accent color along the inner edge of the text panel (between panel and visual zone).
+TEXT PANEL: Use a rich dark-to-dark gradient derived from the brand palette. Both stops must be dark (luminance <60) so white text stays readable. Examples: "linear-gradient(160deg, #0F1E35 0%, #1A3558 100%)" or "linear-gradient(180deg, #1C1230 0%, #2D1B5E 100%)". NEVER use pure black (#000000) as either stop.
+Add a 4–6px vertical accent bar in the brand accent color along the inner edge of the text panel (between panel and visual zone). The accent bar itself MAY use a 2-stop gradient (e.g., accent-color → accent-color-bright) for extra shine.
 
 ## VISUAL ZONE
 Choose the most appropriate approach — DEFAULT to SCENE unless the brand clearly calls for otherwise:
@@ -540,17 +542,15 @@ Inside the text panel, add BOTH:
 ## BADGE DESIGN
 Choose based on product type and tone:
 - TEXT-ONLY outline (clean/minimal): 2px solid accent-color border, corner-radius 4–6px, transparent or ≤12% tint fill, text in accent color. NO solid fills.
-- ICON + TEXT (energetic/feature-rich): Each badge gets its OWN icon matched to that badge's specific meaning — do NOT use the same icon for all badges. Matching rules:
-  - ✓ → quality/certification/guarantee badges (e.g. 品質保証, 実績あり, 対応済)
-  - → → action/process/flow badges (e.g. 単発OK, 簡単発注, すぐ対応)
-  - ★ → premium/value/recommended badges (e.g. 高品質, プロ品質, 人気No.1)
-  - ¥ → price/cost badges (e.g. 30,000円〜, 低コスト, 明確価格)
-  - ∞ → unlimited/no-constraint badges (e.g. 縛りなし, 無制限, 何度でも)
-  Same border/fill rules as TEXT-ONLY.
+- ICON + TEXT (energetic/feature-rich): Use ONE consistent icon across ALL badges for visual rhythm and cohesion — do NOT mix different icons in the same badge row. Choose the single icon that best fits the overall brand tone:
+  - ✓ for service/quality/professional brands (most versatile — conveys reliability)
+  - → for action/efficiency/process-oriented brands
+  - ★ for premium/high-value brands
+  Apply that SAME icon as a prefix to every badge in the row. Same border/fill rules as TEXT-ONLY.
 State your choice in the typography spec.
 
 ## CTA BAR
-Full-width, height 72–96px, solid accent or contrasting brand color, centered CTA text with full typography spec.
+Full-width, height 72–96px. Use a gradient fill (e.g., accent-color → accent-color-bright, left-to-right) for a premium feel. Centered CTA text with full typography spec.
 
 ## COLOR PALETTE
 Base on LP Brand Colors if provided. Stay true to brand — adapt only for contrast/readability.
@@ -573,7 +573,7 @@ CHECKLIST before writing each brief:
 - SCENE style chosen? → specify subject gaze/body facing toward the text panel
 - Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
 - Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
-- ICON+TEXT chosen? → assign a DIFFERENT icon to each badge matching its specific meaning (✓/→/★/¥/∞)
+- ICON+TEXT chosen? → pick ONE icon (✓ / → / ★) and use it on ALL badges for visual cohesion
 - Sub-copy content = unique information? → must NOT repeat price or claims already in headline or badges
 - MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
 
