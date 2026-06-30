@@ -599,25 +599,35 @@ else:
             f'font-size:0.77rem;margin:2px 3px 2px 0">{f}</span>'
             for f in sel_set.get("features", [])
         )
+        _lbl_r = (
+            f'font-size:0.6rem;font-weight:700;color:#475569;text-transform:uppercase;'
+            f'letter-spacing:0.1em;flex-shrink:0;width:68px'
+        )
         st.markdown(
             f'<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);'
             f'border-left:3px solid {_sc};border-radius:10px;padding:12px 16px;margin:10px 0 20px">'
-            f'<div style="margin-bottom:7px">'
-            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
-            f'letter-spacing:0.1em;margin-right:8px">キャッチ</span>'
+            f'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'
+            f'<span style="{_lbl_r}">メインキャッチ</span>'
             f'<span style="background:rgba(59,130,246,0.15);color:#93c5fd;'
             f'border:1px solid rgba(59,130,246,0.4);border-radius:14px;'
             f'padding:3px 12px;font-size:0.82rem;font-weight:600">{sel_set.get("headline","")}</span>'
             f'</div>'
-            f'<div style="margin-bottom:9px">'
-            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
-            f'letter-spacing:0.1em;margin-right:8px">CTA</span>'
+            f'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'
+            f'<span style="{_lbl_r}">サブキャッチ</span>'
+            f'<span style="background:rgba(99,102,241,0.12);color:#a5b4fc;'
+            f'border:1px solid rgba(99,102,241,0.35);border-radius:14px;'
+            f'padding:3px 12px;font-size:0.8rem">{sel_set.get("sub_headline","")}</span>'
+            f'</div>'
+            f'<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">'
+            f'<span style="{_lbl_r};padding-top:5px">特徴</span>'
+            f'<div style="flex:1">{feat_pills_prev}</div>'
+            f'</div>'
+            f'<div style="display:flex;align-items:baseline;gap:8px">'
+            f'<span style="{_lbl_r}">CTA</span>'
             f'<span style="background:rgba(16,185,129,0.12);color:#6ee7b7;'
             f'border:1px solid rgba(16,185,129,0.35);border-radius:14px;'
             f'padding:3px 12px;font-size:0.8rem">{sel_set.get("offer","")}</span>'
             f'</div>'
-            f'<div><span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
-            f'letter-spacing:0.1em;display:block;margin-bottom:5px">特徴</span>{feat_pills_prev}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
