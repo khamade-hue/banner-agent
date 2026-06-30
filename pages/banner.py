@@ -154,7 +154,7 @@ if mode == "新規作成":
 
     # ── ビジュアル設定 ────────────────────────────────────────────────────────
     _section("ビジュアル設定")
-    col_pimg, col_ppl = st.columns(2)
+    col_pimg, col_plogo_use, col_ppl = st.columns(3)
     with col_pimg:
         st.markdown(
             '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
@@ -166,6 +166,20 @@ if mode == "新規作成":
             ["使用する", "使用しない"],
             horizontal=True,
             key="use_product_image",
+            label_visibility="collapsed",
+        ) == "使用する"
+    with col_plogo_use:
+        st.markdown(
+            '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
+            '商品ロゴの使用</div>',
+            unsafe_allow_html=True,
+        )
+        use_product_logo = st.radio(
+            "商品ロゴの使用",
+            ["使用する", "使用しない"],
+            index=1,
+            horizontal=True,
+            key="use_product_logo",
             label_visibility="collapsed",
         ) == "使用する"
     with col_ppl:
@@ -581,7 +595,7 @@ if generate_btn:
                 selected_axis.get("id", ""), selected_axis.get("axis", ""),
                 tonmana_desc, objective_desc, str(num_variations),
                 headline_copy.strip(), offer_copy.strip(),
-                str(use_product_image), str(use_people),
+                str(use_product_image), str(use_product_logo), str(use_people),
                 *sorted(features),
             ])
             _cache_key = hashlib.md5(_cache_raw.encode()).hexdigest()
@@ -607,6 +621,7 @@ if generate_btn:
                         offer_copy=offer_copy.strip(),
                         features=features,
                         use_product_image=use_product_image,
+                        use_product_logo=use_product_logo,
                         use_people=use_people,
                     )
                     if not variations:

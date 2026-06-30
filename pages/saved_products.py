@@ -103,8 +103,10 @@ for p in reversed(products):
                 with col_imgs:
                     if p.get("product_image_url"):
                         st.image(p["product_image_url"], caption="商品画像", width=100)
+                    if p.get("product_logo_url"):
+                        st.image(p["product_logo_url"], caption="商品ロゴ", width=80)
                     if p.get("logo_url"):
-                        st.image(p["logo_url"], caption="ロゴ", width=80)
+                        st.image(p["logo_url"], caption="企業ロゴ", width=80)
 
                 with col_btns:
                     if st.button("✏️", key=f"edit_prod_{p['id']}", help="編集",
@@ -140,11 +142,11 @@ for p in reversed(products):
                     height=90, key=f"e_comp_{p['id']}",
                 )
 
-                e_img_col, e_logo_col = st.columns(2)
+                e_img_col, e_plogo_col, e_logo_col = st.columns(3)
                 with e_img_col:
                     st.markdown(
                         '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
-                        '商品画像（変更する場合のみアップロード）</div>',
+                        '商品画像（変更する場合のみ）</div>',
                         unsafe_allow_html=True,
                     )
                     e_image = st.file_uploader(
@@ -152,14 +154,29 @@ for p in reversed(products):
                         key=f"e_img_{p['id']}", label_visibility="collapsed",
                     )
                     if e_image:
-                        st.image(e_image, width=120)
+                        st.image(e_image, width=110)
                     elif p.get("product_image_url"):
-                        st.image(p["product_image_url"], width=120)
+                        st.image(p["product_image_url"], width=110)
+
+                with e_plogo_col:
+                    st.markdown(
+                        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
+                        '商品ロゴ（変更する場合のみ）</div>',
+                        unsafe_allow_html=True,
+                    )
+                    e_product_logo = st.file_uploader(
+                        "商品ロゴ", type=["png", "jpg", "jpeg"],
+                        key=f"e_plogo_{p['id']}", label_visibility="collapsed",
+                    )
+                    if e_product_logo:
+                        st.image(e_product_logo, width=100)
+                    elif p.get("product_logo_url"):
+                        st.image(p["product_logo_url"], width=100)
 
                 with e_logo_col:
                     st.markdown(
                         '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
-                        '企業ロゴ（変更する場合のみアップロード）</div>',
+                        '企業ロゴ（変更する場合のみ）</div>',
                         unsafe_allow_html=True,
                     )
                     e_logo = st.file_uploader(
@@ -180,10 +197,12 @@ for p in reversed(products):
                         else:
                             with st.spinner("更新中..."):
                                 try:
-                                    img_bytes  = e_image.read() if e_image else None
-                                    img_ext    = e_image.name.rsplit(".", 1)[-1].lower() if e_image else "png"
-                                    logo_bytes = e_logo.read() if e_logo else None
-                                    logo_ext   = e_logo.name.rsplit(".", 1)[-1].lower() if e_logo else "png"
+                                    img_bytes   = e_image.read() if e_image else None
+                                    img_ext     = e_image.name.rsplit(".", 1)[-1].lower() if e_image else "png"
+                                    plogo_bytes = e_product_logo.read() if e_product_logo else None
+                                    plogo_ext   = e_product_logo.name.rsplit(".", 1)[-1].lower() if e_product_logo else "png"
+                                    logo_bytes  = e_logo.read() if e_logo else None
+                                    logo_ext    = e_logo.name.rsplit(".", 1)[-1].lower() if e_logo else "png"
                                     update_product(
                                         product_id=p["id"],
                                         product_name=e_name.strip(),
@@ -192,6 +211,8 @@ for p in reversed(products):
                                         competitor_info=e_comp.strip(),
                                         product_image=img_bytes,
                                         product_image_ext=img_ext,
+                                        product_logo=plogo_bytes,
+                                        product_logo_ext=plogo_ext,
                                         logo=logo_bytes,
                                         logo_ext=logo_ext,
                                     )

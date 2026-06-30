@@ -41,7 +41,7 @@ product_info = st.text_area(
     height=110,
 )
 
-col_img, col_logo = st.columns(2)
+col_img, col_plogo, col_logo = st.columns(3)
 with col_img:
     st.markdown(
         '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
@@ -53,7 +53,20 @@ with col_img:
         key="prod_image", label_visibility="collapsed",
     )
     if uploaded_image:
-        st.image(uploaded_image, width=160)
+        st.image(uploaded_image, width=140)
+
+with col_plogo:
+    st.markdown(
+        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
+        '商品ロゴ（任意）</div>',
+        unsafe_allow_html=True,
+    )
+    uploaded_product_logo = st.file_uploader(
+        "商品ロゴ", type=["png", "jpg", "jpeg"],
+        key="prod_product_logo", label_visibility="collapsed",
+    )
+    if uploaded_product_logo:
+        st.image(uploaded_product_logo, width=120)
 
 with col_logo:
     st.markdown(
@@ -81,10 +94,12 @@ if st.button("商品を登録する", type="primary", use_container_width=True, 
     else:
         with st.spinner("登録中..."):
             try:
-                image_bytes = uploaded_image.read() if uploaded_image else None
-                image_ext   = uploaded_image.name.rsplit(".", 1)[-1].lower() if uploaded_image else "png"
-                logo_bytes  = uploaded_logo.read() if uploaded_logo else None
-                logo_ext    = uploaded_logo.name.rsplit(".", 1)[-1].lower() if uploaded_logo else "png"
+                image_bytes        = uploaded_image.read() if uploaded_image else None
+                image_ext          = uploaded_image.name.rsplit(".", 1)[-1].lower() if uploaded_image else "png"
+                plogo_bytes        = uploaded_product_logo.read() if uploaded_product_logo else None
+                plogo_ext          = uploaded_product_logo.name.rsplit(".", 1)[-1].lower() if uploaded_product_logo else "png"
+                logo_bytes         = uploaded_logo.read() if uploaded_logo else None
+                logo_ext           = uploaded_logo.name.rsplit(".", 1)[-1].lower() if uploaded_logo else "png"
 
                 save_product(
                     product_name=product_name.strip(),
@@ -92,6 +107,8 @@ if st.button("商品を登録する", type="primary", use_container_width=True, 
                     product_url=product_url.strip(),
                     product_image=image_bytes,
                     product_image_ext=image_ext,
+                    product_logo=plogo_bytes,
+                    product_logo_ext=plogo_ext,
                     logo=logo_bytes,
                     logo_ext=logo_ext,
                     competitor_info=competitor_info.strip(),
@@ -169,8 +186,10 @@ else:
                 with col_imgs:
                     if p.get("product_image_url"):
                         st.image(p["product_image_url"], caption="商品画像", width=100)
+                    if p.get("product_logo_url"):
+                        st.image(p["product_logo_url"], caption="商品ロゴ", width=80)
                     if p.get("logo_url"):
-                        st.image(p["logo_url"], caption="ロゴ", width=80)
+                        st.image(p["logo_url"], caption="企業ロゴ", width=80)
 
                 with col_btns:
                     if st.button("✏️", key=f"edit_prod_{p['id']}", help="編集",
@@ -210,11 +229,11 @@ else:
                     height=90, key=f"e_comp_{p['id']}",
                 )
 
-                e_img_col, e_logo_col = st.columns(2)
+                e_img_col, e_plogo_col, e_logo_col = st.columns(3)
                 with e_img_col:
                     st.markdown(
                         '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
-                        '商品画像（変更する場合のみアップロード）</div>',
+                        '商品画像（変更する場合のみ）</div>',
                         unsafe_allow_html=True,
                     )
                     e_image = st.file_uploader(
@@ -222,14 +241,29 @@ else:
                         key=f"e_img_{p['id']}", label_visibility="collapsed",
                     )
                     if e_image:
-                        st.image(e_image, width=120)
+                        st.image(e_image, width=110)
                     elif p.get("product_image_url"):
-                        st.image(p["product_image_url"], width=120)
+                        st.image(p["product_image_url"], width=110)
+
+                with e_plogo_col:
+                    st.markdown(
+                        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
+                        '商品ロゴ（変更する場合のみ）</div>',
+                        unsafe_allow_html=True,
+                    )
+                    e_product_logo = st.file_uploader(
+                        "商品ロゴ", type=["png", "jpg", "jpeg"],
+                        key=f"e_plogo_{p['id']}", label_visibility="collapsed",
+                    )
+                    if e_product_logo:
+                        st.image(e_product_logo, width=100)
+                    elif p.get("product_logo_url"):
+                        st.image(p["product_logo_url"], width=100)
 
                 with e_logo_col:
                     st.markdown(
                         '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
-                        '企業ロゴ（変更する場合のみアップロード）</div>',
+                        '企業ロゴ（変更する場合のみ）</div>',
                         unsafe_allow_html=True,
                     )
                     e_logo = st.file_uploader(
@@ -250,10 +284,12 @@ else:
                         else:
                             with st.spinner("更新中..."):
                                 try:
-                                    img_bytes = e_image.read() if e_image else None
-                                    img_ext   = e_image.name.rsplit(".", 1)[-1].lower() if e_image else "png"
-                                    logo_bytes = e_logo.read() if e_logo else None
-                                    logo_ext   = e_logo.name.rsplit(".", 1)[-1].lower() if e_logo else "png"
+                                    img_bytes   = e_image.read() if e_image else None
+                                    img_ext     = e_image.name.rsplit(".", 1)[-1].lower() if e_image else "png"
+                                    plogo_bytes = e_product_logo.read() if e_product_logo else None
+                                    plogo_ext   = e_product_logo.name.rsplit(".", 1)[-1].lower() if e_product_logo else "png"
+                                    logo_bytes  = e_logo.read() if e_logo else None
+                                    logo_ext    = e_logo.name.rsplit(".", 1)[-1].lower() if e_logo else "png"
                                     update_product(
                                         product_id=p["id"],
                                         product_name=e_name.strip(),
@@ -262,6 +298,8 @@ else:
                                         competitor_info=e_comp.strip(),
                                         product_image=img_bytes,
                                         product_image_ext=img_ext,
+                                        product_logo=plogo_bytes,
+                                        product_logo_ext=plogo_ext,
                                         logo=logo_bytes,
                                         logo_ext=logo_ext,
                                     )

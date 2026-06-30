@@ -144,6 +144,8 @@ def save_product(
     product_url: str,
     product_image: bytes | None,
     product_image_ext: str,
+    product_logo: bytes | None,
+    product_logo_ext: str,
     logo: bytes | None,
     logo_ext: str,
     competitor_info: str,
@@ -153,6 +155,8 @@ def save_product(
 
     product_image_url = ""
     product_image_path = ""
+    product_logo_url = ""
+    product_logo_path = ""
     logo_url = ""
     logo_path = ""
 
@@ -164,6 +168,15 @@ def save_product(
             {"content-type": f"image/{product_image_ext}", "upsert": "true"},
         )
         product_image_url = client.storage.from_(_BUCKET).get_public_url(product_image_path)
+
+    if product_logo:
+        product_logo_path = f"products/{product_id}/product_logo.{product_logo_ext}"
+        client.storage.from_(_BUCKET).upload(
+            product_logo_path,
+            product_logo,
+            {"content-type": f"image/{product_logo_ext}", "upsert": "true"},
+        )
+        product_logo_url = client.storage.from_(_BUCKET).get_public_url(product_logo_path)
 
     if logo:
         logo_path = f"products/{product_id}/logo.{logo_ext}"
@@ -181,6 +194,8 @@ def save_product(
         "product_url": product_url,
         "product_image_url": product_image_url,
         "product_image_path": product_image_path,
+        "product_logo_url": product_logo_url,
+        "product_logo_path": product_logo_path,
         "logo_url": logo_url,
         "logo_path": logo_path,
         "competitor_info": competitor_info,
@@ -198,6 +213,8 @@ def update_product(
     competitor_info: str,
     product_image: bytes | None = None,
     product_image_ext: str = "png",
+    product_logo: bytes | None = None,
+    product_logo_ext: str = "png",
     logo: bytes | None = None,
     logo_ext: str = "png",
 ) -> None:
@@ -216,6 +233,14 @@ def update_product(
         )
         data["product_image_url"] = client.storage.from_(_BUCKET).get_public_url(img_path)
         data["product_image_path"] = img_path
+    if product_logo:
+        plogo_path = f"products/{product_id}/product_logo.{product_logo_ext}"
+        client.storage.from_(_BUCKET).upload(
+            plogo_path, product_logo,
+            {"content-type": f"image/{product_logo_ext}", "upsert": "true"},
+        )
+        data["product_logo_url"] = client.storage.from_(_BUCKET).get_public_url(plogo_path)
+        data["product_logo_path"] = plogo_path
     if logo:
         logo_path = f"products/{product_id}/logo.{logo_ext}"
         client.storage.from_(_BUCKET).upload(
@@ -232,7 +257,11 @@ def delete_product(product_id: str) -> None:
     products = load_products()
     target = next((p for p in products if p["id"] == product_id), None)
     if target:
-        paths = [p for p in [target.get("product_image_path"), target.get("logo_path")] if p]
+        paths = [p for p in [
+            target.get("product_image_path"),
+            target.get("product_logo_path"),
+            target.get("logo_path"),
+        ] if p]
         if paths:
             client.storage.from_(_BUCKET).remove(paths)
     client.table("products").delete().eq("id", product_id).execute()

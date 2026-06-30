@@ -392,6 +392,7 @@ def generate_banner_prompts(
     offer_copy: str = "",
     features: list[str] | None = None,
     use_product_image: bool = True,
+    use_product_logo: bool = False,
     use_people: bool = True,
 ) -> list[dict]:
     """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
@@ -431,6 +432,16 @@ BRAND/SERVICE DETAILS:
         _vc.append("• PRODUCT IMAGE: Feature the product as a prominent visual element in every variation.")
     else:
         _vc.append("• PRODUCT IMAGE: Do NOT depict the physical product. Use lifestyle, abstract, or thematic imagery instead.")
+    if use_product_logo:
+        _vc.append(
+            "• PRODUCT LOGO: Include a small product/brand logo mark in the text panel — "
+            "position it in the upper-left corner of the text zone or directly below the CTA bar. "
+            "Render as a clean, simplified logotype or icon mark in white or the brand accent color. "
+            "Size: 32–48px height, with 16px clearance from panel edges. "
+            "Do NOT add a background box or border behind the logo."
+        )
+    else:
+        _vc.append("• PRODUCT LOGO: Do NOT include any logo mark or logotype element in the design.")
     if use_people:
         _vc.append("• PEOPLE: Include human models or characters as the main visual subject where appropriate.")
     else:
