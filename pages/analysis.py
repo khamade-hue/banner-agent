@@ -371,9 +371,33 @@ if mode == "新規作成":
             "lp_colors": st.session_state.get("analysis_lp_colors", []),
         }
 
-        # ── 提案訴求軸（最初に表示）──────────────────────────────────────────
+        # ── 3C 分析の詳細（先頭に表示）────────────────────────────────────────
+        with st.expander("3C 分析の詳細を見る", expanded=True):
+            st.markdown(
+                '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;'
+                'text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">3C 分析結果</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(_c3_card(
+                "顧客 Customer", "#3b82f6", "linear-gradient(135deg,#1d4ed8,#3b82f6)", "👥",
+                [("ニーズ", cust.get("needs","—")),
+                 ("課題・ペイン", cust.get("pain_points","—")),
+                 ("属性", cust.get("demographics","—"))],
+            ), unsafe_allow_html=True)
+            st.markdown(_c3_card(
+                "競合 Competitor", "#f43f5e", "linear-gradient(135deg,#be123c,#f43f5e)", "⚔️",
+                [("競合状況", comp.get("landscape","—")),
+                 ("差別化ポイント", comp.get("differentiation","—"))],
+            ), unsafe_allow_html=True)
+            st.markdown(_c3_card(
+                "自社 Company", "#10b981", "linear-gradient(135deg,#059669,#10b981)", "🏢",
+                [("強み", co.get("strengths","—")),
+                 ("提供価値", co.get("value_proposition","—"))],
+            ), unsafe_allow_html=True)
+
+        # ── 提案訴求軸 ────────────────────────────────────────────────────────
         st.markdown(
-            '<div style="margin-top:4px;margin-bottom:16px">'
+            '<div style="margin-top:20px;margin-bottom:16px">'
             '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;text-transform:uppercase;'
             'letter-spacing:0.1em;margin-bottom:6px">提案訴求軸</div>'
             '<p style="color:#64748b;font-size:0.82rem;margin:0">'
@@ -476,30 +500,6 @@ if mode == "新規作成":
                     except Exception as e:
                         st.error(f"生成エラー: {e}")
 
-        # ── 3C 分析の詳細（折りたたみ）────────────────────────────────────────
-        st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
-        with st.expander("3C 分析の詳細を見る"):
-            st.markdown(
-                '<div style="font-size:0.72rem;font-weight:700;color:#3b82f6;'
-                'text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">3C 分析結果</div>',
-                unsafe_allow_html=True,
-            )
-            st.markdown(_c3_card(
-                "顧客 Customer", "#3b82f6", "linear-gradient(135deg,#1d4ed8,#3b82f6)", "👥",
-                [("ニーズ", cust.get("needs","—")),
-                 ("課題・ペイン", cust.get("pain_points","—")),
-                 ("属性", cust.get("demographics","—"))],
-            ), unsafe_allow_html=True)
-            st.markdown(_c3_card(
-                "競合 Competitor", "#f43f5e", "linear-gradient(135deg,#be123c,#f43f5e)", "⚔️",
-                [("競合状況", comp.get("landscape","—")),
-                 ("差別化ポイント", comp.get("differentiation","—"))],
-            ), unsafe_allow_html=True)
-            st.markdown(_c3_card(
-                "自社 Company", "#10b981", "linear-gradient(135deg,#059669,#10b981)", "🏢",
-                [("強み", co.get("strengths","—")),
-                 ("提供価値", co.get("value_proposition","—"))],
-            ), unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
