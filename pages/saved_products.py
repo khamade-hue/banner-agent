@@ -142,51 +142,65 @@ for p in reversed(products):
                     height=90, key=f"e_comp_{p['id']}",
                 )
 
+                def _img_field(col, label, url_key, del_sk, undo_sk, up_key, file_types):
+                    with col:
+                        st.markdown(
+                            f'<div style="font-size:0.75rem;color:#64748b;font-weight:600;'
+                            f'margin-bottom:4px">{label}</div>',
+                            unsafe_allow_html=True,
+                        )
+                        existing_url = p.get(url_key, "")
+                        is_del = st.session_state.get(del_sk, False)
+                        if existing_url and not is_del:
+                            _pc, _dc = st.columns([4, 1])
+                            with _pc:
+                                st.image(existing_url, width=90)
+                            with _dc:
+                                st.markdown(
+                                    "<div style='height:24px'></div>", unsafe_allow_html=True
+                                )
+                                if st.button(
+                                    "🗑", key=f"del_btn_{del_sk}", type="secondary",
+                                    use_container_width=True, help="この画像を削除",
+                                ):
+                                    st.session_state[del_sk] = True
+                                    st.rerun()
+                        elif existing_url and is_del:
+                            st.markdown(
+                                '<div style="color:#ef4444;font-size:0.72rem;font-weight:600;'
+                                'padding:4px 0 6px">✕ 保存時に削除されます</div>',
+                                unsafe_allow_html=True,
+                            )
+                            if st.button("取り消し", key=undo_sk, type="secondary"):
+                                st.session_state[del_sk] = False
+                                st.rerun()
+                        uploaded = st.file_uploader(
+                            label, type=file_types,
+                            key=up_key, label_visibility="collapsed",
+                        )
+                        if uploaded:
+                            st.image(uploaded, width=90)
+                    return uploaded
+
                 e_img_col, e_plogo_col, e_logo_col = st.columns(3)
-                with e_img_col:
-                    st.markdown(
-                        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
-                        '商品画像（変更する場合のみ）</div>',
-                        unsafe_allow_html=True,
-                    )
-                    e_image = st.file_uploader(
-                        "商品画像", type=["png", "jpg", "jpeg"],
-                        key=f"e_img_{p['id']}", label_visibility="collapsed",
-                    )
-                    if e_image:
-                        st.image(e_image, width=110)
-                    elif p.get("product_image_url"):
-                        st.image(p["product_image_url"], width=110)
-
-                with e_plogo_col:
-                    st.markdown(
-                        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
-                        '商品ロゴ（変更する場合のみ）</div>',
-                        unsafe_allow_html=True,
-                    )
-                    e_product_logo = st.file_uploader(
-                        "商品ロゴ", type=["png", "jpg", "jpeg"],
-                        key=f"e_plogo_{p['id']}", label_visibility="collapsed",
-                    )
-                    if e_product_logo:
-                        st.image(e_product_logo, width=100)
-                    elif p.get("product_logo_url"):
-                        st.image(p["product_logo_url"], width=100)
-
-                with e_logo_col:
-                    st.markdown(
-                        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">'
-                        '企業ロゴ（変更する場合のみ）</div>',
-                        unsafe_allow_html=True,
-                    )
-                    e_logo = st.file_uploader(
-                        "企業ロゴ", type=["png", "jpg", "jpeg"],
-                        key=f"e_logo_{p['id']}", label_visibility="collapsed",
-                    )
-                    if e_logo:
-                        st.image(e_logo, width=100)
-                    elif p.get("logo_url"):
-                        st.image(p["logo_url"], width=100)
+                e_image        = _img_field(
+                    e_img_col,   "商品画像",
+                    url_key="product_image_url",
+                    del_sk=f"del_pimg_{p['id']}", undo_sk=f"undo_pimg_{p['id']}",
+                    up_key=f"e_img_{p['id']}", file_types=["png", "jpg", "jpeg"],
+                )
+                e_product_logo = _img_field(
+                    e_plogo_col, "商品ロゴ",
+                    url_key="product_logo_url",
+                    del_sk=f"del_plogo_{p['id']}", undo_sk=f"undo_plogo_{p['id']}",
+                    up_key=f"e_plogo_{p['id']}", file_types=["png", "jpg", "jpeg"],
+                )
+                e_logo         = _img_field(
+                    e_logo_col,  "企業ロゴ",
+                    url_key="logo_url",
+                    del_sk=f"del_logo_{p['id']}", undo_sk=f"undo_logo_{p['id']}",
+                    up_key=f"e_logo_{p['id']}", file_types=["png", "jpg", "jpeg"],
+                )
 
                 btn_save, btn_cancel = st.columns(2)
                 with btn_save:
@@ -215,7 +229,12 @@ for p in reversed(products):
                                         product_logo_ext=plogo_ext,
                                         logo=logo_bytes,
                                         logo_ext=logo_ext,
+                                        clear_product_image=st.session_state.get(f"del_pimg_{p['id']}", False),
+                                        clear_product_logo=st.session_state.get(f"del_plogo_{p['id']}", False),
+                                        clear_logo=st.session_state.get(f"del_logo_{p['id']}", False),
                                     )
+                                    for _k in [f"del_pimg_{p['id']}", f"del_plogo_{p['id']}", f"del_logo_{p['id']}"]:
+                                        st.session_state.pop(_k, None)
                                     st.session_state[_edit_key] = False
                                     st.rerun()
                                 except Exception as e:
@@ -223,6 +242,8 @@ for p in reversed(products):
                 with btn_cancel:
                     if st.button("キャンセル", use_container_width=True,
                                  key=f"cancel_prod_{p['id']}"):
+                        for _k in [f"del_pimg_{p['id']}", f"del_plogo_{p['id']}", f"del_logo_{p['id']}"]:
+                            st.session_state.pop(_k, None)
                         st.session_state[_edit_key] = False
                         st.rerun()
 

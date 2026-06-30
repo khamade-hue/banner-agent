@@ -217,6 +217,9 @@ def update_product(
     product_logo_ext: str = "png",
     logo: bytes | None = None,
     logo_ext: str = "png",
+    clear_product_image: bool = False,
+    clear_product_logo: bool = False,
+    clear_logo: bool = False,
 ) -> None:
     client = _client()
     data: dict = {
@@ -225,6 +228,29 @@ def update_product(
         "product_url": product_url,
         "competitor_info": competitor_info,
     }
+
+    # Clear existing images from storage when requested (only if no new upload replaces them)
+    if clear_product_image or clear_product_logo or clear_logo:
+        existing = next((p for p in load_products() if p["id"] == product_id), {})
+        remove_paths: list[str] = []
+        if clear_product_image and not product_image:
+            if existing.get("product_image_path"):
+                remove_paths.append(existing["product_image_path"])
+            data["product_image_url"] = ""
+            data["product_image_path"] = ""
+        if clear_product_logo and not product_logo:
+            if existing.get("product_logo_path"):
+                remove_paths.append(existing["product_logo_path"])
+            data["product_logo_url"] = ""
+            data["product_logo_path"] = ""
+        if clear_logo and not logo:
+            if existing.get("logo_path"):
+                remove_paths.append(existing["logo_path"])
+            data["logo_url"] = ""
+            data["logo_path"] = ""
+        if remove_paths:
+            client.storage.from_(_BUCKET).remove(remove_paths)
+
     if product_image:
         img_path = f"products/{product_id}/product_image.{product_image_ext}"
         client.storage.from_(_BUCKET).upload(
