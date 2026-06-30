@@ -230,16 +230,21 @@ if mode == "新規作成":
             f'border-radius:10px;padding:11px 14px;margin:6px 0 10px">'
             f'<div style="margin-bottom:5px">'
             f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
-            f'letter-spacing:0.1em;margin-right:8px">キャッチ</span>'
+            f'letter-spacing:0.1em;margin-right:8px">メインキャッチ</span>'
             f'<span style="color:#93c5fd;font-size:0.85rem;font-weight:600">'
             f'{sel_set.get("headline","")}</span></div>'
-            f'<div style="margin-bottom:8px">'
+            f'<div style="margin-bottom:5px">'
+            f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
+            f'letter-spacing:0.1em;margin-right:8px">サブキャッチ</span>'
+            f'<span style="color:#a5b4fc;font-size:0.82rem">{sel_set.get("sub_headline","")}</span></div>'
+            f'<div style="margin-bottom:8px"><span style="font-size:0.63rem;font-weight:700;color:#64748b;'
+            f'text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px">'
+            f'特徴</span>{feat_pills}</div>'
+            f'<div>'
             f'<span style="font-size:0.63rem;font-weight:700;color:#64748b;text-transform:uppercase;'
             f'letter-spacing:0.1em;margin-right:8px">CTA</span>'
             f'<span style="color:#6ee7b7;font-size:0.82rem">{sel_set.get("offer","")}</span></div>'
-            f'<div><span style="font-size:0.63rem;font-weight:700;color:#64748b;'
-            f'text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px">'
-            f'特徴</span>{feat_pills}</div></div>',
+            f'</div>',
             unsafe_allow_html=True,
         )
 
@@ -260,17 +265,23 @@ if mode == "新規作成":
 
         with st.expander("コピーを手動で上書き（任意）"):
             hl_override = st.text_input(
-                "キャッチコピー",
+                "メインキャッチ",
                 placeholder=sel_set.get("headline", ""),
                 key=f"hl_override_{sel_set_idx}",
+            )
+            sh_override = st.text_input(
+                "サブキャッチ",
+                placeholder=sel_set.get("sub_headline", ""),
+                key=f"sh_override_{sel_set_idx}",
             )
             of_override = st.text_input(
                 "オファー / CTA",
                 placeholder=sel_set.get("offer", ""),
                 key=f"of_override_{sel_set_idx}",
             )
-        headline_copy = hl_override.strip() if hl_override.strip() else sel_set.get("headline", "")
-        offer_copy    = of_override.strip() if of_override.strip() else sel_set.get("offer", "")
+        headline_copy     = hl_override.strip() if hl_override.strip() else sel_set.get("headline", "")
+        sub_headline_copy = sh_override.strip() if sh_override.strip() else sel_set.get("sub_headline", "")
+        offer_copy        = of_override.strip() if of_override.strip() else sel_set.get("offer", "")
 
     else:
         # ── 旧形式: copy_suggestions ──────────────────────────────────────────
@@ -594,7 +605,7 @@ if generate_btn:
             _cache_raw = "|".join([
                 selected_axis.get("id", ""), selected_axis.get("axis", ""),
                 tonmana_desc, objective_desc, str(num_variations),
-                headline_copy.strip(), offer_copy.strip(),
+                headline_copy.strip(), sub_headline_copy.strip(), offer_copy.strip(),
                 str(use_product_image), str(use_product_logo), str(use_people),
                 *sorted(features),
             ])
@@ -618,6 +629,7 @@ if generate_btn:
                         product_context=selected_axis.get("product_context"),
                         objective=objective_desc,
                         headline_copy=headline_copy.strip(),
+                        sub_headline_copy=sub_headline_copy.strip(),
                         offer_copy=offer_copy.strip(),
                         features=features,
                         use_product_image=use_product_image,
@@ -682,14 +694,15 @@ if generate_btn:
             st.write(f"✓ {len(results)} バリエーションを保存しました")
             status.update(label="生成完了！", state="complete", expanded=False)
 
-        st.session_state["gen_results"]   = results
-        st.session_state["gen_axis"]      = selected_axis
-        st.session_state["gen_platforms"] = selected_platforms
-        st.session_state["gen_tonmana"]   = tonmana_label
-        st.session_state["gen_objective"] = objective_label
-        st.session_state["gen_headline"]  = headline_copy.strip()
-        st.session_state["gen_offer"]     = offer_copy.strip()
-        st.session_state["gen_features"]  = features
+        st.session_state["gen_results"]      = results
+        st.session_state["gen_axis"]         = selected_axis
+        st.session_state["gen_platforms"]    = selected_platforms
+        st.session_state["gen_tonmana"]      = tonmana_label
+        st.session_state["gen_objective"]    = objective_label
+        st.session_state["gen_headline"]     = headline_copy.strip()
+        st.session_state["gen_sub_headline"] = sub_headline_copy.strip()
+        st.session_state["gen_offer"]        = offer_copy.strip()
+        st.session_state["gen_features"]     = features
 
     else:  # 既存のバナーから作成
         ex_platform_name = (
@@ -889,9 +902,10 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
             label_visibility="collapsed",
         )
 
-        gen_headline = st.session_state.get("gen_headline", "")
-        gen_offer    = st.session_state.get("gen_offer", "")
-        gen_features = st.session_state.get("gen_features", [])
+        gen_headline     = st.session_state.get("gen_headline", "")
+        gen_sub_headline = st.session_state.get("gen_sub_headline", "")
+        gen_offer        = st.session_state.get("gen_offer", "")
+        gen_features     = st.session_state.get("gen_features", [])
         target_elem      = None
         rev_instructions = ""
         rev_part_label   = sel_part
@@ -941,6 +955,8 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
             _text_items: list[tuple[str, str]] = []
             if gen_headline:
                 _text_items.append(("メインキャッチ", gen_headline))
+            if gen_sub_headline:
+                _text_items.append(("サブキャッチ", gen_sub_headline))
             if gen_offer:
                 _text_items.append(("オファー・CTA", gen_offer))
             for _f in gen_features:

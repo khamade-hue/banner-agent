@@ -33,14 +33,27 @@ _AXIS_ITEM_SCHEMA = {
             "type": "array",
             "minItems": 3,
             "maxItems": 3,
-            "description": "3パターンのコピーセット（各セットはキャッチ1本・CTA1本・特徴4〜6項目）",
+            "description": "3パターンのコピーセット（各セットはメインキャッチ・サブキャッチ・特徴・CTA）",
             "items": {
                 "type": "object",
-                "required": ["headline", "offer", "features"],
+                "required": ["headline", "sub_headline", "features", "offer"],
                 "properties": {
                     "headline": {
                         "type": "string",
-                        "description": "キャッチコピー（20文字以内、強いインパクト）",
+                        "description": "メインキャッチコピー（20文字以内、強いインパクト）",
+                    },
+                    "sub_headline": {
+                        "type": "string",
+                        "description": (
+                            "サブキャッチコピー（30文字以内）。"
+                            "メインキャッチを補足する一文。ターゲットの状況・サービスカテゴリ・独自価値を端的に表現。"
+                            "headline・features・offerと内容が重複しないこと。"
+                        ),
+                    },
+                    "features": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "バナー用特徴・ベネフィット 4〜6項目（短く簡潔に）",
                     },
                     "offer": {
                         "type": "string",
@@ -48,11 +61,6 @@ _AXIS_ITEM_SCHEMA = {
                             "CTA文言（例: 今すぐ資料を請求する / まず実績を確認する / 無料で相談する）。"
                             "商品情報に明記されていない割引・限定・無料体験・具体的数値は絶対に含めないこと。"
                         ),
-                    },
-                    "features": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "バナー用特徴・ベネフィット 4〜6項目（短く簡潔に）",
                     },
                 },
             },
@@ -128,10 +136,12 @@ _COPY_INSTRUCTIONS = """
 headline・offer・features が1枚のバナー上で統一感を持って機能するよう設計してください。
 
 各セットの構成:
-- headline: キャッチコピー1本（20文字以内、強いインパクト）
+- headline: メインキャッチコピー1本（20文字以内、強いインパクト）
+- sub_headline: サブキャッチコピー1本（30文字以内、メインキャッチを補足する一文。
+  ターゲットの状況・サービスカテゴリ・独自価値を端的に。headline・features・offerと重複しないこと）
+- features: バナーのアイコン行に使う特徴・ベネフィット 4〜6項目（短く簡潔に）
 - offer: CTA文言1本（行動を促す動詞ベースの表現。具体的な割引率・限定期間・無料体験期間などは
   商品情報に明記されている場合のみ使用すること）
-- features: バナーのアイコン行に使う特徴・ベネフィット 4〜6項目（短く簡潔に）
 
 【絶対に守るルール】
 ■ 事実根拠ルール（最優先）
@@ -324,9 +334,10 @@ def generate_more_axes(
 
 
 _PART_LABELS = {
-    "headlines": "キャッチコピー（20文字以内×3つ）",
-    "offers":    "オファー・CTA（2つ）",
-    "features":  "特徴・アイコン（4〜6項目、短く簡潔に）",
+    "headlines":     "メインキャッチコピー（20文字以内×3つ）",
+    "sub_headlines": "サブキャッチコピー（30文字以内×3つ）",
+    "features":      "特徴・アイコン（4〜6項目、短く簡潔に）",
+    "offers":        "CTA文言（3つ）",
 }
 
 
@@ -435,6 +446,7 @@ def generate_banner_prompts(
     product_context: dict | None = None,
     objective: str = "",
     headline_copy: str = "",
+    sub_headline_copy: str = "",
     offer_copy: str = "",
     features: list[str] | None = None,
     use_product_image: bool = True,
@@ -468,6 +480,7 @@ BRAND/SERVICE DETAILS:
     objective_section = f"\nCampaign Objective: {objective}" if objective else ""
 
     headline_section = f"Main Headline: {headline_copy}" if headline_copy else "Main Headline: (generate a compelling Japanese headline)"
+    sub_headline_section = f"Sub-copy (18-22px supporting line below headline): {sub_headline_copy}" if sub_headline_copy else ""
     offer_section = f"Offer/CTA: {offer_copy}" if offer_copy else ""
     features_section = ""
     if features:
@@ -653,6 +666,7 @@ TARGET AUDIENCE: {target_audience}{axis_section}{objective_section}
 
 COPY — embed verbatim:
 {headline_section}
+{sub_headline_section}
 {offer_section}
 {features_section}
 {visual_constraints_section}

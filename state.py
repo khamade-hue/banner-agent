@@ -43,10 +43,11 @@ def add_axis(
     if copy_sets:
         # Derive flat lists for backward compat, embed copy_sets inside copy_suggestions
         cs_merged: dict = {
-            "headlines": [cs.get("headline", "") for cs in copy_sets],
-            "offers":    [cs.get("offer", "") for cs in copy_sets],
-            "features":  list(dict.fromkeys(f for cs in copy_sets for f in cs.get("features", []))),
-            "_sets":     copy_sets,
+            "headlines":     [cs.get("headline", "") for cs in copy_sets],
+            "sub_headlines": [cs.get("sub_headline", "") for cs in copy_sets],
+            "features":      list(dict.fromkeys(f for cs in copy_sets for f in cs.get("features", []))),
+            "offers":        [cs.get("offer", "") for cs in copy_sets],
+            "_sets":         copy_sets,
         }
     else:
         cs_merged = axis.get("copy_suggestions", {})
