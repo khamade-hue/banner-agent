@@ -498,7 +498,10 @@ BRAND/SERVICE DETAILS:
     objective_section = f"\nCampaign Objective: {objective}" if objective else ""
 
     headline_section = f"Main Headline: {headline_copy}" if headline_copy else "Main Headline: (generate a compelling Japanese headline)"
-    sub_headline_section = f"Sub-copy (18-22px supporting line below headline): {sub_headline_copy}" if sub_headline_copy else ""
+    sub_headline_section = (
+        f"Sub-copy — REQUIRED, embed this exact text verbatim "
+        f"(split into lines of ≤18 chars if needed, do NOT shorten or rewrite): 「{sub_headline_copy}」"
+    ) if sub_headline_copy else ""
     offer_section = f"Offer/CTA: {offer_copy}" if offer_copy else ""
     features_section = ""
     if features:
@@ -570,7 +573,7 @@ NEVER place text over photos, bright gradients, light colors, or textures.
 
 ### RULE 2 — SHORT TEXT STRINGS
 - Headline: split into lines of ≤10 Japanese characters each (2 lines max)
-- Sub-copy: ≤18 characters per line
+- Sub-copy: ≤18 characters per line (if provided text is longer, wrap into 2 lines — do NOT shorten or omit)
 - Feature badges: ≤8 characters each, maximum 4 badges total
 - CTA button text: ≤14 characters
 
@@ -615,7 +618,7 @@ Strict hierarchy — for each element specify ALL:
 - Eyebrow label (above headline): 12–14px / Noto Sans JP Medium / accent color / letter-spacing 0.15em — short service category word (e.g. "動画制作" or "VIDEO PRODUCTION"). Placed 12–16px above headline line 1.
 - Headline line 1 (category / context): 54–64px / Noto Sans JP Black / white or light color
 - Headline line 2 (key proposition — price, benefit, or hook): 72–84px / Noto Sans JP Black / white or accent color — larger than line 1 to emphasize the most impactful phrase
-- Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5. UNIQUENESS RULE: sub-copy must state information NOT already in the headline or badges. If the price appears in a badge, do NOT repeat it here. If the quality claim is in the headline, use a different angle (e.g. target audience, use-case, speed). Each element must add new information.
+- Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5. If sub-copy text is explicitly provided in the COPY section, use it VERBATIM (wrap into ≤18-char lines if needed — never shorten or omit). UNIQUENESS RULE (applies only when sub-copy is NOT provided): sub-copy must state information not already in the headline or badges.
 - Badge text: 14–16px / Noto Sans JP Bold
 - CTA: 18–22px / Noto Sans JP Black
 Headline line 2 ÷ sub-copy size ratio ≥ 3:1.
@@ -673,7 +676,7 @@ CHECKLIST before writing each brief:
 - Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
 - Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
 - Badges: use RICH ICON BADGE format (rounded-square icon block with gradient ✓ + text label) — not plain text pills or Unicode prefixes
-- Sub-copy content = unique information? → must NOT repeat price or claims already in headline or badges
+- Sub-copy provided in COPY section? → use it VERBATIM (split into ≤18-char lines). Uniqueness rule applies ONLY when sub-copy is auto-generated (not provided).
 - MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
 
 BRAND: {brand_name}
