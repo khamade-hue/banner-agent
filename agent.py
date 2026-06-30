@@ -540,14 +540,25 @@ Inside the text panel, add BOTH:
 2. Small color bar — 4px × 28–36px, solid accent color — placed as visual anchor immediately above the headline
 
 ## BADGE DESIGN
-Choose based on product type and tone:
-- TEXT-ONLY outline (clean/minimal): 2px solid accent-color border, corner-radius 4–6px, transparent or ≤12% tint fill, text in accent color. NO solid fills.
-- ICON + TEXT (energetic/feature-rich): Use ONE consistent icon across ALL badges for visual rhythm and cohesion — do NOT mix different icons in the same badge row. Choose the single icon that best fits the overall brand tone:
-  - ✓ for service/quality/professional brands (most versatile — conveys reliability)
-  - → for action/efficiency/process-oriented brands
-  - ★ for premium/high-value brands
-  Apply that SAME icon as a prefix to every badge in the row. Same border/fill rules as TEXT-ONLY.
-State your choice in the typography spec.
+Use RICH ICON BADGES — NOT plain text pills or raw Unicode characters as prefixes.
+Each badge is a horizontal unit: [icon block] + [text label]
+
+ICON BLOCK (left side of every badge):
+- Shape: rounded square, 22–26px × 22–26px, corner-radius 5–6px
+- Border: 1.5px solid, light gray (#D8D8D8) or 15%-tint of the brand accent color
+- Background: white (#FFFFFF) or near-white (#F8F8F8)
+- Mark inside: a bold checkmark (✓) drawn as a thick-stroke graphic element — NOT a text character. Render the stroke in a 2-stop diagonal gradient: brand accent color (bottom-left) → lighter/brighter variant of the accent or a complementary brand color (top-right). The checkmark should read like a modern app icon.
+
+TEXT LABEL (right side, 8–10px gap from icon block):
+- Font: Noto Sans JP Bold, 14–16px
+- Color: white or high-contrast light color against the dark text panel
+
+OUTER BADGE CONTAINER (wraps icon block + text label together):
+- Background: transparent or ≤8% tint of accent color
+- Border: 1px, accent color at 25–35% opacity, corner-radius 6–8px
+- Padding: 6–8px vertical, 10–12px horizontal
+
+All badges use the IDENTICAL icon block design — same size, same gradient direction, same border — for visual rhythm.
 
 ## CTA BAR
 Full-width, height 72–96px. Use a gradient fill (e.g., accent-color → accent-color-bright, left-to-right) for a premium feel. Centered CTA text with full typography spec.
@@ -573,7 +584,7 @@ CHECKLIST before writing each brief:
 - SCENE style chosen? → specify subject gaze/body facing toward the text panel
 - Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
 - Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
-- ICON+TEXT chosen? → pick ONE icon (✓ / → / ★) and use it on ALL badges for visual cohesion
+- Badges: use RICH ICON BADGE format (rounded-square icon block with gradient ✓ + text label) — not plain text pills or Unicode prefixes
 - Sub-copy content = unique information? → must NOT repeat price or claims already in headline or badges
 - MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
 
