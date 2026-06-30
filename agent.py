@@ -566,6 +566,12 @@ BRAND/SERVICE DETAILS:
 
 ## NON-NEGOTIABLE RULES (violations cause text distortion and AI artifacts)
 
+### RULE 0 — NO EYEBROW / CATEGORY LABEL (HIGHEST PRIORITY — CHECK THIS FIRST)
+NEVER write any eyebrow label, service-category text, or descriptor above the headline.
+Concretely banned: "VIDEO PRODUCTION", "動画制作", "動画制作サービス", "CORPORATE VIDEO", or any word/phrase that names the service category and sits above or before headline line 1.
+The text panel starts with: brand logo → [no text until headline line 1]. Nothing in between.
+If you are tempted to add a category label, stop and delete it.
+
 ### RULE 1 — HIGH-CONTRAST BACKGROUNDS UNDER ALL TEXT
 Every Japanese character must maintain WCAG AA contrast (≥4.5:1 against white text).
 Text panels MAY use subtle dark-to-dark gradients (e.g., #0F1E35 → #1A3558) provided BOTH gradient stops are dark enough for white text — this adds richness over flat solids.
@@ -593,6 +599,11 @@ Avoid diagonal cuts, multi-zone complexity, glass morphism, overlapping zones.
 ALL characters in the same text element — Japanese + numerals + symbols — MUST use the same Noto Sans JP weight.
 NEVER mix Western/serif numerals with Japanese text. Write explicitly: "all characters including numerals/symbols: Noto Sans JP [weight]".
 
+### RULE 7 — NO EYEBROW LABEL (CRITICAL)
+Do NOT include any eyebrow label, category label, or service-type text above or below the headline.
+BANNED elements: "VIDEO PRODUCTION", "動画制作", "CORPORATE VIDEO", or any short uppercase/category descriptor separate from the main headline.
+The banner headline begins directly with Headline line 1 — no preceding text of any kind.
+
 ---
 
 ## CANVAS
@@ -615,8 +626,8 @@ State which approach you chose and why (one sentence in the rationale field).
 
 ## TYPOGRAPHY
 Strict hierarchy — for each element specify ALL:
-- Eyebrow label (above headline): 12–14px / Noto Sans JP Medium / accent color / letter-spacing 0.15em — short service category word (e.g. "動画制作" or "VIDEO PRODUCTION"). Placed 12–16px above headline line 1.
-- Headline line 1 (category / context): 54–64px / Noto Sans JP Black / white or light color
+- Eyebrow label / category text: do NOT include anywhere. See RULE 7.
+- Headline line 1 (first line of main headline — a phrase from the copy, NOT a category label): 54–64px / Noto Sans JP Black / white or light color
 - Headline line 2 (key proposition — price, benefit, or hook): 72–84px / Noto Sans JP Black / white or accent color — larger than line 1 to emphasize the most impactful phrase
 - Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5. If sub-copy text is explicitly provided in the COPY section, use it VERBATIM (wrap into ≤18-char lines if needed — never shorten or omit). UNIQUENESS RULE (applies only when sub-copy is NOT provided): sub-copy must state information not already in the headline or badges.
 - Badge text: 14–16px / Noto Sans JP Bold
@@ -626,9 +637,28 @@ Per element: verbatim text + position in px from zone edge + font + size + color
 For any numeral in Japanese text: "numeral 'X' rendered in Noto Sans JP [weight] — same typeface as surrounding characters".
 
 ## ACCENT ELEMENTS (include in EVERY brief)
-Inside the text panel, add BOTH:
+Inside the text panel, add ONE accent element only:
 1. Thin horizontal rule — 1–2px, accent color at 60% opacity, 60–75% of panel width — placed between headline and badge row
-2. Small color bar — 4px × 28–36px, solid accent color — placed as visual anchor immediately above the headline
+
+Do NOT add any small bar, pip, or color mark above headline line 1. The LAYOUT ZONES vertical accent bar (along the panel/photo border) is the only vertical accent allowed.
+
+## DEPTH & DIMENSIONALITY (mandatory — include ALL of the following in every brief)
+Flat 2D results are a failure. Explicitly describe each depth cue below in the brief using image-description language (not CSS).
+
+1. SUBJECT OVERLAP (highest impact — always specify this):
+   The photo-zone subject's shoulder, arm, or body edge must cross the boundary between photo zone and text panel by 30–50px, overlapping INTO the text panel. This creates a strong illusion that the subject is physically in front of the text panel. Write in the brief: "the subject's [body part] extends 30–50px past the zone boundary into the text panel, with a soft cast shadow on the panel surface where the subject overlaps it."
+
+2. PHOTO DEPTH:
+   Specify VERY SHALLOW depth of field (f/1.4–f/2.0): subject razor-sharp, background melts into smooth circular bokeh. Add a blurred foreground element (desk edge, plant leaf, glass edge) between the camera lens and the subject, creating three distinct depth planes: blurred foreground → sharp subject → blurred background.
+
+3. BADGE LIFT:
+   Each badge floats visibly above the text panel surface — describe "a soft cast shadow falls directly below each badge, suggesting the badge is elevated 4–6px off the panel surface."
+
+4. PANEL LIGHT SOURCE:
+   The text panel is lit from the upper-center as if by a recessed ceiling light: the top-center of the panel is slightly lighter, fading to deeper dark at the bottom corners — giving the panel physical curvature and preventing it from looking like a flat painted surface.
+
+5. ZONE EDGE DEPTH:
+   At the edge where text panel meets photo zone, the photo zone appears to be set slightly behind the text panel plane — describe "a soft shadow falls from the text panel edge onto the photo zone, as if the text panel is a raised layer in front of the photo."
 
 ## BADGE DESIGN
 Use RICH ICON BADGES — NOT plain text pills or raw Unicode characters as prefixes.
@@ -668,11 +698,12 @@ Each must use a DIFFERENT 2-zone layout chosen from: left-text/right-photo | rig
 CHECKLIST before writing each brief:
 - Headline >10 chars? → split into 2 lines of ≤10 chars
 - Headline line 2 = most impactful phrase (price/hook)? → make it 72–84px, larger than line 1
-- Eyebrow label added above headline? → short service category, 12–14px, accent color, wide letter-spacing
+- Eyebrow label / category text above headline? → do NOT include — omit entirely
 - Badge text >8 chars? → shorten
 - Text panel color = pure black? → replace with deep brand-derived dark
 - Accent elements included? → thin rule + small color bar in text panel
-- SCENE style chosen? → specify subject gaze/body facing toward the text panel
+- SCENE style chosen? → specify subject gaze/body facing toward the text panel; subject body/shoulder overlaps zone boundary by 30–50px INTO the text panel (REQUIRED for depth)
+- Depth cues included? → subject overlap + badge lift shadows + panel light source + zone edge shadow — ALL 5 mandatory
 - Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
 - Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
 - Badges: use RICH ICON BADGE format (rounded-square icon block with gradient ✓ + text label) — not plain text pills or Unicode prefixes

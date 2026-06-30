@@ -49,7 +49,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 3カラムグリッドで表示
+# ── 3-column grid ─────────────────────────────────────────────────────────────
+
 COLS = 3
 rows = [banners_sorted[i:i + COLS] for i in range(0, len(banners_sorted), COLS)]
 
@@ -60,7 +61,7 @@ for row in rows:
             platforms = banner.get("platforms", [])
             first_url = platforms[0].get("public_url", "") if platforms else ""
 
-            # DL リンク HTML を先に組み立て
+            # DL リンク HTML
             if len(platforms) > 1:
                 dl_html = "↓ " + " · ".join(
                     f'<a href="{p["public_url"]}?download={p.get("filename","banner.png")}" '
@@ -78,19 +79,35 @@ for row in rows:
             else:
                 dl_html = ""
 
-            img_html = (
-                f'<img src="{first_url}" style="width:100%;height:100%;'
-                f'object-fit:cover;display:block">'
-                if first_url else
-                '<div style="width:100%;height:100%;display:flex;align-items:center;'
-                'justify-content:center;color:#475569;font-size:0.78rem">No image</div>'
-            )
+            # Image zone — clicking anywhere opens the image full-size in a new tab
+            # The "⛶ 拡大" badge overlaid at top-right makes it discoverable
+            if first_url:
+                img_section = (
+                    f'<a href="{first_url}" target="_blank" '
+                    f'style="display:block;text-decoration:none;'
+                    f'position:relative;height:220px;flex-shrink:0;overflow:hidden">'
+                    f'<img src="{first_url}" '
+                    f'style="width:100%;height:100%;object-fit:cover;display:block">'
+                    f'<div style="position:absolute;top:8px;right:8px;'
+                    f'background:rgba(15,23,42,0.82);backdrop-filter:blur(6px);'
+                    f'-webkit-backdrop-filter:blur(6px);'
+                    f'color:#f1f5f9;border:1px solid rgba(255,255,255,0.22);'
+                    f'border-radius:6px;padding:5px 11px;'
+                    f'font-size:0.7rem;font-weight:700;letter-spacing:0.04em;'
+                    f'pointer-events:none">⛶ 拡大</div>'
+                    f'</a>'
+                )
+            else:
+                img_section = (
+                    '<div style="height:220px;flex-shrink:0;display:flex;align-items:center;'
+                    'justify-content:center;color:#475569;font-size:0.78rem">No image</div>'
+                )
 
-            # カード全体を固定高さで包む（画像220px＋テキスト100px＝320px）
             st.markdown(
                 f'<div style="background:#1e293b;border:1px solid #334155;border-radius:10px;'
-                f'overflow:hidden;height:320px;display:flex;flex-direction:column;margin-bottom:8px">'
-                f'<div style="height:220px;flex-shrink:0">{img_html}</div>'
+                f'overflow:hidden;height:320px;display:flex;flex-direction:column;'
+                f'margin-bottom:8px">'
+                f'{img_section}'
                 f'<div style="padding:10px 12px;flex:1;overflow:hidden;display:flex;'
                 f'flex-direction:column;gap:4px">'
                 f'<div style="font-weight:700;font-size:0.8rem;color:#e2e8f0;'
@@ -105,7 +122,6 @@ for row in rows:
                 unsafe_allow_html=True,
             )
 
-            # 削除ボタン
             if st.button("🗑 削除", key=f"del_banner_{banner['id']}", type="secondary",
                          use_container_width=True):
                 delete_banner(banner["id"])
