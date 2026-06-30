@@ -469,7 +469,7 @@ if mode == "新規作成":
             if st.button("追加訴求軸を生成", key="gen_more_btn", type="primary"):
                 with st.spinner("訴求軸を生成中..."):
                     try:
-                        new_axes = generate_more_axes(product_name_s, current_axes, add_angle)
+                        new_axes = generate_more_axes(product_name_s, current_axes, add_angle, analysis_result=c3)
                         analysis["appeal_axes"] = current_axes + new_axes
                         st.session_state["analysis"] = analysis
                         st.rerun()

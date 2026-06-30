@@ -262,12 +262,35 @@ appeal_axesは必ず3つ以上5つ以内で生成してください。各訴求�
 
 
 def generate_more_axes(
-    product_name: str, existing_axes: list[dict], additional_angle: str
+    product_name: str,
+    existing_axes: list[dict],
+    additional_angle: str,
+    analysis_result: dict | None = None,
 ) -> list[dict]:
     """Generate additional appeal axes (with copy suggestions) from a new angle."""
     client = _claude()
 
     existing = "\n".join(f"- {a['axis']}: {a['description']}" for a in existing_axes)
+
+    c3_section = ""
+    if analysis_result:
+        cust = analysis_result.get("customer", {})
+        comp = analysis_result.get("competitor", {})
+        co   = analysis_result.get("company", {})
+        c3_section = f"""
+【3C分析サマリー（この分析と整合する訴求軸を生成すること）】
+■ 顧客
+  ニーズ: {cust.get("needs", "")}
+  課題・ペイン: {cust.get("pain_points", "")}
+  属性: {cust.get("demographics", "")}
+■ 競合
+  競合状況: {comp.get("landscape", "")}
+  差別化ポイント: {comp.get("differentiation", "")}
+■ 自社
+  強み: {co.get("strengths", "")}
+  提供価値: {co.get("value_proposition", "")}
+上記の3C分析を根拠に、既存軸がカバーしていない顧客ニーズ・切り口を選んで新軸を設計してください。
+"""
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
@@ -284,7 +307,7 @@ def generate_more_axes(
 
 既存の訴求軸:
 {existing}
-
+{c3_section}
 追加で検討したい観点: {additional_angle if additional_angle else "既存と差別化された新しい切り口"}
 既存と重複しないこと。
 {_COPY_INSTRUCTIONS}""",
