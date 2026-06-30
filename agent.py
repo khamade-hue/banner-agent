@@ -646,7 +646,7 @@ Do NOT add any small bar, pip, or color mark above headline line 1. The LAYOUT Z
 Flat 2D results are a failure. Explicitly describe each depth cue below in the brief using image-description language (not CSS).
 
 1. SUBJECT OVERLAP (highest impact — always specify this):
-   The photo-zone subject's shoulder, arm, or body edge must cross the boundary between photo zone and text panel by 30–50px, overlapping INTO the text panel. This creates a strong illusion that the subject is physically in front of the text panel. Write in the brief: "the subject's [body part] extends 30–50px past the zone boundary into the text panel, with a soft cast shadow on the panel surface where the subject overlaps it."
+   The photo-zone subject's shoulder, arm, or body edge must cross the boundary between photo zone and text panel by 30–50px, overlapping INTO the text panel. The subject is 100% SOLID and OPAQUE — no transparency, no ghosting, no blending. The depth illusion comes entirely from a hard cast shadow that falls onto the dark text panel surface BEHIND the subject. Write in the brief: "the subject's [body part] extends 30–50px past the zone boundary into the text panel — subject is fully opaque and solid, casting a distinct shadow onto the panel surface beneath them."
 
 2. PHOTO DEPTH:
    Specify VERY SHALLOW depth of field (f/1.4–f/2.0): subject razor-sharp, background melts into smooth circular bokeh. Add a blurred foreground element (desk edge, plant leaf, glass edge) between the camera lens and the subject, creating three distinct depth planes: blurred foreground → sharp subject → blurred background.
