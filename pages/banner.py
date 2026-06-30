@@ -854,10 +854,21 @@ with col_dl:
 
 st.divider()
 
-tabs = st.tabs([f"[{v['variation']}] {v['label']}" for v, _ in results])
+# ── Thumbnail overview strip ──────────────────────────────────────────────────
+n_res = len(results)
+thumb_cols = st.columns(n_res)
+for _c_idx, ((v_t, pimgs_t), _col) in enumerate(zip(results, thumb_cols)):
+    with _col:
+        st.image(_img_to_bytes(pimgs_t[0][1]), use_container_width=True)
+        st.caption(f"[{v_t['variation']}] {v_t['label']}")
 
-for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
-    with tab:
+st.divider()
+
+# ── Per-variation expanders ────────────────────────────────────────────────────
+_ref_img = locals().get("reference_image")  # None when in 既存バナーから作成 mode
+
+for tab_idx, (v, platform_images) in enumerate(results):
+    with st.expander(f"[{v['variation']}]  {v['label']}", expanded=(tab_idx == 0)):
         st.markdown(f"**戦略:** {v['rationale']}")
         with st.expander("生成プロンプトを見る"):
             st.code(v["prompt"], language=None)
@@ -865,9 +876,8 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
         st.markdown("**プラットフォーム別プレビュー**")
         chunk = 4
         for row_start in range(0, len(platform_images), chunk):
-            row  = platform_images[row_start: row_start + chunk]
+            row   = platform_images[row_start: row_start + chunk]
             n_row = len(row)
-            # 1枚のときは中央カラムに収めて過剰な横幅を防ぐ
             if n_row == 1:
                 _lc, _mc, _rc = st.columns([1, 2, 1])
                 render_cols = [_mc]
@@ -897,6 +907,18 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
             unsafe_allow_html=True,
         )
 
+        # ── バナーのテキストをプロンプトから抽出（バリエーションごとにキャッシュ）──
+        _prompt_key = f"_varcopy_{hashlib.md5(v['prompt'].encode()).hexdigest()[:12]}"
+        if _prompt_key not in st.session_state:
+            with st.spinner("テキスト要素を解析中..."):
+                try:
+                    st.session_state[_prompt_key] = extract_banner_copy(v["prompt"])
+                except Exception:
+                    st.session_state[_prompt_key] = {
+                        "headlines": [], "sub_headlines": [], "offers": [], "features": []
+                    }
+        _var_copy = st.session_state[_prompt_key]
+
         # ① 修正するパーツ
         st.markdown(
             '<div style="font-size:0.8rem;font-weight:700;color:#94a3b8;margin-bottom:6px">'
@@ -912,10 +934,6 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
             label_visibility="collapsed",
         )
 
-        gen_headline     = st.session_state.get("gen_headline", "")
-        gen_sub_headline = st.session_state.get("gen_sub_headline", "")
-        gen_offer        = st.session_state.get("gen_offer", "")
-        gen_features     = st.session_state.get("gen_features", [])
         target_elem      = None
         rev_instructions = ""
         rev_part_label   = sel_part
@@ -961,15 +979,15 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
                 height=80,
             )
 
-        else:  # テキスト
+        else:  # テキスト — プロンプトから抽出したテキストを使用
             _text_items: list[tuple[str, str]] = []
-            if gen_headline:
-                _text_items.append(("メインキャッチ", gen_headline))
-            if gen_sub_headline:
-                _text_items.append(("サブキャッチ", gen_sub_headline))
-            if gen_offer:
-                _text_items.append(("オファー・CTA", gen_offer))
-            for _f in gen_features:
+            for _h in _var_copy.get("headlines", []):
+                _text_items.append(("メインキャッチ", _h))
+            for _sh in _var_copy.get("sub_headlines", []):
+                _text_items.append(("サブキャッチ", _sh))
+            for _o in _var_copy.get("offers", []):
+                _text_items.append(("オファー・CTA", _o))
+            for _f in _var_copy.get("features", []):
                 _text_items.append(("特徴・アイコン", _f))
 
             st.markdown(
@@ -1025,7 +1043,7 @@ for tab_idx, (tab, (v, platform_images)) in enumerate(zip(tabs, results)):
                         new_prompt = refine_banner_part(
                             v["prompt"], rev_part_label, target_elem, rev_instructions
                         )
-                        new_base_img = generate_image(new_prompt, reference_image=reference_image)
+                        new_base_img = generate_image(new_prompt, reference_image=_ref_img)
                         new_platform_images = resize_for_selected_platforms(
                             new_base_img, current_platforms
                         )

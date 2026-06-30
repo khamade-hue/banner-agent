@@ -792,7 +792,7 @@ def _has_jp(s: str) -> bool:
 def _regex_extract_copy(prompt: str) -> dict:
     import re
 
-    headlines, offers, features = [], [], []
+    headlines, sub_headlines, offers, features = [], [], [], []
     lines = prompt.split("\n")
     in_feature = False
 
@@ -811,7 +811,10 @@ def _regex_extract_copy(prompt: str) -> dict:
             t = m.group(1).strip()
             if _has_jp(t):
                 ctx = "\n".join(lines[max(0, i - 8):i]).lower()
-                if any(k in ctx for k in ["headline", "catch", "main text", "primary"]):
+                if any(k in ctx for k in ["sub-copy", "sub_copy", "sub copy", "supporting", "サブ"]):
+                    if t not in sub_headlines:
+                        sub_headlines.append(t)
+                elif any(k in ctx for k in ["headline", "catch", "main text", "primary"]):
                     if t not in headlines:
                         headlines.append(t)
                 elif any(k in ctx for k in ["offer", "cta", "button", "action"]):
@@ -827,6 +830,18 @@ def _regex_extract_copy(prompt: str) -> dict:
             t = m.group(1).strip()
             if _has_jp(t) and t not in headlines:
                 headlines.append(t)
+            continue
+
+        # "Sub-copy: テキスト" / "Supporting copy: テキスト"
+        m = re.match(
+            r"[-•\s]*(?:sub[-\s]?copy|supporting\s+copy|sub[-\s]?headline|sub[-\s]?catch)"
+            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(].*)?$",
+            s, re.I,
+        )
+        if m:
+            t = m.group(1).strip()
+            if _has_jp(t) and t not in sub_headlines:
+                sub_headlines.append(t)
             continue
 
         # "Offer/CTA: テキスト" / "CTA: テキスト"
@@ -863,7 +878,10 @@ def _regex_extract_copy(prompt: str) -> dict:
         if pos == -1:
             continue
         ctx = prompt[max(0, pos - 150):pos].lower()
-        if any(k in ctx for k in ["headline", "main", "catch", "キャッチ"]):
+        if any(k in ctx for k in ["sub-copy", "sub copy", "supporting", "sub_copy"]):
+            if q not in sub_headlines:
+                sub_headlines.append(q)
+        elif any(k in ctx for k in ["headline", "main", "catch", "キャッチ"]):
             if q not in headlines:
                 headlines.append(q)
         elif any(k in ctx for k in ["offer", "cta", "button"]):
@@ -873,9 +891,10 @@ def _regex_extract_copy(prompt: str) -> dict:
             features.append(q)
 
     return {
-        "headlines": headlines[:3],
-        "offers": offers[:2],
-        "features": features[:8],
+        "headlines":     headlines[:3],
+        "sub_headlines": sub_headlines[:2],
+        "offers":        offers[:2],
+        "features":      features[:8],
     }
 
 
@@ -885,7 +904,7 @@ def _haiku_extract_copy(prompt: str) -> dict:
         "description": "Submit extracted Japanese ad copy from the design brief",
         "input_schema": {
             "type": "object",
-            "required": ["headlines", "offers", "features"],
+            "required": ["headlines", "sub_headlines", "offers", "features"],
             "properties": {
                 "headlines": {
                     "type": "array", "items": {"type": "string"},
@@ -893,6 +912,13 @@ def _haiku_extract_copy(prompt: str) -> dict:
                         "Primary Japanese headline texts. "
                         "Find after 'Main Headline:', 'Exact text:' near headline sections, "
                         "or quoted Japanese text 「」 near the word headline/catch."
+                    ),
+                },
+                "sub_headlines": {
+                    "type": "array", "items": {"type": "string"},
+                    "description": (
+                        "Japanese sub-copy / supporting line texts. "
+                        "Find after 'Sub-copy:', 'Supporting copy:', or near the word sub/supporting."
                     ),
                 },
                 "offers": {
@@ -916,12 +942,13 @@ def _haiku_extract_copy(prompt: str) -> dict:
     try:
         response = _claude().messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=600,
+            max_tokens=700,
             tools=[tool],
             tool_choice={"type": "tool", "name": "submit_copy"},
             system=(
                 "Extract Japanese advertising copy verbatim from English banner design briefs.\n"
                 "- headlines: large primary Japanese text (catch copy / main headline)\n"
+                "- sub_headlines: smaller supporting Japanese text below the headline (sub-copy line)\n"
                 "- offers: Japanese text on CTA buttons or offer lines\n"
                 "- features: short Japanese badge phrases (typically bullets under Feature Badges)\n"
                 "Return ONLY the Japanese text itself, never English descriptions or specs."
@@ -933,10 +960,12 @@ def _haiku_extract_copy(prompt: str) -> dict:
         )
         for block in response.content:
             if block.type == "tool_use":
-                return block.input
+                inp = block.input
+                inp.setdefault("sub_headlines", [])
+                return inp
     except Exception:
         pass
-    return {"headlines": [], "offers": [], "features": []}
+    return {"headlines": [], "sub_headlines": [], "offers": [], "features": []}
 
 
 def refine_banner_prompt(original_prompt: str, revision_instructions: str) -> str:
