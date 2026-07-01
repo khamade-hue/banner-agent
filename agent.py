@@ -675,7 +675,7 @@ Flat 2D results are a failure. Explicitly describe each depth cue below in the b
    FRAME SAFETY: All body parts (hands, arms, feet) must be FULLY VISIBLE within the image frame — no limbs cropped at the frame edge. Keep at least 30px clearance between any extremity and the frame boundary. The overlap is only at the internal zone boundary, never at the outer frame edge.
 
 2. PHOTO DEPTH:
-   Specify VERY SHALLOW depth of field (f/1.4–f/2.0): subject razor-sharp, background melts into smooth circular bokeh. Add a blurred foreground element (desk edge, plant leaf, glass edge) between the camera lens and the subject, creating three distinct depth planes: blurred foreground → sharp subject → blurred background.
+   Specify VERY SHALLOW depth of field (f/1.4–f/2.0): subject razor-sharp, background melts into smooth circular bokeh. If the composition naturally allows it, consider adding a blurred foreground element (desk edge, plant leaf, glass edge) to create a third depth plane — but only when it enhances the scene. Do not force a foreground element if it would look unnatural or cluttered.
 
 3. BADGE LIFT:
    Each badge floats visibly above the text panel surface — describe "a soft cast shadow falls directly below each badge, suggesting the badge is elevated 4–6px off the panel surface."
