@@ -525,7 +525,21 @@ BRAND/SERVICE DETAILS:
     if use_people:
         _vc.append("• PEOPLE: Include human models or characters as the main visual subject where appropriate.")
     else:
-        _vc.append("• PEOPLE: Do NOT include any people or human figures (no models, faces, hands, silhouettes). Use objects, scenery, or abstract visuals only.")
+        _vc.append(
+            "• PEOPLE: Do NOT include any people or human figures (no models, faces, hands, silhouettes). "
+            "INSTEAD, use one of the following high-quality visual approaches — choose whichever best fits the brand:\n"
+            "  (A) EQUIPMENT / ENVIRONMENT PHOTOGRAPHY: professional tools or workspace shot in cinematic style — "
+            "e.g. cinema camera on a rig, editing suite with multiple monitors glowing, professional lighting equipment, "
+            "a production studio interior. Use shallow depth of field (f/1.8–2.8), dramatic side-lighting or practical lights in frame, "
+            "slightly desaturated color grade. Must look like a real commercial photo shoot, NOT a stock image cliché.\n"
+            "  (B) SERVICE OUTPUT VISUALIZATION: a high-quality monitor, laptop, or large screen displaying the brand's work — "
+            "e.g. a color-graded video timeline on a pro editing interface, a cinematic scene playing back on a studio monitor, "
+            "a rendered video frame on a sleek display. The screen content must look premium and professional. "
+            "Place the device at a slight angle (15–25°) with soft environmental lighting reflecting off the screen bezel.\n"
+            "  Combine both if space allows (e.g. editing monitor in foreground + studio equipment in background bokeh). "
+            "Do NOT use flat geometric shapes, generic icons, infographic elements, or abstract patterns. "
+            "Always aim for cinematic commercial photography aesthetics."
+        )
     visual_constraints_section = "\nVISUAL CONSTRAINTS — must apply to ALL variations:\n" + "\n".join(_vc)
 
     variation_labels = [chr(65 + i) for i in range(num_variations)]
