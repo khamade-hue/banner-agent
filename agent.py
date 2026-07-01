@@ -502,7 +502,10 @@ BRAND/SERVICE DETAILS:
         f"Sub-copy — REQUIRED, embed this exact text verbatim "
         f"(split into lines of ≤18 chars if needed, do NOT shorten or rewrite): 「{sub_headline_copy}」"
     ) if sub_headline_copy else ""
-    offer_section = f"Offer/CTA: {offer_copy}" if offer_copy else ""
+    offer_section = (
+        f"Offer/CTA — place this ENTIRE text verbatim in the CTA bar only: 「{offer_copy}」"
+        f" Do NOT split it — do NOT place any portion of this text outside the CTA bar as a separate element."
+    ) if offer_copy else ""
     features_section = ""
     if features:
         features_section = "Feature Badges:\n" + "\n".join(f"• {f}" for f in features)
@@ -527,17 +530,25 @@ BRAND/SERVICE DETAILS:
     else:
         _vc.append(
             "• PEOPLE: Do NOT include any people or human figures (no models, faces, hands, silhouettes). "
-            "INSTEAD, use one of the following high-quality visual approaches — choose whichever best fits the brand:\n"
-            "  (A) EQUIPMENT / ENVIRONMENT PHOTOGRAPHY: professional tools or workspace shot in cinematic style — "
-            "e.g. cinema camera on a rig, editing suite with multiple monitors glowing, professional lighting equipment, "
-            "a production studio interior. Use shallow depth of field (f/1.8–2.8), dramatic side-lighting or practical lights in frame, "
-            "slightly desaturated color grade. Must look like a real commercial photo shoot, NOT a stock image cliché.\n"
-            "  (B) SERVICE OUTPUT VISUALIZATION: a high-quality monitor, laptop, or large screen displaying the brand's work — "
-            "e.g. a color-graded video timeline on a pro editing interface, a cinematic scene playing back on a studio monitor, "
-            "a rendered video frame on a sleek display. The screen content must look premium and professional. "
-            "Place the device at a slight angle (15–25°) with soft environmental lighting reflecting off the screen bezel.\n"
-            "  Combine both if space allows (e.g. editing monitor in foreground + studio equipment in background bokeh). "
-            "Do NOT use flat geometric shapes, generic icons, infographic elements, or abstract patterns. "
+            "INSTEAD, each variation MUST use a DISTINCTLY DIFFERENT visual concept from the list below — "
+            "never use the same concept for two variations. Assign concepts in order (variation A → concept 1, B → concept 2, etc.):\n"
+            "  CONCEPT 1 — EDITING SOFTWARE ON SCREEN: laptop or monitor at 15–25° angle displaying a professional "
+            "video editing timeline (color-graded footage, audio waveforms, color wheels). "
+            "Screen content looks premium. Soft environmental lighting reflects off the bezel. "
+            "Background: dark studio blur.\n"
+            "  CONCEPT 2 — THUMBNAIL MONTAGE / FILM STRIP: multiple video thumbnails or frames arranged as a "
+            "dynamic film-strip or mosaic grid — cinematic landscapes, dramatic scenes, brand-colored frames. "
+            "Composition suggests volume and variety of content. "
+            "Use perspective/depth so the strip recedes into the background. High visual energy.\n"
+            "  CONCEPT 3 — PRODUCTION EQUIPMENT CLOSE-UP: extreme close-up of cinema camera lens, "
+            "a lighting rig with practicals glowing, or an audio/video mixing console with illuminated faders. "
+            "Dramatic side-lighting, shallow DoF (f/1.4), rich dark tones. "
+            "No people — pure equipment as hero subject.\n"
+            "  CONCEPT 4 — STUDIO ENVIRONMENT: wide or medium shot of an empty editing suite, "
+            "production floor, or green-screen stage. Multiple screens glowing in a dark room, "
+            "practical light sources visible, cinematic atmosphere.\n"
+            "  If there are more variations than concepts, cycle back. "
+            "Do NOT use flat geometric shapes, generic icons, or abstract patterns in any concept. "
             "Always aim for cinematic commercial photography aesthetics."
         )
     visual_constraints_section = "\nVISUAL CONSTRAINTS — must apply to ALL variations:\n" + "\n".join(_vc)
