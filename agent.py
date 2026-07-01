@@ -555,6 +555,27 @@ BRAND/SERVICE DETAILS:
 
     variation_labels = [chr(65 + i) for i in range(num_variations)]
 
+    # Per-variation visual concept assignment (人物なし・複数バリエーション時)
+    _no_people_concepts = [
+        "CONCEPT 1 — EDITING SOFTWARE ON SCREEN: laptop or dual monitor at 15–25° angle showing a professional video editing timeline (color-graded footage, audio waveforms, color wheels). Dark studio background, soft bezel reflection. Do NOT use any other concept.",
+        "CONCEPT 2 — THUMBNAIL MONTAGE / FILM STRIP: multiple video frames/thumbnails arranged as a dynamic film-strip or mosaic grid receding in perspective. High visual energy, diverse cinematic scenes. No monitors or editing UI. Do NOT use any other concept.",
+        "CONCEPT 3 — PRODUCTION EQUIPMENT CLOSE-UP: extreme close-up of cinema camera lens, lighting rig with practicals glowing, or mixing console with illuminated faders. Dramatic side-lighting, shallow DoF f/1.4. No screens or editing software. Do NOT use any other concept.",
+        "CONCEPT 4 — STUDIO ENVIRONMENT: empty editing suite or production floor. Multiple screens glowing in a dark room, practical light sources visible. Wide or medium shot. Do NOT use any other concept.",
+    ]
+    if not use_people and num_variations > 1:
+        concept_lines = "\n".join(
+            f"  Variation {label}: {_no_people_concepts[i % len(_no_people_concepts)]}"
+            for i, label in enumerate(variation_labels)
+        )
+        variation_concepts_section = (
+            f"\nVISUAL CONCEPT ASSIGNMENT (人物なし — mandatory, one concept per variation):\n"
+            f"Each variation MUST use ONLY its assigned concept below. "
+            f"Using the same concept for two variations is a violation.\n"
+            f"{concept_lines}"
+        )
+    else:
+        variation_concepts_section = ""
+
     banner_tool = {
         "name": "submit_banner_prompts",
         "description": "Submit design brief prompts for gpt-image-2 banner ad generation",
@@ -736,6 +757,7 @@ CHECKLIST before writing each brief:
 - Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
 - Badges: use RICH ICON BADGE format (rounded-square icon block with gradient ✓ + text label) — not plain text pills or Unicode prefixes
 - Sub-copy provided in COPY section? → use it VERBATIM (split into ≤18-char lines). Uniqueness rule applies ONLY when sub-copy is auto-generated (not provided).
+- Offer/CTA text provided? → place the COMPLETE string in the CTA bar, every word. Example: if provided text is「キャンペーン実施中！今なら1本無料」the CTA bar must show「キャンペーン実施中！今なら1本無料」in full — do NOT extract「キャンペーン実施中！」as a separate badge, label, or text element outside the bar.
 - MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
 
 BRAND: {brand_name}
@@ -750,6 +772,7 @@ COPY — embed verbatim:
 {offer_section}
 {features_section}
 {visual_constraints_section}
+{variation_concepts_section}
 
 Output per variation: layout zones (with accent bar) → visual zone (state SCENE/CUTOUT/FLAT choice) → typography with size hierarchy → accent elements → badge row (state TEXT-ONLY/ICON+TEXT choice) → CTA bar → color palette. Under 600 words per brief.""",
         }],
