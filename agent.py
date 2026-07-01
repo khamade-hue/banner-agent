@@ -514,11 +514,11 @@ BRAND/SERVICE DETAILS:
         _vc.append("• PRODUCT IMAGE: Do NOT depict the physical product. Use lifestyle, abstract, or thematic imagery instead.")
     if use_product_logo:
         _vc.append(
-            "• PRODUCT LOGO: Include a small product/brand logo mark in the text panel — "
-            "position it in the upper-left corner of the text zone or directly below the CTA bar. "
+            "• PRODUCT LOGO: Include a small product/brand logo mark in the TEXT PANEL ONLY — "
+            "position it in the upper-left corner of the text panel (above the headline). "
             "Render as a clean, simplified logotype or icon mark in white or the brand accent color. "
             "Size: 32–48px height, with 16px clearance from panel edges. "
-            "Do NOT add a background box or border behind the logo."
+            "Do NOT place the logo in the CTA bar. Do NOT add a background box or border behind the logo."
         )
     else:
         _vc.append("• PRODUCT LOGO: Do NOT include any logo mark or logotype element in the design.")
@@ -581,7 +581,7 @@ NEVER place text over photos, bright gradients, light colors, or textures.
 - Headline: split into lines of ≤10 Japanese characters each (2 lines max)
 - Sub-copy: ≤18 characters per line (if provided text is longer, wrap into 2 lines — do NOT shorten or omit)
 - Feature badges: ≤8 characters each, maximum 4 badges total
-- CTA button text: ≤14 characters
+- CTA button text: ≤14 characters preferred; if explicitly provided text is longer, keep it verbatim (max 2 lines inside the CTA bar) — do NOT move part of it outside the bar
 
 ### RULE 3 — MINIMAL TEXT ELEMENTS
 Maximum: 1 headline (1–2 lines) + 1 sub-line + 1 price/offer + 4 badges + 1 CTA. No decorative text.
@@ -647,6 +647,7 @@ Flat 2D results are a failure. Explicitly describe each depth cue below in the b
 
 1. SUBJECT OVERLAP (highest impact — always specify this):
    The photo-zone subject's shoulder, arm, or body edge must cross the boundary between photo zone and text panel by 30–50px, overlapping INTO the text panel. The subject is 100% SOLID and OPAQUE — no transparency, no ghosting, no blending. The depth illusion comes entirely from a hard cast shadow that falls onto the dark text panel surface BEHIND the subject. Write in the brief: "the subject's [body part] extends 30–50px past the zone boundary into the text panel — subject is fully opaque and solid, casting a distinct shadow onto the panel surface beneath them."
+   FRAME SAFETY: All body parts (hands, arms, feet) must be FULLY VISIBLE within the image frame — no limbs cropped at the frame edge. Keep at least 30px clearance between any extremity and the frame boundary. The overlap is only at the internal zone boundary, never at the outer frame edge.
 
 2. PHOTO DEPTH:
    Specify VERY SHALLOW depth of field (f/1.4–f/2.0): subject razor-sharp, background melts into smooth circular bokeh. Add a blurred foreground element (desk edge, plant leaf, glass edge) between the camera lens and the subject, creating three distinct depth planes: blurred foreground → sharp subject → blurred background.
@@ -683,6 +684,8 @@ All badges use the IDENTICAL icon block design — same size, same gradient dire
 
 ## CTA BAR
 Full-width, height 72–96px. Use a gradient fill (e.g., accent-color → accent-color-bright, left-to-right) for a premium feel. Centered CTA text with full typography spec.
+The CTA bar contains the CTA text ONLY — no logo, no sub-text, no icon. Brand logo belongs in the text panel, never in the CTA bar.
+If the provided CTA text exceeds 14 characters, render it as-is across 1–2 lines within the bar — do NOT split it into a separate element outside the bar.
 
 ## COLOR PALETTE
 Base on LP Brand Colors if provided. Stay true to brand — adapt only for contrast/readability.
