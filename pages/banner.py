@@ -131,7 +131,7 @@ def _pattern_grid() -> str:
         st.markdown(
             f'<div style="font-size:0.78rem;font-weight:700;color:{ai_lbl_c};margin-bottom:3px">'
             f'{"✓ " if is_ai else ""}✨ AIにおすすめ</div>'
-            f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;margin-bottom:6px">'
+            f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;min-height:2.8em;margin-bottom:6px">'
             f'目的・コピーを踏まえてAIが最適なパターンを自動選択</div>'
             f'<div style="{ai_bg}{ai_border}border-radius:8px;height:72px;'
             f'display:flex;align-items:center;justify-content:center;margin-bottom:6px">'
@@ -176,12 +176,11 @@ def _pattern_grid() -> str:
                     unsafe_allow_html=True,
                 )
                 # 2. 概要
-                if short_desc:
-                    st.markdown(
-                        f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;'
-                        f'margin-bottom:6px">{short_desc}</div>',
-                        unsafe_allow_html=True,
-                    )
+                st.markdown(
+                    f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;min-height:2.8em;'
+                    f'margin-bottom:6px">{short_desc}</div>',
+                    unsafe_allow_html=True,
+                )
                 # 3. 画像
                 if img_path:
                     try:
@@ -406,8 +405,8 @@ if _banner_mode == "新規生成":
 
     st.divider()
 
-    # ── STEP 3 — 詳細設定 ──────────────────────────────────────────────────────
-    _section("STEP 3 — 詳細設定")
+    # ── STEP 3 — 生成枚数・訴求パターン ──────────────────────────────────────
+    _section("STEP 3 — 生成枚数・訴求パターン")
 
     selected_platform_name = st.selectbox(
         "プラットフォーム *",
@@ -415,6 +414,22 @@ if _banner_mode == "新規生成":
         index=0,
         key="banner_platform",
     )
+
+    num_variations = st.selectbox(
+        "生成枚数 *", [1, 2, 3, 4, 5], index=2,
+        key="banner_num_var",
+    )
+
+    st.markdown(
+        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:12px 0 8px">訴求パターン *</div>',
+        unsafe_allow_html=True,
+    )
+    tonmana_label = _pattern_grid()
+
+    st.divider()
+
+    # ── STEP 4 — 詳細設定 ──────────────────────────────────────────────────────
+    _section("STEP 4 — 詳細設定")
 
     col_ppl, col_pimg, col_plogo = st.columns(3)
     with col_ppl:
@@ -445,22 +460,6 @@ if _banner_mode == "新規生成":
             key="banner_free_comment",
             label_visibility="visible",
         )
-
-    st.divider()
-
-    # ── STEP 4 — 生成枚数・訴求パターン ──────────────────────────────────────
-    _section("STEP 4 — 生成枚数・訴求パターン")
-
-    num_variations = st.selectbox(
-        "生成枚数 *", [1, 2, 3, 4, 5], index=2,
-        key="banner_num_var",
-    )
-
-    st.markdown(
-        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:12px 0 8px">訴求パターン *</div>',
-        unsafe_allow_html=True,
-    )
-    tonmana_label = _pattern_grid()
 
     # 生成ボタン
     st.markdown("<div style='margin-top:24px'></div>", unsafe_allow_html=True)
