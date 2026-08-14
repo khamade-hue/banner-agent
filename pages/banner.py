@@ -15,7 +15,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import extract_banner_copy, generate_banner_prompts, refine_banner_part
+from agent import extract_banner_copy, generate_banner_prompts, recommend_pattern, refine_banner_part
 from image_gen import generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_banners, load_copies, load_products, save_banner_entry
@@ -85,14 +85,45 @@ _PATTERN_SHORT_DESC: dict[str, str] = {
 }
 
 
+_AI_SENTINEL = "__AI_RECOMMEND__"
+
+
 def _pattern_grid() -> str:
-    """訴求パターンをビジュアルグリッドで選択し、選択されたパターン名を返す。"""
+    """訴求パターンをビジュアルグリッドで選択し、選択されたパターン名（またはAI sentinel）を返す。"""
     if not _TONMANA_LIST:
         st.warning("assets/tonmana/ に画像が見つかりません")
         return ""
 
     if "tonmana_sel_idx" not in st.session_state:
         st.session_state["tonmana_sel_idx"] = 0
+
+    # ── AIにおすすめカード ────────────────────────────────────────────────────
+    is_ai = st.session_state["tonmana_sel_idx"] == -1
+    ai_border = "border:2px solid #8b5cf6;" if is_ai else "border:1px dashed #334155;"
+    ai_bg     = "background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(99,102,241,0.06));" if is_ai else "background:rgba(255,255,255,0.02);"
+    ai_lbl_c  = "#a78bfa" if is_ai else "#cbd5e1"
+    ai_row    = st.columns(4)
+    with ai_row[0]:
+        st.markdown(
+            f'<div style="font-size:0.78rem;font-weight:700;color:{ai_lbl_c};margin-bottom:3px">'
+            f'{"✓ " if is_ai else ""}✨ AIにおすすめ</div>'
+            f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;margin-bottom:6px">'
+            f'目的・コピーを踏まえてAIが最適なパターンを自動選択</div>'
+            f'<div style="{ai_bg}{ai_border}border-radius:8px;height:72px;'
+            f'display:flex;align-items:center;justify-content:center;margin-bottom:6px">'
+            f'<span style="font-size:1.8rem">✨</span></div>',
+            unsafe_allow_html=True,
+        )
+        if is_ai:
+            st.markdown(
+                '<div style="text-align:center;color:#a78bfa;font-size:0.7rem;'
+                'font-weight:700;padding:4px 0 10px">選択中</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            if st.button("選択", key="ton_sel_ai", use_container_width=True, type="secondary"):
+                st.session_state["tonmana_sel_idx"] = -1
+                st.rerun()
 
     n_cols = 4
     for row_start in range(0, len(_TONMANA_LIST), n_cols):
@@ -148,6 +179,8 @@ def _pattern_grid() -> str:
                         st.session_state["tonmana_sel_idx"] = idx
                         st.rerun()
 
+    if st.session_state["tonmana_sel_idx"] == -1:
+        return _AI_SENTINEL
     return _TONMANA_NAMES[st.session_state["tonmana_sel_idx"]]
 
 # ── CTA リスト（仮）────────────────────────────────────────────────────────────
@@ -410,20 +443,45 @@ if _banner_mode == "新規生成":
             st.stop()
 
         selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
-        tonmana_desc = _TONMANA_DESC.get(tonmana_label, tonmana_label)
 
-        _cache_raw = "|".join([
+        _cache_raw_base = "|".join([
             selected_product.get("id", ""),
             selected_copy.get("id", ""),
-            tonmana_desc, selected_cta, str(num_variations),
+            tonmana_label, selected_cta, str(num_variations),
             str(use_product_image), str(use_product_logo), str(use_people),
             color_hint.strip(), free_comment.strip(),
             *sorted(selected_rtbs),
         ])
-        _cache_key = hashlib.md5(_cache_raw.encode()).hexdigest()
         _brief_cache = st.session_state.setdefault("_brief_cache", {})
 
         with st.status("バナーを生成中...", expanded=True) as status:
+
+            # AI推薦パターンの選択（AIにおすすめ選択時）
+            resolved_label = tonmana_label
+            ai_reason = ""
+            if tonmana_label == _AI_SENTINEL:
+                st.write("**Step 0 / 3** — AI が最適な訴求パターンを選択中")
+                try:
+                    available = [
+                        {"name": n, "desc": _PATTERN_SHORT_DESC.get(n, "")}
+                        for n in _TONMANA_NAMES
+                    ]
+                    resolved_label, ai_reason = recommend_pattern(
+                        product_name=selected_product["product_name"],
+                        product_info=selected_product.get("product_info", ""),
+                        objective=selected_copy.get("objective", ""),
+                        headline=selected_copy.get("headline", ""),
+                        sub_headline=selected_copy.get("sub_headline", ""),
+                        available_patterns=available,
+                    )
+                    st.write(f"  ✓ 選択パターン: **{resolved_label}**　← {ai_reason}")
+                except Exception as _e:
+                    st.warning(f"AI推薦に失敗しました。最初のパターンを使用します: {_e}")
+                    resolved_label = _TONMANA_NAMES[0] if _TONMANA_NAMES else ""
+
+            tonmana_desc = _TONMANA_DESC.get(resolved_label, resolved_label)
+            _cache_key = hashlib.md5((_cache_raw_base + resolved_label).encode()).hexdigest()
+
             if _cache_key in _brief_cache:
                 variations = _brief_cache[_cache_key]
                 st.write(f"✓ キャッシュ使用 — {len(variations)} バリエーション（Step 1 スキップ）")
@@ -503,7 +561,7 @@ if _banner_mode == "新規生成":
                     axis_label=selected_copy.get("headline", ""),
                     variation=v,
                     platform_images=platform_images,
-                    tonmana=tonmana_label,
+                    tonmana=resolved_label,
                     objective="",
                 )
             st.write(f"✓ {len(results)} バリエーションを保存しました")
@@ -514,7 +572,7 @@ if _banner_mode == "新規生成":
         st.session_state["gen_copy"]      = selected_copy
         st.session_state["gen_cta"]       = selected_cta
         st.session_state["gen_platforms"] = selected_platforms
-        st.session_state["gen_tonmana"]   = tonmana_label
+        st.session_state["gen_tonmana"]   = resolved_label
 
 # ══════════════════════════════════════════════════════════════════════════════
 # リサイズ

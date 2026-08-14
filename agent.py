@@ -7,6 +7,66 @@ def _claude() -> anthropic.Anthropic:
     return anthropic.Anthropic(max_retries=5)
 
 
+def recommend_pattern(
+    product_name: str,
+    product_info: str,
+    objective: str,
+    headline: str,
+    sub_headline: str,
+    available_patterns: list[dict],
+) -> tuple[str, str]:
+    """Recommend the best banner pattern. Returns (pattern_name, reason_ja)."""
+    tool = {
+        "name": "select_pattern",
+        "description": "最適な訴求パターンを選択して理由を返す",
+        "input_schema": {
+            "type": "object",
+            "required": ["pattern_name", "reason"],
+            "properties": {
+                "pattern_name": {
+                    "type": "string",
+                    "enum": [p["name"] for p in available_patterns],
+                    "description": "選択した訴求パターンの名称",
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "選択理由（1〜2文、日本語）",
+                },
+            },
+        },
+    }
+    patterns_text = "\n".join(
+        f"- {p['name']}: {p['desc']}" for p in available_patterns
+    )
+    response = _claude().messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=300,
+        tools=[tool],
+        tool_choice={"type": "tool", "name": "select_pattern"},
+        system="あなたはSNS広告のクリエイティブディレクターです。商品・コピー・目的に最も適した訴求パターンを選んでください。",
+        messages=[{
+            "role": "user",
+            "content": f"""以下の広告に最適な訴求パターンを1つ選んでください。
+
+商品名: {product_name}
+商品情報: {product_info[:400] if product_info else "（なし）"}
+広告目的: {objective}
+メインコピー: {headline}
+サブコピー: {sub_headline}
+
+訴求パターン一覧:
+{patterns_text}""",
+        }],
+    )
+    for block in response.content:
+        if block.type == "tool_use":
+            inp = block.input
+            if hasattr(inp, "model_dump"):
+                inp = inp.model_dump()
+            return inp.get("pattern_name", available_patterns[0]["name"]), inp.get("reason", "")
+    return available_patterns[0]["name"], ""
+
+
 def _parse_json(text: str, is_array: bool = False):
     """Fallback text-based JSON extraction (used only for generate_banner_prompts)."""
     clean = re.sub(r"```(?:json)?\s*|```", "", text).strip()
