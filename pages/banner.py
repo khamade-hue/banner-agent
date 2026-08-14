@@ -44,12 +44,14 @@ _TONMANA_DESC: dict[str, str] = {
 
 
 @st.cache_data
-def _load_tonmana_b64(path: str) -> tuple[str, str]:
-    with open(path, "rb") as f:
-        data = base64.b64encode(f.read()).decode()
-    ext = os.path.splitext(path)[1].lower().lstrip(".")
-    mime = "image/png" if ext == "png" else "image/jpeg"
-    return data, mime
+def _load_tonmana_b64(path: str, max_width: int = 240) -> tuple[str, str]:
+    img = Image.open(path).convert("RGB")
+    if img.width > max_width:
+        ratio = max_width / img.width
+        img = img.resize((max_width, int(img.height * ratio)), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=75, optimize=True)
+    return base64.b64encode(buf.getvalue()).decode(), "image/jpeg"
 
 
 def _build_tonmana_list() -> list[tuple[str, str]]:
