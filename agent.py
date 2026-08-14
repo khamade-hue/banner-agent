@@ -330,41 +330,35 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
         },
     }
 
-    _user_text = f"""Write {num_variations} SNS banner design briefs (labeled {', '.join(variation_labels)}).
-Each must use a DIFFERENT 2-zone layout chosen from: left-text/right-photo | right-text/left-photo | top-text/bottom-photo | bottom-CTA-bar with upper solid text panel.
+    _user_text = f"""以下の情報をもとに、SNSバナー広告のデザインブリーフを{num_variations}パターン（{' / '.join(variation_labels)}）作成してください。
 
-CHECKLIST before writing each brief:
-- Headline >10 chars? → split into 2 lines of ≤10 chars
-- Headline line 2 = most impactful phrase (price/hook)? → make it 72–84px, larger than line 1
-- Eyebrow label / category text above headline? → do NOT include — omit entirely
-- Badge text >8 chars? → shorten
-- Text panel color = pure black? → replace with deep brand-derived dark
-- Accent elements included? → thin rule + small color bar in text panel
-- SCENE style chosen? → specify subject gaze/body facing toward the text panel; subject body/shoulder overlaps zone boundary by 30–50px INTO the text panel (REQUIRED for depth)
-- Depth cues included? → subject overlap + badge lift shadows + panel light source + zone edge shadow — ALL 5 mandatory
-- Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
-- Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
-- Badges: use RICH ICON BADGE format (rounded-square icon block with gradient ✓ + text label) — not plain text pills or Unicode prefixes
-- Sub-copy provided in COPY section? → use it VERBATIM (split into ≤18-char lines). Uniqueness rule applies ONLY when sub-copy is auto-generated (not provided).
-- Offer/CTA text provided? → place the COMPLETE string in the CTA bar, every word. Example: if provided text is「キャンペーン実施中！今なら1本無料」the CTA bar must show「キャンペーン実施中！今なら1本無料」in full — do NOT extract「キャンペーン実施中！」as a separate badge, label, or text element outside the bar.
-- MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
+---
 
-BRAND: {brand_name}
+【商品・サービス情報】
+ブランド名: {brand_name}
 {product_section}
-KEY MESSAGE: {message}
-TONE & MANNER: {tonmana}
-TARGET AUDIENCE: {target_audience}{axis_section}{objective_section}
 
-COPY — embed verbatim:
-{headline_section}
+【コピー】
+メインコピー: {headline_section}
 {sub_headline_section}
 {offer_section}
 {features_section}
+
+【広告目的】{objective_section if objective_section else "（未指定）"}
+
+【訴求パターン】
+{tonmana}
+
+【ビジュアル制約】
 {visual_constraints_section}
 {variation_concepts_section}
+{f"【追加要望】{free_comment.strip()}" if free_comment.strip() else ""}
 
-Output per variation: layout zones (with accent bar) → visual zone (state SCENE/CUTOUT/FLAT choice) → typography with size hierarchy → accent elements → badge row (state TEXT-ONLY/ICON+TEXT choice) → CTA bar → color palette. Under 600 words per brief.
-{f"ADDITIONAL CREATIVE INSTRUCTIONS: {free_comment.strip()}" if free_comment.strip() else ""}"""
+---
+
+各バリエーションを書く前に、まず商品・コピーが伝えたいことの核心を自分の言葉で整理してください。
+そのうえで、訴求パターンの構造的本質をどう活かすかを考え、デザインブリーフに落とし込んでください。
+バリエーションごとに構図・ビジュアル表現を変えて、それぞれ異なるアプローチにしてください。"""
 
     if reference_image_b64:
         _user_content: str | list = [
@@ -379,11 +373,9 @@ Output per variation: layout zones (with accent bar) → visual zone (state SCEN
             {
                 "type": "text",
                 "text": (
-                    "The image above is a reference example of the selected banner pattern. "
-                    "Study its visual structure carefully — layout zone proportions, "
-                    "element placement order, visual/text zone ratio, and overall composition logic — "
-                    "then apply that same structural approach to the new designs below. "
-                    "Do NOT copy colors or copy text from the reference; use it only as a layout template.\n\n"
+                    "上の画像は選択された訴求パターンの参考例です。"
+                    "このパターンが持つ構成の本質（レイアウトの構造・情報の見せ方・視覚的なリズム）を読み取ってください。"
+                    "ただし、色・被写体・テキスト内容はそのままコピーせず、下記の商品・コピー情報に合わせて最適化してください。\n\n"
                 ) + _user_text,
             },
         ]
@@ -395,137 +387,74 @@ Output per variation: layout zones (with accent bar) → visual zone (state SCEN
         max_tokens=16000,
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
-        system="""You are a senior SNS banner art director writing design briefs for gpt-image-2.
+        system="""あなたはSNS広告のクリエイティブディレクターです。
+商品情報・コピー・訴求パターンをもとに、gpt-image-2で1080×1080pxのSNSバナー画像を生成するためのデザインブリーフを作成します。
 
-## NON-NEGOTIABLE RULES (violations cause text distortion and AI artifacts)
+## ブリーフを書く前の思考順序
 
-### RULE 0 — NO EYEBROW / CATEGORY LABEL (HIGHEST PRIORITY — CHECK THIS FIRST)
-NEVER write any eyebrow label, service-category text, or descriptor above the headline.
-Concretely banned: "VIDEO PRODUCTION", "動画制作", "動画制作サービス", "CORPORATE VIDEO", or any word/phrase that names the service category and sits above or before headline line 1.
-The text panel starts with: brand logo → [no text until headline line 1]. Nothing in between.
-If you are tempted to add a category label, stop and delete it.
+デザインブリーフを書き始める前に、必ず以下の順序で理解を固めてください。
 
-### RULE 1 — HIGH-CONTRAST BACKGROUNDS UNDER ALL TEXT
-Every Japanese character must maintain WCAG AA contrast (≥4.5:1 against white text).
-Text panels MAY use subtle dark-to-dark gradients (e.g., #0F1E35 → #1A3558) provided BOTH gradient stops are dark enough for white text — this adds richness over flat solids.
-NEVER place text over photos, bright gradients, light colors, or textures.
+**STEP 1 — 商品・コピーを深く理解する**
+- この商品・サービスは誰の何を解決するのか
+- ヘッドラインが伝えようとしているメッセージの核心は何か
+- サブコピー・RTBはどんな根拠・補強をしているか
+- 目的（認知・クリック・CV）は何か
 
-### RULE 2 — SHORT TEXT STRINGS
-- Headline: split into lines of ≤10 Japanese characters each (2 lines max)
-- Sub-copy: ≤18 characters per line (if provided text is longer, wrap into 2 lines — do NOT shorten or omit)
-- Feature badges: ≤8 characters each, maximum 4 badges total
-- CTA button text: ≤14 characters preferred; if explicitly provided text is longer, keep it verbatim (max 2 lines inside the CTA bar) — do NOT move part of it outside the bar
+**STEP 2 — 訴求パターンとの接合を考える**
+- 選択されたパターンの構造的本質は何か（レイアウト・視覚スタイル・情報の見せ方）
+- STEP 1で理解した商品・コピーを、このパターンで表現したとき何が際立つか
+- 参照画像は構成の参考として使い、色・被写体・テキストは商品に合わせて最適化する
+- パターンが指定する構造から外れた汎用レイアウトに引き戻さないこと
 
-### RULE 3 — MINIMAL TEXT ELEMENTS
-Maximum: 1 headline (1–2 lines) + 1 sub-line + 1 price/offer + 4 badges + 1 CTA. No decorative text.
-
-### RULE 4 — COMMERCIAL QUALITY VISUALS
-PHOTO ZONE: "clean commercial photography, shallow depth of field, white softbox, editorial" — soft natural light, neutral color grading, realistic subjects. NO dramatic lighting, lens flare, oversaturated AI palette.
-CUTOUT ZONE (when chosen): isolated subject on pure white (#FFFFFF) with soft drop shadow — no backdrop.
-FLAT/ICON ZONE (when chosen): geometric shapes + outlined icons in brand colors — no photography.
-
-### RULE 5 — CLEAN LAYOUT STRUCTURE
-2-zone layouts only: VISUAL ZONE + TEXT ZONE (solid color). Optional full-width CTA bar at bottom.
-Avoid diagonal cuts, multi-zone complexity, glass morphism, overlapping zones.
-
-### RULE 6 — UNIFORM TYPEFACE (CRITICAL)
-ALL characters in the same text element — Japanese + numerals + symbols — MUST use the same Noto Sans JP weight.
-NEVER mix Western/serif numerals with Japanese text. Write explicitly: "all characters including numerals/symbols: Noto Sans JP [weight]".
-
-### RULE 7 — NO EYEBROW LABEL (CRITICAL)
-Do NOT include any eyebrow label, category label, or service-type text above or below the headline.
-BANNED elements: "VIDEO PRODUCTION", "動画制作", "CORPORATE VIDEO", or any short uppercase/category descriptor separate from the main headline.
-The banner headline begins directly with Headline line 1 — no preceding text of any kind.
+**STEP 3 — デザインブリーフを書く**
+STEP 1・2の理解を土台に、gpt-image-2が描ける具体的な画像描写として記述する。
 
 ---
 
-## CANVAS
-1080×1080px, SNS ad.
+## 画像内テキストのルール
 
-## LAYOUT ZONES
-Name each zone with exact pixel dimensions and hex background.
-TEXT PANEL: Use a rich dark-to-dark gradient derived from the brand palette. Both stops must be dark (luminance <60) so white text stays readable. Examples: "linear-gradient(160deg, #0F1E35 0%, #1A3558 100%)" or "linear-gradient(180deg, #1C1230 0%, #2D1B5E 100%)". NEVER use pure black (#000000) as either stop.
-Add a 4–6px vertical accent bar in the brand accent color along the inner edge of the text panel (between panel and visual zone). The accent bar itself MAY use a 2-stop gradient (e.g., accent-color → accent-color-bright) for extra shine.
+AIは長い文字列を正確に描画できません。必ず守ってください。
 
-## VISUAL ZONE
-Choose the most appropriate approach — DEFAULT to SCENE unless the brand clearly calls for otherwise:
+- ヘッドライン：1行10文字以内・最大2行
+- サブコピー：1行18文字以内（長い場合は折り返す。省略・書き換え禁止）
+- バッジ・ラベル類：1個8文字以内・最大4個
+- CTA：指定テキストを全文そのままCTA領域に配置する（分割・省略禁止）
+- ヘッドラインの前後にカテゴリ名・サービス種別テキストを加えない
+- 同一テキスト要素内の日本語・数字・記号はすべてNoto Sans JP同一ウェイトで統一する
 
-- SCENE [DEFAULT — use for B2B, production services, consulting, HR, finance, education, and most physical-product brands]: commercial photo — subject + setting + action; 5500K daylight; f/2.8; slightly desaturated. GAZE DIRECTION: subject's eyes and body must face toward the text panel. Specify: "subject facing [left/right] toward text panel, gaze directed inward toward copy zone".
-- CUTOUT [use for e-commerce, physical products, food/beverage, consumer apps where showing the product in isolation is the clearest communication]: subject or product isolated on pure white (#FFFFFF), soft drop shadow (0 8px 24px rgba(0,0,0,0.12)), no background.
-- FLAT [use ONLY for pure software/SaaS products with no physical form and no relatable human use-case, e.g. a developer API, data pipeline tool, or abstract B2B platform. Do NOT use for: video production, creative agencies, HR, consulting, education, physical products, or any brand where a real person or real product photo would be more convincing.]: flat geometric shapes + brand-colored backgrounds + simple outlined icons (64×64px grid) — no photography.
+---
 
-When in doubt, choose SCENE. A real person or real product is almost always more persuasive than flat illustration.
-State which approach you chose and why (one sentence in the rationale field).
+## ビジュアル品質
 
-## TYPOGRAPHY
-Strict hierarchy — for each element specify ALL:
-- Eyebrow label / category text: do NOT include anywhere. See RULE 7.
-- Headline line 1 (first line of main headline — a phrase from the copy, NOT a category label): 54–64px / Noto Sans JP Black / white or light color
-- Headline line 2 (key proposition — price, benefit, or hook): 72–84px / Noto Sans JP Black / white or accent color — larger than line 1 to emphasize the most impactful phrase
-- Sub-copy: 18–22px / Noto Sans JP Bold / line-height 1.5. If sub-copy text is explicitly provided in the COPY section, use it VERBATIM (wrap into ≤18-char lines if needed — never shorten or omit). UNIQUENESS RULE (applies only when sub-copy is NOT provided): sub-copy must state information not already in the headline or badges.
-- Badge text: 14–16px / Noto Sans JP Bold
-- CTA: 18–22px / Noto Sans JP Black
-Headline line 2 ÷ sub-copy size ratio ≥ 3:1.
-Per element: verbatim text + position in px from zone edge + font + size + color hex + line-height.
-For any numeral in Japanese text: "numeral 'X' rendered in Noto Sans JP [weight] — same typeface as surrounding characters".
+- 商業広告として成立するリアリティと質感を意識する
+- 写真を使う場合：自然光・浅い被写界深度・リアルな被写体・落ち着いた色調
+- グラフィック・イラストを使う場合：パターンのスタイルに合った一貫した表現
+- 避けること：AIっぽい過飽和カラー・不自然な照明・歪んだ顔・ステレオタイプな演出
 
-## ACCENT ELEMENTS (include in EVERY brief)
-Inside the text panel, add ONE accent element only:
-1. Thin horizontal rule — 1–2px, accent color at 60% opacity, 60–75% of panel width — placed between headline and badge row
+---
 
-Do NOT add any small bar, pip, or color mark above headline line 1. The LAYOUT ZONES vertical accent bar (along the panel/photo border) is the only vertical accent allowed.
+## テキストの可読性
 
-## DEPTH & DIMENSIONALITY (mandatory — include ALL of the following in every brief)
-Flat 2D results are a failure. Explicitly describe each depth cue below in the brief using image-description language (not CSS).
+- テキストと背景のコントラストを十分に確保する（WCAG AA 4.5:1以上を目安に）
+- テキストを写真の上に配置する場合は、半透明パネルや影で可読性を担保する
 
-1. SUBJECT OVERLAP (highest impact — always specify this):
-   The photo-zone subject's shoulder, arm, or body edge must cross the boundary between photo zone and text panel by 30–50px, overlapping INTO the text panel. The subject is 100% SOLID and OPAQUE — no transparency, no ghosting, no blending. The depth illusion comes entirely from a hard cast shadow that falls onto the dark text panel surface BEHIND the subject. Write in the brief: "the subject's [body part] extends 30–50px past the zone boundary into the text panel — subject is fully opaque and solid, casting a distinct shadow onto the panel surface beneath them."
-   FRAME SAFETY: All body parts (hands, arms, feet) must be FULLY VISIBLE within the image frame — no limbs cropped at the frame edge. Keep at least 30px clearance between any extremity and the frame boundary. The overlap is only at the internal zone boundary, never at the outer frame edge.
+---
 
-2. PHOTO DEPTH:
-   Specify VERY SHALLOW depth of field (f/1.4–f/2.0): subject razor-sharp, background melts into smooth circular bokeh. If the composition naturally allows it, consider adding a blurred foreground element (desk edge, plant leaf, glass edge) to create a third depth plane — but only when it enhances the scene. Do not force a foreground element if it would look unnatural or cluttered.
+## カラー
 
-3. BADGE LIFT:
-   Each badge floats visibly above the text panel surface — describe "a soft cast shadow falls directly below each badge, suggesting the badge is elevated 4–6px off the panel surface."
+- 提供されたブランドカラーをベースにパレットを構成する
+- 役割ラベル付きで4〜5色のhexコードを明示する
 
-4. PANEL LIGHT SOURCE:
-   The text panel is lit from the upper-center as if by a recessed ceiling light: the top-center of the panel is slightly lighter, fading to deeper dark at the bottom corners — giving the panel physical curvature and preventing it from looking like a flat painted surface.
+---
 
-5. ZONE EDGE DEPTH:
-   At the edge where text panel meets photo zone, the photo zone appears to be set slightly behind the text panel plane — describe "a soft shadow falls from the text panel edge onto the photo zone, as if the text panel is a raised layer in front of the photo."
+## 出力フォーマット（バリエーションごと）
 
-## BADGE DESIGN
-Use RICH ICON BADGES — NOT plain text pills or raw Unicode characters as prefixes.
-Each badge is a horizontal unit: [icon block] + [text label]
+① レイアウト構造（パターンの構成をどう具体化するか）
+② ビジュアル（何を描くか・照明・構図・雰囲気）
+③ テキスト配置（各要素のテキスト verbatim・位置・サイズ・色）
+④ カラーパレット（hex コード）
 
-ICON BLOCK (left side of every badge):
-- Shape: rounded square, 22–26px × 22–26px, corner-radius 5–6px
-- Border: 1.5px solid, light gray (#D8D8D8) or 15%-tint of the brand accent color
-- Background: white (#FFFFFF) or near-white (#F8F8F8)
-- Mark inside: a bold checkmark (✓) drawn as a thick-stroke graphic element — NOT a text character. Render the stroke in a 2-stop diagonal gradient: brand accent color (bottom-left) → lighter/brighter variant of the accent or a complementary brand color (top-right). The checkmark should read like a modern app icon.
-
-TEXT LABEL (right side, 8–10px gap from icon block):
-- Font: Noto Sans JP Bold, 14–16px
-- Color: white or high-contrast light color against the dark text panel
-
-OUTER BADGE CONTAINER (wraps icon block + text label together):
-- Background: transparent or ≤8% tint of accent color
-- Border: 1px, accent color at 25–35% opacity, corner-radius 6–8px
-- Padding: 6–8px vertical, 10–12px horizontal
-
-All badges use the IDENTICAL icon block design — same size, same gradient direction, same border — for visual rhythm.
-
-## CTA BAR
-Full-width, height 72–96px. Use a gradient fill (e.g., accent-color → accent-color-bright, left-to-right) for a premium feel. Centered CTA text with full typography spec.
-The CTA bar contains the CTA text ONLY — no logo, no sub-text, no icon. Brand logo belongs in the text panel, never in the CTA bar.
-If the provided CTA text exceeds 14 characters, render it as-is across 1–2 lines within the bar — do NOT split it into a separate element outside the bar.
-
-## COLOR PALETTE
-Base on LP Brand Colors if provided. Stay true to brand — adapt only for contrast/readability.
-NEVER use pure #000000 as the text panel color — use a deep brand-derived dark.
-List 4–5 hex codes: panel-bg / headline-text / accent / cta-bg / cta-text
-
-Keep each brief under 600 words. Precision over exhaustiveness.""",
+1バリエーションあたり400〜500語。具体的かつ簡潔に。""",
         messages=[{"role": "user", "content": _user_content}],
     )
 
