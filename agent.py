@@ -192,6 +192,8 @@ def generate_banner_prompts(
     use_product_logo: bool = False,
     use_people: bool = True,
     free_comment: str = "",
+    reference_image_b64: str = "",
+    reference_image_mime: str = "image/jpeg",
 ) -> list[dict]:
     """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
     client = _claude()
@@ -327,6 +329,66 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
             },
         },
     }
+
+    _user_text = f"""Write {num_variations} SNS banner design briefs (labeled {', '.join(variation_labels)}).
+Each must use a DIFFERENT 2-zone layout chosen from: left-text/right-photo | right-text/left-photo | top-text/bottom-photo | bottom-CTA-bar with upper solid text panel.
+
+CHECKLIST before writing each brief:
+- Headline >10 chars? → split into 2 lines of ≤10 chars
+- Headline line 2 = most impactful phrase (price/hook)? → make it 72–84px, larger than line 1
+- Eyebrow label / category text above headline? → do NOT include — omit entirely
+- Badge text >8 chars? → shorten
+- Text panel color = pure black? → replace with deep brand-derived dark
+- Accent elements included? → thin rule + small color bar in text panel
+- SCENE style chosen? → specify subject gaze/body facing toward the text panel; subject body/shoulder overlaps zone boundary by 30–50px INTO the text panel (REQUIRED for depth)
+- Depth cues included? → subject overlap + badge lift shadows + panel light source + zone edge shadow — ALL 5 mandatory
+- Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
+- Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
+- Badges: use RICH ICON BADGE format (rounded-square icon block with gradient ✓ + text label) — not plain text pills or Unicode prefixes
+- Sub-copy provided in COPY section? → use it VERBATIM (split into ≤18-char lines). Uniqueness rule applies ONLY when sub-copy is auto-generated (not provided).
+- Offer/CTA text provided? → place the COMPLETE string in the CTA bar, every word. Example: if provided text is「キャンペーン実施中！今なら1本無料」the CTA bar must show「キャンペーン実施中！今なら1本無料」in full — do NOT extract「キャンペーン実施中！」as a separate badge, label, or text element outside the bar.
+- MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
+
+BRAND: {brand_name}
+{product_section}
+KEY MESSAGE: {message}
+TONE & MANNER: {tonmana}
+TARGET AUDIENCE: {target_audience}{axis_section}{objective_section}
+
+COPY — embed verbatim:
+{headline_section}
+{sub_headline_section}
+{offer_section}
+{features_section}
+{visual_constraints_section}
+{variation_concepts_section}
+
+Output per variation: layout zones (with accent bar) → visual zone (state SCENE/CUTOUT/FLAT choice) → typography with size hierarchy → accent elements → badge row (state TEXT-ONLY/ICON+TEXT choice) → CTA bar → color palette. Under 600 words per brief.
+{f"ADDITIONAL CREATIVE INSTRUCTIONS: {free_comment.strip()}" if free_comment.strip() else ""}"""
+
+    if reference_image_b64:
+        _user_content: str | list = [
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": reference_image_mime,
+                    "data": reference_image_b64,
+                },
+            },
+            {
+                "type": "text",
+                "text": (
+                    "The image above is a reference example of the selected banner pattern. "
+                    "Study its visual structure carefully — layout zone proportions, "
+                    "element placement order, visual/text zone ratio, and overall composition logic — "
+                    "then apply that same structural approach to the new designs below. "
+                    "Do NOT copy colors or copy text from the reference; use it only as a layout template.\n\n"
+                ) + _user_text,
+            },
+        ]
+    else:
+        _user_content = _user_text
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
@@ -464,44 +526,7 @@ NEVER use pure #000000 as the text panel color — use a deep brand-derived dark
 List 4–5 hex codes: panel-bg / headline-text / accent / cta-bg / cta-text
 
 Keep each brief under 600 words. Precision over exhaustiveness.""",
-        messages=[{
-            "role": "user",
-            "content": f"""Write {num_variations} SNS banner design briefs (labeled {', '.join(variation_labels)}).
-Each must use a DIFFERENT 2-zone layout chosen from: left-text/right-photo | right-text/left-photo | top-text/bottom-photo | bottom-CTA-bar with upper solid text panel.
-
-CHECKLIST before writing each brief:
-- Headline >10 chars? → split into 2 lines of ≤10 chars
-- Headline line 2 = most impactful phrase (price/hook)? → make it 72–84px, larger than line 1
-- Eyebrow label / category text above headline? → do NOT include — omit entirely
-- Badge text >8 chars? → shorten
-- Text panel color = pure black? → replace with deep brand-derived dark
-- Accent elements included? → thin rule + small color bar in text panel
-- SCENE style chosen? → specify subject gaze/body facing toward the text panel; subject body/shoulder overlaps zone boundary by 30–50px INTO the text panel (REQUIRED for depth)
-- Depth cues included? → subject overlap + badge lift shadows + panel light source + zone edge shadow — ALL 5 mandatory
-- Visual approach chosen (SCENE / CUTOUT / FLAT)? → pick what suits the brand best
-- Badge style chosen (TEXT-ONLY / ICON+TEXT)? → pick what suits the tone best
-- Badges: use RICH ICON BADGE format (rounded-square icon block with gradient ✓ + text label) — not plain text pills or Unicode prefixes
-- Sub-copy provided in COPY section? → use it VERBATIM (split into ≤18-char lines). Uniqueness rule applies ONLY when sub-copy is auto-generated (not provided).
-- Offer/CTA text provided? → place the COMPLETE string in the CTA bar, every word. Example: if provided text is「キャンペーン実施中！今なら1本無料」the CTA bar must show「キャンペーン実施中！今なら1本無料」in full — do NOT extract「キャンペーン実施中！」as a separate badge, label, or text element outside the bar.
-- MIXED-FONT PREVENTION: any numeral/symbol in Japanese? → "Noto Sans JP [weight] — same typeface, no Western numerals"
-
-BRAND: {brand_name}
-{product_section}
-KEY MESSAGE: {message}
-TONE & MANNER: {tonmana}
-TARGET AUDIENCE: {target_audience}{axis_section}{objective_section}
-
-COPY — embed verbatim:
-{headline_section}
-{sub_headline_section}
-{offer_section}
-{features_section}
-{visual_constraints_section}
-{variation_concepts_section}
-
-Output per variation: layout zones (with accent bar) → visual zone (state SCENE/CUTOUT/FLAT choice) → typography with size hierarchy → accent elements → badge row (state TEXT-ONLY/ICON+TEXT choice) → CTA bar → color palette. Under 600 words per brief.
-{f"ADDITIONAL CREATIVE INSTRUCTIONS: {free_comment.strip()}" if free_comment.strip() else ""}""",
-        }],
+        messages=[{"role": "user", "content": _user_content}],
     )
 
     if response.stop_reason == "max_tokens":

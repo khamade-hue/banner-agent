@@ -517,6 +517,15 @@ if _banner_mode == "新規生成":
             tonmana_desc = _TONMANA_DESC.get(resolved_label, resolved_label)
             _cache_key = hashlib.md5((_cache_raw_base + resolved_label).encode()).hexdigest()
 
+            # 選択パターンの参照画像を取得（Claude vision に渡す）
+            _ref_b64, _ref_mime = "", "image/jpeg"
+            _ref_path = _TONMANA_IMG_MAP.get(resolved_label, "")
+            if _ref_path:
+                try:
+                    _ref_b64, _ref_mime = _load_tonmana_b64(_ref_path)
+                except Exception:
+                    pass
+
             if _cache_key in _brief_cache:
                 variations = _brief_cache[_cache_key]
                 st.write(f"✓ キャッシュ使用 — {len(variations)} バリエーション（Step 1 スキップ）")
@@ -544,6 +553,8 @@ if _banner_mode == "新規生成":
                         use_product_logo=use_product_logo,
                         use_people=use_people,
                         free_comment=free_comment.strip(),
+                        reference_image_b64=_ref_b64,
+                        reference_image_mime=_ref_mime,
                     )
                     if not variations:
                         st.error("バリエーションが生成されませんでした。再度「バナーを生成」を押してください。")
