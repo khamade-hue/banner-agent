@@ -63,7 +63,31 @@ def _build_tonmana_list() -> list[tuple[str, str]]:
 
 
 _TONMANA_LIST = _build_tonmana_list()
-_TONMANA_NAMES = [name for name, _ in _TONMANA_LIST]
+_TONMANA_IMG_MAP = {name: path for name, path in _TONMANA_LIST}
+
+_PATTERN_GROUPS = [
+    {
+        "label": "A｜汎用 / ベーシック",
+        "desc": "どんな商品・目的にも使える基本形",
+        "patterns": ["オーソドックス", "シンプル❶｜左右分割", "シンプル❷｜上下分割", "ダイナミックコピー"],
+    },
+    {
+        "label": "B｜情報・比較",
+        "desc": "理性に訴える、論理的アプローチ",
+        "patterns": ["比較・ランキング風", "ビフォーアフター", "図解", "テキストのみ"],
+    },
+    {
+        "label": "C｜共感・信頼",
+        "desc": "感情と社会的証明による訴求",
+        "patterns": ["口コミ・レビュー", "ニュース風", "インフルエンサー投稿風", "キャンペーン・セール"],
+    },
+    {
+        "label": "D｜個性・スタイル",
+        "desc": "特定ターゲット・世界観訴求",
+        "patterns": ["フィルム写真風", "チャット風", "アニメ風", "マンガ風"],
+    },
+]
+_TONMANA_NAMES = [p for g in _PATTERN_GROUPS for p in g["patterns"]]
 
 _PATTERN_SHORT_DESC: dict[str, str] = {
     "アニメ風": "アニメ・イラスト調のビジュアルで親しみやすさを演出",
@@ -125,13 +149,23 @@ def _pattern_grid() -> str:
                 st.session_state["tonmana_sel_idx"] = -1
                 st.rerun()
 
-    n_cols = 4
-    for row_start in range(0, len(_TONMANA_LIST), n_cols):
-        row = _TONMANA_LIST[row_start:row_start + n_cols]
-        cols = st.columns(n_cols)
-        for c_idx, (col, (name, img_path)) in enumerate(zip(cols, row)):
-            idx = row_start + c_idx
+    for g_idx, group in enumerate(_PATTERN_GROUPS):
+        # グループヘッダー
+        mt = "20px" if g_idx > 0 else "12px"
+        st.markdown(
+            f'<div style="margin:{mt} 0 8px;padding-bottom:6px;'
+            f'border-bottom:1px solid #1e293b">'
+            f'<span style="font-size:0.7rem;font-weight:700;color:#8b5cf6;'
+            f'text-transform:uppercase;letter-spacing:0.08em">{group["label"]}</span>'
+            f'<span style="font-size:0.68rem;color:#475569;margin-left:8px">{group["desc"]}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        cols = st.columns(4)
+        for c_idx, (col, name) in enumerate(zip(cols, group["patterns"])):
+            idx = g_idx * 4 + c_idx
             is_sel = st.session_state["tonmana_sel_idx"] == idx
+            img_path = _TONMANA_IMG_MAP.get(name, "")
             short_desc = _PATTERN_SHORT_DESC.get(name, "")
             with col:
                 # 1. 名称
@@ -149,24 +183,25 @@ def _pattern_grid() -> str:
                         unsafe_allow_html=True,
                     )
                 # 3. 画像
-                try:
-                    b64, mime = _load_tonmana_b64(img_path)
-                    border = "border:2px solid #8b5cf6;" if is_sel else "border:1px solid #1e293b;"
-                    bg = "background:rgba(139,92,246,0.08);" if is_sel else ""
-                    st.markdown(
-                        f'<div style="border-radius:8px;overflow:hidden;{border}{bg}padding:2px;margin-bottom:6px">'
-                        f'<img src="data:{mime};base64,{b64}" style="width:100%;display:block;border-radius:6px">'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                except Exception:
-                    st.markdown(
-                        f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
-                        f'height:60px;display:flex;align-items:center;justify-content:center;'
-                        f'color:#475569;font-size:0.65rem;padding:4px;text-align:center;'
-                        f'margin-bottom:6px">{name}</div>',
-                        unsafe_allow_html=True,
-                    )
+                if img_path:
+                    try:
+                        b64, mime = _load_tonmana_b64(img_path)
+                        border = "border:2px solid #8b5cf6;" if is_sel else "border:1px solid #1e293b;"
+                        bg = "background:rgba(139,92,246,0.08);" if is_sel else ""
+                        st.markdown(
+                            f'<div style="border-radius:8px;overflow:hidden;{border}{bg}padding:2px;margin-bottom:6px">'
+                            f'<img src="data:{mime};base64,{b64}" style="width:100%;display:block;border-radius:6px">'
+                            f'</div>',
+                            unsafe_allow_html=True,
+                        )
+                    except Exception:
+                        st.markdown(
+                            f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
+                            f'height:60px;display:flex;align-items:center;justify-content:center;'
+                            f'color:#475569;font-size:0.65rem;padding:4px;text-align:center;'
+                            f'margin-bottom:6px">{name}</div>',
+                            unsafe_allow_html=True,
+                        )
                 # 4. 選択ボタン
                 if is_sel:
                     st.markdown(
