@@ -65,9 +65,28 @@ def _build_tonmana_list() -> list[tuple[str, str]]:
 _TONMANA_LIST = _build_tonmana_list()
 _TONMANA_NAMES = [name for name, _ in _TONMANA_LIST]
 
+_PATTERN_SHORT_DESC: dict[str, str] = {
+    "アニメ風": "アニメ・イラスト調のビジュアルで親しみやすさを演出",
+    "インフルエンサー投稿風": "SNS投稿のようなリアル感で自然に訴求",
+    "オーソドックス": "王道の広告レイアウトで安定した訴求力",
+    "キャンペーン・セール": "セール感・限定感を前面に出した訴求",
+    "シンプル❶｜左右分割": "左右で画像とテキストを分けたミニマルな構成",
+    "シンプル❷｜上下分割": "上下で画像とテキストを分けたミニマルな構成",
+    "ダイナミックコピー": "大きなコピーをメインビジュアルにした文字中心の訴求",
+    "チャット風": "会話・メッセージ形式で親近感を演出",
+    "テキストのみ": "写真なし、テキストだけで力強く伝える",
+    "ニュース風": "ニュース・メディア調で信頼感と情報価値を演出",
+    "ビフォーアフター": "Before/After の対比で変化・効果を視覚的に伝える",
+    "フィルム写真風": "フィルム感のある温かみあるビジュアルで情緒に訴える",
+    "マンガ風": "マンガ・コミック調で個性的に訴求",
+    "口コミ・レビュー": "ユーザーの声・レビューを前面に出して信頼を獲得",
+    "図解": "図・アイコンで情報をわかりやすく整理して伝える",
+    "比較・ランキング風": "競合比較やランキング形式で優位性を示す",
+}
 
-def _tonmana_grid() -> str:
-    """ビジュアルグリッドでトンマナを選択。選択されたトンマナ名を返す。"""
+
+def _pattern_grid() -> str:
+    """訴求パターンをビジュアルグリッドで選択し、選択されたパターン名を返す。"""
     if not _TONMANA_LIST:
         st.warning("assets/tonmana/ に画像が見つかりません")
         return ""
@@ -82,13 +101,29 @@ def _tonmana_grid() -> str:
         for c_idx, (col, (name, img_path)) in enumerate(zip(cols, row)):
             idx = row_start + c_idx
             is_sel = st.session_state["tonmana_sel_idx"] == idx
+            short_desc = _PATTERN_SHORT_DESC.get(name, "")
             with col:
+                # 1. 名称
+                label_color = "#a78bfa" if is_sel else "#cbd5e1"
+                st.markdown(
+                    f'<div style="font-size:0.78rem;font-weight:700;color:{label_color};'
+                    f'margin-bottom:3px">{"✓ " if is_sel else ""}{name}</div>',
+                    unsafe_allow_html=True,
+                )
+                # 2. 概要
+                if short_desc:
+                    st.markdown(
+                        f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;'
+                        f'margin-bottom:6px">{short_desc}</div>',
+                        unsafe_allow_html=True,
+                    )
+                # 3. 画像
                 try:
                     b64, mime = _load_tonmana_b64(img_path)
                     border = "border:2px solid #8b5cf6;" if is_sel else "border:1px solid #1e293b;"
                     bg = "background:rgba(139,92,246,0.08);" if is_sel else ""
                     st.markdown(
-                        f'<div style="border-radius:8px;overflow:hidden;{border}{bg}padding:2px;margin-bottom:4px">'
+                        f'<div style="border-radius:8px;overflow:hidden;{border}{bg}padding:2px;margin-bottom:6px">'
                         f'<img src="data:{mime};base64,{b64}" style="width:100%;display:block;border-radius:6px">'
                         f'</div>',
                         unsafe_allow_html=True,
@@ -97,18 +132,19 @@ def _tonmana_grid() -> str:
                     st.markdown(
                         f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
                         f'height:60px;display:flex;align-items:center;justify-content:center;'
-                        f'color:#475569;font-size:0.65rem;padding:4px;text-align:center">{name}</div>',
+                        f'color:#475569;font-size:0.65rem;padding:4px;text-align:center;'
+                        f'margin-bottom:6px">{name}</div>',
                         unsafe_allow_html=True,
                     )
-
+                # 4. 選択ボタン
                 if is_sel:
                     st.markdown(
-                        f'<div style="text-align:center;color:#a78bfa;font-size:0.7rem;'
-                        f'font-weight:700;margin-bottom:8px">✓ {name}</div>',
+                        '<div style="text-align:center;color:#a78bfa;font-size:0.7rem;'
+                        'font-weight:700;padding:4px 0 10px">選択中</div>',
                         unsafe_allow_html=True,
                     )
                 else:
-                    if st.button(name, key=f"ton_sel_{idx}", use_container_width=True, type="secondary"):
+                    if st.button("選択", key=f"ton_sel_{idx}", use_container_width=True, type="secondary"):
                         st.session_state["tonmana_sel_idx"] = idx
                         st.rerun()
 
@@ -305,6 +341,13 @@ if _banner_mode == "新規生成":
     # ── STEP 3 — 詳細設定 ──────────────────────────────────────────────────────
     _section("STEP 3 — 詳細設定")
 
+    selected_platform_name = st.selectbox(
+        "プラットフォーム *",
+        [p.name for p in PLATFORMS],
+        index=0,
+        key="banner_platform",
+    )
+
     col_ppl, col_pimg, col_plogo = st.columns(3)
     with col_ppl:
         st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">人物の使用</div>', unsafe_allow_html=True)
@@ -337,8 +380,8 @@ if _banner_mode == "新規生成":
 
     st.divider()
 
-    # ── STEP 4 — 生成枚数・トンマナ・プラットフォーム ─────────────────────────
-    _section("STEP 4 — 生成枚数・トンマナ・プラットフォーム")
+    # ── STEP 4 — 生成枚数・訴求パターン ──────────────────────────────────────
+    _section("STEP 4 — 生成枚数・訴求パターン")
 
     num_variations = st.selectbox(
         "生成枚数 *", [1, 2, 3, 4, 5], index=2,
@@ -346,17 +389,10 @@ if _banner_mode == "新規生成":
     )
 
     st.markdown(
-        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:12px 0 8px">トンマナ *</div>',
+        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:12px 0 8px">訴求パターン *</div>',
         unsafe_allow_html=True,
     )
-    tonmana_label = _tonmana_grid()
-
-    selected_platform_name = st.selectbox(
-        "プラットフォーム *",
-        [p.name for p in PLATFORMS],
-        index=0,
-        key="banner_platform",
-    )
+    tonmana_label = _pattern_grid()
 
     # 生成ボタン
     st.markdown("<div style='margin-top:24px'></div>", unsafe_allow_html=True)
@@ -658,7 +694,7 @@ if _banner_mode == "新規生成" and st.session_state.get("gen_results"):
         st.caption(
             f"商品: {current_product.get('product_name', '—')} ｜ "
             f"コピー: {current_copy.get('headline', '—')} ｜ "
-            f"トンマナ: {st.session_state.get('gen_tonmana', '—')}"
+            f"訴求パターン: {st.session_state.get('gen_tonmana', '—')}"
         )
     with col_saved:
         if st.button("保存済みバナー →", type="secondary", use_container_width=True, key="goto_saved"):
@@ -730,7 +766,7 @@ if _banner_mode == "新規生成" and st.session_state.get("gen_results"):
                         }
             _var_copy = st.session_state[_prompt_key]
 
-            REVISION_PARTS = ["トンマナ", "ビジュアル", "テキスト"]
+            REVISION_PARTS = ["訴求パターン", "ビジュアル", "テキスト"]
             sel_part = st.radio(
                 "① 修正するパーツ",
                 REVISION_PARTS,
@@ -742,11 +778,11 @@ if _banner_mode == "新規生成" and st.session_state.get("gen_results"):
             rev_instructions = ""
             rev_part_label   = sel_part
 
-            if sel_part == "トンマナ":
+            if sel_part == "訴求パターン":
                 _cur_ton = st.session_state.get("gen_tonmana", _TONMANA_NAMES[0] if _TONMANA_NAMES else "")
                 _ton_idx = _TONMANA_NAMES.index(_cur_ton) if _cur_ton in _TONMANA_NAMES else 0
                 _new_ton = st.selectbox(
-                    "② 新しいトンマナ",
+                    "② 新しい訴求パターン",
                     _TONMANA_NAMES,
                     index=_ton_idx,
                     key=f"rev_ton_{tab_idx}",
