@@ -1,5 +1,6 @@
 """Page 3: バナー生成・リサイズ"""
 
+import base64
 import hashlib
 import io
 import os
@@ -19,17 +20,99 @@ from image_gen import generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_banners, load_copies, load_products, save_banner_entry
 
-# ── トンマナ定義 ──────────────────────────────────────────────────────────────
-TONMANA = {
-    "モダン・ミニマル": "modern minimalist: clean geometric composition, ample white space, muted neutral palette (white/light gray/black), simple elegant forms, understated sophistication",
-    "プロフェッショナル・信頼感": "professional and trustworthy: structured balanced composition, authoritative navy-gray-white palette, polished corporate aesthetic, conveys stability and credibility",
-    "ポップ・カジュアル": "playful and casual: vibrant saturated colors, energetic dynamic layout, bold graphic shapes, youthful approachable feel",
-    "ラグジュアリー・高級感": "luxury premium: deep rich tones (black/gold/deep burgundy), dramatic chiaroscuro lighting, exclusive sophisticated atmosphere, opulent textures",
-    "エネルギッシュ・ダイナミック": "energetic and dynamic: bold diagonal lines, high-contrast vivid colors, sense of speed and momentum, powerful impactful composition",
-    "ナチュラル・オーガニック": "natural and organic: earthy warm tones (sage green/warm beige/terracotta), soft natural textures, wholesome honest aesthetic, nature-inspired elements",
-    "テック・イノベーティブ": "tech-forward and innovative: dark background, electric neon accent colors (blue/cyan/purple), futuristic geometric elements, cutting-edge digital aesthetic",
-    "ウォーム・フレンドリー": "warm and friendly: soft warm colors (peach/warm yellow/coral), inviting comfortable composition, heartfelt approachable mood, human-centered",
+# ── トンマナ定義（assets/tonmana/ のファイル名が表示名、値がAIプロンプト用説明）────
+_TONMANA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "tonmana")
+
+_TONMANA_DESC: dict[str, str] = {
+    "アニメ風": "anime and illustration style: vibrant clean anime-inspired artwork, expressive characters, manga-influenced typography and dynamic energetic layout",
+    "インフルエンサー投稿風": "influencer post style: authentic casual lifestyle photography, warm social media aesthetic, personal and approachable tone, feels organic not staged",
+    "オーソドックス": "classic orthodox advertising: clean professional layout, balanced composition, traditional ad structure with headline, visual, and CTA, high trust aesthetic",
+    "キャンペーン・セール": "campaign and sale promotional: bold urgent colors (red/yellow/orange), large discount or price callout, high-energy excitement, deadline-driven tone",
+    "シンプル❶｜左右分割": "simple left-right split layout: minimalist two-column design, photography on one side and text on the other, clean uncluttered composition",
+    "シンプル❷｜上下分割": "simple top-bottom split layout: minimalist two-row design, image panel on top and text panel below, airy and clean presentation",
+    "ダイナミックコピー": "dynamic copy-driven: oversized bold typography as the hero element, copy takes visual center stage, minimal imagery, impactful text-forward design",
+    "チャット風": "chat and messaging bubble style: speech bubble graphic elements, conversational dialogue format, messaging app aesthetic, informal and friendly tone",
+    "テキストのみ": "text-only typographic: pure bold typography with no photography, strong copywriting hierarchy, minimal two-color palette, high-contrast and striking",
+    "ニュース風": "news and editorial style: newspaper-inspired layout with column structure, journalistic credibility tone, authoritative factual presentation",
+    "ビフォーアフター": "before and after comparison: split-screen transformation reveal, clear visual contrast between problem state and solution state, persuasive side-by-side format",
+    "フィルム写真風": "film photography style: analog grain texture, warm vintage color grading, light leaks and soft edges, nostalgic candid authentic aesthetic",
+    "マンガ風": "manga and comic style: comic panel layout structure, speech bubbles, bold ink outline illustration, Japanese manga visual language and energy",
+    "口コミ・レビュー": "testimonial and review style: user quote design with attribution, star ratings display, social proof emphasis, authentic word-of-mouth format",
+    "図解": "infographic and diagram style: explanatory icons, simple charts and flows, structured information hierarchy, visual data storytelling approach",
+    "比較・ランキング風": "comparison and ranking style: competitive feature comparison table, vs. format or ranking display, checklist-style advantages, clear winner positioning",
 }
+
+
+@st.cache_data
+def _load_tonmana_b64(path: str) -> tuple[str, str]:
+    with open(path, "rb") as f:
+        data = base64.b64encode(f.read()).decode()
+    ext = os.path.splitext(path)[1].lower().lstrip(".")
+    mime = "image/png" if ext == "png" else "image/jpeg"
+    return data, mime
+
+
+def _build_tonmana_list() -> list[tuple[str, str]]:
+    if not os.path.isdir(_TONMANA_DIR):
+        return []
+    files = sorted([
+        f for f in os.listdir(_TONMANA_DIR)
+        if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
+    ])
+    return [(os.path.splitext(f)[0], os.path.join(_TONMANA_DIR, f)) for f in files]
+
+
+_TONMANA_LIST = _build_tonmana_list()
+_TONMANA_NAMES = [name for name, _ in _TONMANA_LIST]
+
+
+def _tonmana_grid() -> str:
+    """ビジュアルグリッドでトンマナを選択。選択されたトンマナ名を返す。"""
+    if not _TONMANA_LIST:
+        st.warning("assets/tonmana/ に画像が見つかりません")
+        return ""
+
+    if "tonmana_sel_idx" not in st.session_state:
+        st.session_state["tonmana_sel_idx"] = 0
+
+    n_cols = 4
+    for row_start in range(0, len(_TONMANA_LIST), n_cols):
+        row = _TONMANA_LIST[row_start:row_start + n_cols]
+        cols = st.columns(n_cols)
+        for c_idx, (col, (name, img_path)) in enumerate(zip(cols, row)):
+            idx = row_start + c_idx
+            is_sel = st.session_state["tonmana_sel_idx"] == idx
+            with col:
+                try:
+                    b64, mime = _load_tonmana_b64(img_path)
+                    border = "border:2px solid #8b5cf6;" if is_sel else "border:1px solid #1e293b;"
+                    bg = "background:rgba(139,92,246,0.08);" if is_sel else ""
+                    st.markdown(
+                        f'<div style="border-radius:8px;overflow:hidden;{border}{bg}padding:2px;margin-bottom:4px">'
+                        f'<img src="data:{mime};base64,{b64}" style="width:100%;display:block;border-radius:6px">'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                except Exception:
+                    st.markdown(
+                        f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
+                        f'height:60px;display:flex;align-items:center;justify-content:center;'
+                        f'color:#475569;font-size:0.65rem;padding:4px;text-align:center">{name}</div>',
+                        unsafe_allow_html=True,
+                    )
+
+                if is_sel:
+                    st.markdown(
+                        f'<div style="text-align:center;color:#a78bfa;font-size:0.7rem;'
+                        f'font-weight:700;margin-bottom:8px">✓ {name}</div>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    if st.button(name, key=f"ton_sel_{idx}", use_container_width=True, type="secondary"):
+                        st.session_state["tonmana_sel_idx"] = idx
+                        st.rerun()
+
+    return _TONMANA_NAMES[st.session_state["tonmana_sel_idx"]]
 
 # ── CTA リスト（仮）────────────────────────────────────────────────────────────
 _CTA_LIST = [
@@ -257,17 +340,16 @@ if _banner_mode == "新規生成":
     # ── STEP 4 — 生成枚数・トンマナ・プラットフォーム ─────────────────────────
     _section("STEP 4 — 生成枚数・トンマナ・プラットフォーム")
 
-    col_var, col_ton = st.columns([1, 2])
-    with col_var:
-        num_variations = st.selectbox(
-            "生成枚数 *", [1, 2, 3, 4, 5], index=2,
-            key="banner_num_var",
-        )
-    with col_ton:
-        tonmana_label = st.selectbox(
-            "トンマナ *", list(TONMANA.keys()),
-            key="banner_tonmana",
-        )
+    num_variations = st.selectbox(
+        "生成枚数 *", [1, 2, 3, 4, 5], index=2,
+        key="banner_num_var",
+    )
+
+    st.markdown(
+        '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin:12px 0 8px">トンマナ *</div>',
+        unsafe_allow_html=True,
+    )
+    tonmana_label = _tonmana_grid()
 
     selected_platform_name = st.selectbox(
         "プラットフォーム *",
@@ -292,7 +374,7 @@ if _banner_mode == "新規生成":
             st.stop()
 
         selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
-        tonmana_desc = TONMANA[tonmana_label]
+        tonmana_desc = _TONMANA_DESC.get(tonmana_label, tonmana_label)
 
         _cache_raw = "|".join([
             selected_product.get("id", ""),
@@ -661,15 +743,15 @@ if _banner_mode == "新規生成" and st.session_state.get("gen_results"):
             rev_part_label   = sel_part
 
             if sel_part == "トンマナ":
-                _cur_ton = st.session_state.get("gen_tonmana", list(TONMANA.keys())[0])
-                _ton_idx = list(TONMANA.keys()).index(_cur_ton) if _cur_ton in TONMANA else 0
+                _cur_ton = st.session_state.get("gen_tonmana", _TONMANA_NAMES[0] if _TONMANA_NAMES else "")
+                _ton_idx = _TONMANA_NAMES.index(_cur_ton) if _cur_ton in _TONMANA_NAMES else 0
                 _new_ton = st.selectbox(
                     "② 新しいトンマナ",
-                    list(TONMANA.keys()),
+                    _TONMANA_NAMES,
                     index=_ton_idx,
                     key=f"rev_ton_{tab_idx}",
                 )
-                rev_instructions = f"Change the tone and manner to: {TONMANA[_new_ton]}"
+                rev_instructions = f"Change the tone and manner to: {_TONMANA_DESC.get(_new_ton, _new_ton)}"
 
             elif sel_part == "ビジュアル":
                 st.markdown(
