@@ -294,6 +294,54 @@ def delete_product(product_id: str) -> None:
     client.table("products").delete().eq("id", product_id).execute()
 
 
+# ── Copies ────────────────────────────────────────────────────────────────────
+
+def load_copies(product_id: str | None = None) -> list[dict]:
+    q = _client().table("copies").select("*").order("created_at")
+    if product_id:
+        q = q.eq("product_id", product_id)
+    return q.execute().data or []
+
+
+def save_copy(
+    product_id: str,
+    product_name: str,
+    objective: str,
+    headline: str,
+    sub_headline: str,
+    rtbs: list[str],
+) -> dict:
+    entry = {
+        "id": str(uuid.uuid4()),
+        "product_id": product_id,
+        "product_name": product_name,
+        "objective": objective,
+        "headline": headline,
+        "sub_headline": sub_headline,
+        "rtbs": rtbs,
+        "created_at": datetime.now().isoformat(),
+    }
+    _client().table("copies").insert(entry).execute()
+    return entry
+
+
+def update_copy(
+    copy_id: str,
+    headline: str,
+    sub_headline: str,
+    rtbs: list[str],
+) -> None:
+    _client().table("copies").update({
+        "headline": headline,
+        "sub_headline": sub_headline,
+        "rtbs": rtbs,
+    }).eq("id", copy_id).execute()
+
+
+def delete_copy(copy_id: str) -> None:
+    _client().table("copies").delete().eq("id", copy_id).execute()
+
+
 def delete_banner(banner_id: str) -> None:
     client = _client()
     banners = load_banners()

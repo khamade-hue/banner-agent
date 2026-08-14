@@ -20,366 +20,46 @@ def _parse_json(text: str, is_array: bool = False):
         raise ValueError(f"JSONの解析に失敗しました: {e}")
 
 
-# ── Shared schema for a single appeal axis (used by both tools) ───────────────
-_AXIS_ITEM_SCHEMA = {
-    "type": "object",
-    "required": ["axis", "description", "target_segment", "rationale", "copy_sets"],
-    "properties": {
-        "axis": {"type": "string"},
-        "description": {"type": "string"},
-        "target_segment": {"type": "string"},
-        "rationale": {"type": "string"},
-        "copy_sets": {
-            "type": "array",
-            "minItems": 3,
-            "maxItems": 3,
-            "description": "3パターンのコピーセット（各セットはメインキャッチ・サブキャッチ・特徴・CTA）",
-            "items": {
-                "type": "object",
-                "required": ["headline", "sub_headline", "features", "offer"],
-                "properties": {
-                    "headline": {
-                        "type": "string",
-                        "description": "メインキャッチコピー（20文字以内、強いインパクト）",
-                    },
-                    "sub_headline": {
-                        "type": "string",
-                        "description": (
-                            "サブキャッチコピー（30文字以内）。"
-                            "メインキャッチを補足する一文。ターゲットの状況・サービスカテゴリ・独自価値を端的に表現。"
-                            "headline・features・offerと内容が重複しないこと。"
-                        ),
-                    },
-                    "features": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": (
-                            "バナーのチップ形式で並列表示する特徴・ベネフィット 4〜6項目（1項目10〜20文字）。"
-                            "他の2セットのfeaturesと切り口・内容が重複しないこと。"
-                            "3セット合計で価格・品質・速度・サポート・実績・利便性など多面的な強みを網羅すること。"
-                        ),
-                    },
-                    "offer": {
-                        "type": "string",
-                        "description": (
-                            "CTA文言（例: 今すぐ資料を請求する / まず実績を確認する / 無料で相談する）。"
-                            "商品情報に明記されていない割引・限定・無料体験・具体的数値は絶対に含めないこと。"
-                        ),
-                    },
-                },
-            },
-        },
-    },
-}
-
-_ANALYSIS_TOOL = {
-    "name": "submit_analysis",
-    "description": "3C分析と訴求軸の結果を送信する",
-    "input_schema": {
-        "type": "object",
-        "required": ["3c_analysis", "appeal_axes"],
-        "properties": {
-            "3c_analysis": {
-                "type": "object",
-                "required": ["customer", "competitor", "company"],
-                "properties": {
-                    "customer": {
-                        "type": "object",
-                        "properties": {
-                            "needs": {"type": "string"},
-                            "pain_points": {"type": "string"},
-                            "demographics": {"type": "string"},
-                        },
-                    },
-                    "competitor": {
-                        "type": "object",
-                        "properties": {
-                            "landscape": {"type": "string"},
-                            "differentiation": {"type": "string"},
-                        },
-                    },
-                    "company": {
-                        "type": "object",
-                        "properties": {
-                            "strengths": {"type": "string"},
-                            "value_proposition": {"type": "string"},
-                        },
-                    },
-                },
-            },
-            "appeal_axes": {
-                "type": "array",
-                "minItems": 3,
-                "maxItems": 5,
-                "items": _AXIS_ITEM_SCHEMA,
-            },
-        },
-    },
-}
-
-_AXES_TOOL = {
-    "name": "submit_axes",
-    "description": "追加の訴求軸を送信する",
-    "input_schema": {
-        "type": "object",
-        "required": ["axes"],
-        "properties": {
-            "axes": {
-                "type": "array",
-                "minItems": 2,
-                "maxItems": 3,
-                "items": _AXIS_ITEM_SCHEMA,
-            }
-        },
-    },
-}
-
-_COPY_INSTRUCTIONS = """
-各訴求軸の copy_sets を必ず3セット生成してください。
-プロのコピーライターとしてバナーの完成形をイメージし、
-headline・offer・features が1枚のバナー上で統一感を持って機能するよう設計してください。
-
-各セットの構成:
-- headline: メインキャッチコピー1本（20文字以内、強いインパクト）
-- sub_headline: サブキャッチコピー1本（30文字以内、メインキャッチを補足する一文。
-  ターゲットの状況・サービスカテゴリ・独自価値を端的に。headline・features・offerと重複しないこと）
-- features: バナーのチップ形式で並列表示する特徴・ベネフィット 4〜6項目（1項目10〜20文字）
-- offer: CTA文言1本（行動を促す動詞ベースの表現。具体的な割引率・限定期間・無料体験期間などは
-  商品情報に明記されている場合のみ使用すること）
-
-【絶対に守るルール】
-■ 事実根拠ルール（最優先）
-  提供された商品情報・LPに明記されていない以下の情報はコピーに含めないこと:
-  - 割引率・金額（例: 30%オフ、5万円引き）
-  - 限定オファー（例: 初回限定、今月限定、先着○名）
-  - 試用期間・無料体験（例: 30日間無料、1ヶ月トライアル）
-  - 導入社数・実績数値（例: 累計1000社、満足度98%）
-  - その他、商品情報から確認できない具体的な数値・期間・特典
-
-■ 商品理解ルール
-  headline + features の組み合わせで、その商品を知らない人が読んでも
-  「何のサービスか・誰向けか・何が得られるか」を理解できること。
-  サービスカテゴリや主要な機能・価値を必ず特徴に含めること。
-
-■ 特徴事実根拠ルール（最重要）
-  featuresの各項目は、商品情報・LPに記載された事実・スペック・サービス内容のみを根拠とすること。
-  商品情報を精読し、以下の項目が明記されていれば積極的に特徴として活用すること:
-  - 納期・制作スピード（例: 最短即日、最短3営業日など）
-  - 修正対応（例: 修正回数無制限、初稿3日以内など）
-  - 対応コンテンツ・用途（例: SNS広告・採用動画・ブランディング動画）
-  - 制作体制（例: 専任ディレクター制、プロクリエイターチームなど）
-  - 料金体系（例: 追加費用なし・明確な料金表など）
-  商品情報に記載のない機能・サービス内容を「〜できる」「〜対応」として含めること禁止。
-  【NG例】「予算に合わせてプラン選択できる」← プラン選択の記載がない場合は不可
-  【NG例】「最短即日納品」← 納期の記載がない場合は不可（記載があれば積極的に使うこと）
-
-■ 特徴差別化ルール（重要）
-  3セットのfeaturesは互いに重複させず、合計したときに製品の多面的な強みを網羅すること。
-  各セットで取り上げる「切り口」を意図的に分散させること:
-  - セット1: headlineの訴求軸に最も直結する強みで固める
-  - セット2: 品質・実績・信頼性の側面から別の強みを挙げる
-  - セット3: 利便性・サポート・プロセス・柔軟性の側面から挙げる
-  ※上記は例示。訴求軸の性質に応じて最適な3分類を設計すること。
-  【禁止】同じ事実を言い換えただけの特徴を3セットに並べること
-  【禁止】価格・数字を含む特徴をセット1・2・3の全てに入れること（1セットに1項目まで）
-  各セットのfeaturesはそのセットのheadlineのトーン・切り口と整合させること。
-
-■ ヘッドライン心理起点ルール
-  3セットのうち少なくとも1本は、ターゲットの「今の状況・感情・悩み」を起点にした表現にすること。
-  NG（ベネフィット起点のみ）: 「高品質×低コストを両立。」
-  OK（状況・悩み起点）: 「その見積もり、高すぎませんか？」「社内に動画ノウハウ、ありますか？」
-  読んだ瞬間に「自分のことだ」と感じさせる共感型コピーを1本以上含めること。
-
-■ CTAバリエーションルール
-  3セットのofferは必ず異なるアクション動詞・異なる意思決定段階を使うこと。
-  段階の目安:
-  - 情報収集段階: 「〜を知る」「実績をチェックする」「サービスを見てみる」
-  - 比較検討段階: 「料金・事例を確認する」「他社と比べてみる」「詳細を見る」
-  - 意思決定段階: 「まず相談する」「1本依頼してみる」「今すぐ問い合わせる」
-  同一軸の3セット内で同じ動詞を繰り返さないこと（例: 3セット全部「〜を確認する」はNG）。
-  各訴求軸のターゲット層がどのファネル段階にいるかを考慮してCTAの重心を決めること。
-
-3セットはクリエイティブコンセプト（例: 感情訴求 / 機能訴求 / 社会的証明）を
-それぞれ変えて作成し、多様なバナー表現を可能にしてください。"""
-
-
-def analyze_product(
+def generate_copies(
     product_name: str,
-    product_url: str,
-    page_content: str,
-    competitor_url: str = "",
-    competitor_content: str = "",
-    free_comment: str = "",
-) -> dict:
-    """3C analysis and appeal axis generation."""
-    client = _claude()
-
-    content_section = (
-        f"\n自社ページ内容（抜粋）:\n{page_content[:3000]}" if page_content.strip() else ""
-    )
-
-    free_comment_section = (
-        f"\n\n【クライアントからの追加指示・優先事項】\n"
-        f"※ 以下の指示を最優先で訴求軸・コピーに反映してください:\n{free_comment.strip()}"
-        if free_comment.strip() else ""
-    )
-
-    if competitor_url and competitor_content.strip():
-        competitor_section = f"""
-【競合情報（指定URL）】
-競合URL: {competitor_url}
-競合ページ内容（抜粋）:
-{competitor_content[:2500]}
-
-上記の競合商品を中心に詳細な競合分析を実施し、自社商品が勝てる差別化ポイントを明確にしてください。"""
-    else:
-        competitor_section = """
-【競合情報】
-競合URLは指定されていません。あなたの知識をベースに、この商品カテゴリの主要競合（3〜5社）を
-特定し、各社の強み・市場ポジション・差別化ポイントを分析してください。
-競合landscape フィールドには特定した競合企業名と概要を含めてください。"""
-
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=8000,
-        tools=[_ANALYSIS_TOOL],
-        tool_choice={"type": "tool", "name": "submit_analysis"},
-        system=(
-            "あなたはデジタル広告に精通したシニアマーケティングストラテジスト兼プロのコピーライターです。"
-            "3C分析（顧客・競合・自社）を実施し、バナーの完成形をイメージしながら"
-            "訴求軸と刺さるコピーセットを生成することを得意としています。"
-        ),
-        messages=[{
-            "role": "user",
-            "content": f"""以下の商品について3C分析を実施し、SNS広告の訴求軸を最低3パターン提案してください。
-
-商品名: {product_name}
-商品URL: {product_url}{content_section}
-{competitor_section}{free_comment_section}
-
-appeal_axesは必ず3つ以上5つ以内で生成してください。各訴求軸は以下の観点で差別化してください:
-- 感情訴求 vs 機能訴求
-- ターゲット層の違い
-- ベネフィットの切り口の違い
-{_COPY_INSTRUCTIONS}""",
-        }],
-    )
-
-    for block in response.content:
-        if block.type == "tool_use":
-            inp = block.input
-            c3   = inp.get("3c_analysis")
-            axes = inp.get("appeal_axes")
-            # Claude occasionally returns nested objects as JSON strings — parse them
-            if isinstance(c3, str):
-                try:
-                    c3 = json.loads(c3)
-                except json.JSONDecodeError:
-                    pass
-            if isinstance(axes, str):
-                try:
-                    axes = json.loads(axes)
-                except json.JSONDecodeError:
-                    pass
-            if not isinstance(c3, dict):
-                raise ValueError(f"3c_analysis が dict ではありません: {type(c3)} / {inp}")
-            if not isinstance(axes, list) or not axes:
-                raise ValueError(f"appeal_axes が空または list ではありません: {type(axes)} / {inp}")
-            return {"3c_analysis": c3, "appeal_axes": axes}
-    raise ValueError("ツール呼び出し結果が取得できませんでした")
-
-
-def generate_more_axes(
-    product_name: str,
-    existing_axes: list[dict],
-    additional_angle: str,
-    analysis_result: dict | None = None,
+    product_info: str,
+    objective: str,
 ) -> list[dict]:
-    """Generate additional appeal axes (with copy suggestions) from a new angle."""
+    """Generate 5 copy sets (headline, sub_headline, rtbs×3) for a product."""
     client = _claude()
-
-    existing = "\n".join(f"- {a['axis']}: {a['description']}" for a in existing_axes)
-
-    c3_section = ""
-    if analysis_result:
-        cust = analysis_result.get("customer", {})
-        comp = analysis_result.get("competitor", {})
-        co   = analysis_result.get("company", {})
-        c3_section = f"""
-【3C分析サマリー（この分析と整合する訴求軸を生成すること）】
-■ 顧客
-  ニーズ: {cust.get("needs", "")}
-  課題・ペイン: {cust.get("pain_points", "")}
-  属性: {cust.get("demographics", "")}
-■ 競合
-  競合状況: {comp.get("landscape", "")}
-  差別化ポイント: {comp.get("differentiation", "")}
-■ 自社
-  強み: {co.get("strengths", "")}
-  提供価値: {co.get("value_proposition", "")}
-上記の3C分析を根拠に、既存軸がカバーしていない顧客ニーズ・切り口を選んで新軸を設計してください。
-"""
-
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=3000,
-        tools=[_AXES_TOOL],
-        tool_choice={"type": "tool", "name": "submit_axes"},
-        system=(
-            "あなたはデジタル広告に精通したシニアマーケティングストラテジスト兼プロのコピーライターです。"
-            "バナーの完成形をイメージしながら、刺さるコピーセットを生成することを得意としています。"
-        ),
-        messages=[{
-            "role": "user",
-            "content": f"""商品「{product_name}」について、以下の既存の訴求軸とは異なる新しい訴求軸を2〜3パターン追加提案してください。
-
-既存の訴求軸:
-{existing}
-{c3_section}
-追加で検討したい観点: {additional_angle if additional_angle else "既存と差別化された新しい切り口"}
-既存と重複しないこと。
-{_COPY_INSTRUCTIONS}""",
-        }],
-    )
-
-    for block in response.content:
-        if block.type == "tool_use":
-            axes = list(block.input.get("axes", []))
-            if not axes:
-                raise ValueError(f"訴求軸が取得できませんでした。返却データ: {block.input}")
-            return axes
-    raise ValueError("ツール呼び出し結果が取得できませんでした")
-
-
-_PART_LABELS = {
-    "headlines":     "メインキャッチコピー（20文字以内×3つ）",
-    "sub_headlines": "サブキャッチコピー（30文字以内×3つ）",
-    "features":      "特徴・アイコン（4〜6項目、短く簡潔に）",
-    "offers":        "CTA文言（3つ）",
-}
-
-
-def refine_copy_part(
-    axis: dict, part_key: str, target_items: list[str], instructions: str
-) -> list[str]:
-    """Refine specific items within a copy part, returning the complete updated list."""
-    client = _claude()
-    part_label = _PART_LABELS.get(part_key, part_key)
-    all_items  = axis.get("copy_suggestions", {}).get(part_key, [])
-    all_str    = "\n".join(f"・{item}" for item in all_items)
-    target_str = "\n".join(f"・{item}" for item in target_items)
 
     tool = {
-        "name": "submit_refined_copy",
-        "description": f"改修した{part_label}の完全リストを送信する",
+        "name": "submit_copies",
+        "description": "5セットのコピーを送信する",
         "input_schema": {
             "type": "object",
-            "required": ["items"],
+            "required": ["copy_sets"],
             "properties": {
-                "items": {
+                "copy_sets": {
                     "type": "array",
-                    "items": {"type": "string"},
-                    "description": f"改修後の{part_label}完全リスト（改修対象以外は変更しない）",
+                    "minItems": 5,
+                    "maxItems": 5,
+                    "items": {
+                        "type": "object",
+                        "required": ["headline", "sub_headline", "rtbs"],
+                        "properties": {
+                            "headline": {
+                                "type": "string",
+                                "description": "メインコピー（20文字以内、強いインパクト）",
+                            },
+                            "sub_headline": {
+                                "type": "string",
+                                "description": "サブコピー（30文字以内、メインコピーを補足する一文）",
+                            },
+                            "rtbs": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "minItems": 3,
+                                "maxItems": 3,
+                                "description": "RTB（Reason to Believe）3つ（各10〜20文字）",
+                            },
+                        },
+                    },
                 }
             },
         },
@@ -387,70 +67,37 @@ def refine_copy_part(
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=1000,
-        tools=[tool],
-        tool_choice={"type": "tool", "name": "submit_refined_copy"},
-        system="あなたはデジタル広告に精通したシニアコピーライターです。",
-        messages=[{
-            "role": "user",
-            "content": (
-                f"以下の訴求軸の「{part_label}」から、指定した項目のみを改修してください。\n\n"
-                f"【訴求軸】\n"
-                f"軸名: {axis.get('axis','')}\n"
-                f"説明: {axis.get('description','')}\n"
-                f"ターゲット: {axis.get('target_segment','')}\n\n"
-                f"【現在の{part_label}（全項目）】\n{all_str}\n\n"
-                f"【改修対象（この項目のみ書き直す）】\n{target_str}\n\n"
-                f"【改修指示】\n{instructions}\n\n"
-                f"改修対象の項目を改修指示に従って書き直し、他の項目は変更せずに、"
-                f"全項目を含む完全なリストを返してください。"
-            ),
-        }],
-    )
-
-    for block in response.content:
-        if block.type == "tool_use":
-            return list(block.input.get("items", []))
-    raise ValueError("コピー候補の改修結果が取得できませんでした")
-
-
-def refine_axis(existing_axis: dict, revision_instructions: str) -> dict:
-    """Refine an existing appeal axis based on user revision instructions."""
-    client = _claude()
-
-    copy_str = json.dumps(existing_axis.get("copy_suggestions", {}), ensure_ascii=False)
-
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
         max_tokens=3000,
-        tools=[{
-            "name": "submit_refined_axis",
-            "description": "改修した訴求軸を送信する",
-            "input_schema": _AXIS_ITEM_SCHEMA,
-        }],
-        tool_choice={"type": "tool", "name": "submit_refined_axis"},
-        system="あなたはデジタル広告に精通したシニアマーケティングストラテジストです。",
+        tools=[tool],
+        tool_choice={"type": "tool", "name": "submit_copies"},
+        system=(
+            "あなたはデジタル広告に精通したシニアコピーライターです。"
+            "商品情報をもとに、バナー広告用のコピーセットを生成します。"
+        ),
         messages=[{
             "role": "user",
-            "content": (
-                f"以下の訴求軸を、改修指示に基づいて磨きこんでください。\n\n"
-                f"【既存の訴求軸】\n"
-                f"軸名: {existing_axis.get('axis','')}\n"
-                f"説明: {existing_axis.get('description','')}\n"
-                f"ターゲット: {existing_axis.get('target_segment','')}\n"
-                f"根拠: {existing_axis.get('rationale','')}\n"
-                f"コピー候補: {copy_str}\n\n"
-                f"【改修指示】\n{revision_instructions}\n\n"
-                f"改修指示を反映しつつ、マーケティング的に有効な訴求軸に仕上げてください。"
-                f"copy_suggestions（headlines 3つ・offers 2つ・features 4〜6項目）を必ず含めてください。"
-            ),
+            "content": f"""以下の商品について、SNS広告バナー用のコピーセットを5パターン生成してください。
+
+商品名: {product_name}
+商品情報: {product_info or "（商品情報なし）"}
+広告目的: {objective}
+
+各セットの構成:
+- headline: メインコピー（20文字以内、強いインパクト）
+- sub_headline: サブコピー（30文字以内、メインコピーを補足する一文）
+- rtbs: RTB 3本（各10〜20文字、商品の具体的な強みや特徴）
+
+【ルール】
+- 5セットはそれぞれ異なる切り口・訴求角度にすること（感情訴求・機能訴求・実績訴求など）
+- 商品情報に記載のない事実・数値は含めないこと
+- RTBは商品の実際の特徴・強みを具体的に表現すること""",
         }],
     )
 
     for block in response.content:
         if block.type == "tool_use":
-            return block.input
-    raise ValueError("訴求軸の改修結果が取得できませんでした")
+            return list(block.input.get("copy_sets", []))
+    raise ValueError("コピー生成結果が取得できませんでした")
 
 
 def generate_banner_prompts(
@@ -470,6 +117,7 @@ def generate_banner_prompts(
     use_product_image: bool = True,
     use_product_logo: bool = False,
     use_people: bool = True,
+    free_comment: str = "",
 ) -> list[dict]:
     """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
     client = _claude()
@@ -486,14 +134,17 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
     if ctx:
         lp_colors_line = ""
         if ctx.get("lp_colors"):
-            lp_colors_line = f"\n- LP Brand Colors: {' / '.join(ctx['lp_colors'])} ← USE THESE as the base palette"
-        product_section = f"""
-BRAND/SERVICE DETAILS:
-- Value Proposition: {ctx.get('value_proposition', '')}
-- Key Strengths: {ctx.get('strengths', '')}
-- Customer Needs: {ctx.get('customer_needs', '')}
-- Pain Points Solved: {ctx.get('pain_points', '')}
-- vs Competitors: {ctx.get('differentiation', '')}{lp_colors_line}"""
+            lp_colors_line = f"- LP Brand Colors: {' / '.join(ctx['lp_colors'])} ← USE THESE as the base palette"
+        parts = []
+        if ctx.get("value_proposition"): parts.append(f"- Value Proposition: {ctx['value_proposition']}")
+        if ctx.get("strengths"):         parts.append(f"- Key Strengths: {ctx['strengths']}")
+        if ctx.get("customer_needs"):    parts.append(f"- Customer Needs: {ctx['customer_needs']}")
+        if ctx.get("pain_points"):       parts.append(f"- Pain Points Solved: {ctx['pain_points']}")
+        if ctx.get("differentiation"):   parts.append(f"- vs Competitors: {ctx['differentiation']}")
+        if ctx.get("product_info"):      parts.append(f"- Product Details: {ctx['product_info'][:800]}")
+        if lp_colors_line:               parts.append(lp_colors_line)
+        if parts:
+            product_section = "\nBRAND/SERVICE DETAILS:\n" + "\n".join(parts)
 
     objective_section = f"\nCampaign Objective: {objective}" if objective else ""
 
@@ -774,7 +425,8 @@ COPY — embed verbatim:
 {visual_constraints_section}
 {variation_concepts_section}
 
-Output per variation: layout zones (with accent bar) → visual zone (state SCENE/CUTOUT/FLAT choice) → typography with size hierarchy → accent elements → badge row (state TEXT-ONLY/ICON+TEXT choice) → CTA bar → color palette. Under 600 words per brief.""",
+Output per variation: layout zones (with accent bar) → visual zone (state SCENE/CUTOUT/FLAT choice) → typography with size hierarchy → accent elements → badge row (state TEXT-ONLY/ICON+TEXT choice) → CTA bar → color palette. Under 600 words per brief.
+{f"ADDITIONAL CREATIVE INSTRUCTIONS: {free_comment.strip()}" if free_comment.strip() else ""}""",
         }],
     )
 
