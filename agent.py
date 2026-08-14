@@ -7,6 +7,87 @@ def _claude() -> anthropic.Anthropic:
     return anthropic.Anthropic(max_retries=5)
 
 
+def recommend_patterns(
+    product_name: str,
+    product_info: str,
+    objective: str,
+    headline: str,
+    sub_headline: str,
+    available_patterns: list[dict],
+    count: int = 2,
+) -> list[tuple[str, str]]:
+    """Recommend `count` distinct patterns. Returns list of (pattern_name, reason_ja)."""
+    tool = {
+        "name": "select_patterns",
+        "description": f"最適な訴求パターンを{count}種類選択して理由を返す",
+        "input_schema": {
+            "type": "object",
+            "required": ["selections"],
+            "properties": {
+                "selections": {
+                    "type": "array",
+                    "minItems": count,
+                    "maxItems": count,
+                    "description": f"異なる訴求パターンを{count}種類選ぶ。重複禁止。",
+                    "items": {
+                        "type": "object",
+                        "required": ["pattern_name", "reason"],
+                        "properties": {
+                            "pattern_name": {
+                                "type": "string",
+                                "enum": [p["name"] for p in available_patterns],
+                            },
+                            "reason": {"type": "string", "description": "選択理由（1文・日本語）"},
+                        },
+                    },
+                }
+            },
+        },
+    }
+    patterns_text = "\n".join(f"- {p['name']}: {p['desc']}" for p in available_patterns)
+    response = _claude().messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=800,
+        tools=[tool],
+        tool_choice={"type": "tool", "name": "select_patterns"},
+        system="あなたはSNS広告のクリエイティブディレクターです。商品・コピー・目的に合わせて、互いに異なるアプローチの訴求パターンを複数選んでください。",
+        messages=[{
+            "role": "user",
+            "content": f"""以下の広告に対して、それぞれ異なるアプローチになる訴求パターンを{count}種類選んでください。
+同じパターンを重複して選ばないこと。バリエーション間で訴求の切り口が変わるように選ぶこと。
+
+商品名: {product_name}
+商品情報: {product_info[:400] if product_info else "（なし）"}
+広告目的: {objective}
+メインコピー: {headline}
+サブコピー: {sub_headline}
+
+訴求パターン一覧:
+{patterns_text}""",
+        }],
+    )
+    for block in response.content:
+        if block.type == "tool_use":
+            inp = block.input
+            if hasattr(inp, "model_dump"):
+                inp = inp.model_dump()
+            selections = inp.get("selections", [])
+            result, seen = [], set()
+            for s in selections:
+                if hasattr(s, "model_dump"):
+                    s = s.model_dump()
+                elif not isinstance(s, dict):
+                    continue
+                name = s.get("pattern_name", "")
+                reason = s.get("reason", "")
+                if name and name not in seen:
+                    seen.add(name)
+                    result.append((name, reason))
+            if result:
+                return result
+    return [(p["name"], "") for p in available_patterns[:count]]
+
+
 def recommend_pattern(
     product_name: str,
     product_info: str,

@@ -15,7 +15,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import extract_banner_copy, generate_banner_prompts, recommend_pattern, refine_banner_part
+from agent import extract_banner_copy, generate_banner_prompts, recommend_pattern, recommend_patterns, refine_banner_part
 from image_gen import generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_banners, load_copies, load_products, save_banner_entry
@@ -491,40 +491,81 @@ if _banner_mode == "新規生成":
 
         with st.status("バナーを生成中...", expanded=True) as status:
 
-            # AI推薦パターンの選択（AIにおすすめ選択時）
+            # AI推薦パターンの選択
             resolved_label = tonmana_label
-            ai_reason = ""
+            _ai_assignments: list[tuple[str, str]] = []  # (pattern_name, reason) — 複数推薦時
+
             if tonmana_label == _AI_SENTINEL:
                 st.write("**Step 0 / 3** — AI が最適な訴求パターンを選択中")
+                available = [
+                    {"name": n, "desc": _PATTERN_SHORT_DESC.get(n, "")}
+                    for n in _TONMANA_NAMES
+                ]
                 try:
-                    available = [
-                        {"name": n, "desc": _PATTERN_SHORT_DESC.get(n, "")}
-                        for n in _TONMANA_NAMES
-                    ]
-                    resolved_label, ai_reason = recommend_pattern(
-                        product_name=selected_product["product_name"],
-                        product_info=selected_product.get("product_info", ""),
-                        objective=selected_copy.get("objective", ""),
-                        headline=selected_copy.get("headline", ""),
-                        sub_headline=selected_copy.get("sub_headline", ""),
-                        available_patterns=available,
-                    )
-                    st.write(f"  ✓ 選択パターン: **{resolved_label}**　← {ai_reason}")
+                    if num_variations >= 2:
+                        # バリエーションごとに異なるパターンを推薦
+                        _ai_assignments = recommend_patterns(
+                            product_name=selected_product["product_name"],
+                            product_info=selected_product.get("product_info", ""),
+                            objective=selected_copy.get("objective", ""),
+                            headline=selected_copy.get("headline", ""),
+                            sub_headline=selected_copy.get("sub_headline", ""),
+                            available_patterns=available,
+                            count=num_variations,
+                        )
+                        for i, (pname, preason) in enumerate(_ai_assignments):
+                            st.write(f"  ✓ バリエーション{chr(65 + i)}: **{pname}**　← {preason}")
+                        resolved_label = " / ".join(p for p, _ in _ai_assignments)
+                    else:
+                        resolved_label, ai_reason = recommend_pattern(
+                            product_name=selected_product["product_name"],
+                            product_info=selected_product.get("product_info", ""),
+                            objective=selected_copy.get("objective", ""),
+                            headline=selected_copy.get("headline", ""),
+                            sub_headline=selected_copy.get("sub_headline", ""),
+                            available_patterns=available,
+                        )
+                        st.write(f"  ✓ 選択パターン: **{resolved_label}**　← {ai_reason}")
                 except Exception as _e:
                     st.warning(f"AI推薦に失敗しました。最初のパターンを使用します: {_e}")
                     resolved_label = _TONMANA_NAMES[0] if _TONMANA_NAMES else ""
 
-            tonmana_desc = _TONMANA_DESC.get(resolved_label, resolved_label)
             _cache_key = hashlib.md5((_cache_raw_base + resolved_label).encode()).hexdigest()
 
-            # 選択パターンの参照画像を取得（Claude vision に渡す）
-            _ref_b64, _ref_mime = "", "image/jpeg"
-            _ref_path = _TONMANA_IMG_MAP.get(resolved_label, "")
-            if _ref_path:
+            def _load_ref(pattern_name: str) -> tuple[str, str]:
+                path = _TONMANA_IMG_MAP.get(pattern_name, "")
+                if not path:
+                    return "", "image/jpeg"
                 try:
-                    _ref_b64, _ref_mime = _load_tonmana_b64(_ref_path)
+                    return _load_tonmana_b64(path)
                 except Exception:
-                    pass
+                    return "", "image/jpeg"
+
+            def _gen_prompt_args(tonmana_desc: str, n_var: int, ref_b64: str, ref_mime: str) -> dict:
+                return dict(
+                    brand_name=selected_product["product_name"],
+                    product=selected_product["product_name"],
+                    message=selected_copy.get("headline", ""),
+                    tonmana=tonmana_desc,
+                    target_audience="",
+                    num_variations=n_var,
+                    appeal_axis=None,
+                    product_context={
+                        "product_info": selected_product.get("product_info", ""),
+                        "lp_colors": [color_hint.strip()] if color_hint.strip() else [],
+                    },
+                    objective="",
+                    headline_copy=selected_copy.get("headline", ""),
+                    sub_headline_copy=selected_copy.get("sub_headline", ""),
+                    offer_copy=selected_cta,
+                    features=selected_rtbs,
+                    use_product_image=use_product_image,
+                    use_product_logo=use_product_logo,
+                    use_people=use_people,
+                    free_comment=free_comment.strip(),
+                    reference_image_b64=ref_b64,
+                    reference_image_mime=ref_mime,
+                )
 
             if _cache_key in _brief_cache:
                 variations = _brief_cache[_cache_key]
@@ -532,30 +573,21 @@ if _banner_mode == "新規生成":
             else:
                 st.write("**Step 1 / 3** — Claude がデザインブリーフを生成中")
                 try:
-                    variations = generate_banner_prompts(
-                        brand_name=selected_product["product_name"],
-                        product=selected_product["product_name"],
-                        message=selected_copy.get("headline", ""),
-                        tonmana=tonmana_desc,
-                        target_audience="",
-                        num_variations=num_variations,
-                        appeal_axis=None,
-                        product_context={
-                            "product_info": selected_product.get("product_info", ""),
-                            "lp_colors": [color_hint.strip()] if color_hint.strip() else [],
-                        },
-                        objective="",
-                        headline_copy=selected_copy.get("headline", ""),
-                        sub_headline_copy=selected_copy.get("sub_headline", ""),
-                        offer_copy=selected_cta,
-                        features=selected_rtbs,
-                        use_product_image=use_product_image,
-                        use_product_logo=use_product_logo,
-                        use_people=use_people,
-                        free_comment=free_comment.strip(),
-                        reference_image_b64=_ref_b64,
-                        reference_image_mime=_ref_mime,
-                    )
+                    if _ai_assignments:
+                        # バリエーションごとに異なるパターンでブリーフを生成
+                        variations = []
+                        for i, (pname, _) in enumerate(_ai_assignments):
+                            p_desc = _TONMANA_DESC.get(pname, pname)
+                            ref_b64, ref_mime = _load_ref(pname)
+                            v_list = generate_banner_prompts(**_gen_prompt_args(p_desc, 1, ref_b64, ref_mime))
+                            if v_list:
+                                v_list[0]["variation"] = chr(65 + i)
+                                variations.append(v_list[0])
+                    else:
+                        tonmana_desc = _TONMANA_DESC.get(resolved_label, resolved_label)
+                        ref_b64, ref_mime = _load_ref(resolved_label)
+                        variations = generate_banner_prompts(**_gen_prompt_args(tonmana_desc, num_variations, ref_b64, ref_mime))
+
                     if not variations:
                         st.error("バリエーションが生成されませんでした。再度「バナーを生成」を押してください。")
                         st.stop()
