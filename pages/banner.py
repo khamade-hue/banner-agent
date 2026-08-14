@@ -169,41 +169,40 @@ def _pattern_grid() -> str:
             is_sel = st.session_state["tonmana_sel_idx"] == idx
             img_path = _TONMANA_IMG_MAP.get(name, "")
             short_desc = _PATTERN_SHORT_DESC.get(name, "")
+            label_color = "#a78bfa" if is_sel else "#cbd5e1"
+            border = "border:2px solid #8b5cf6;" if is_sel else "border:1px solid #1e293b;"
+            bg = "background:rgba(139,92,246,0.08);" if is_sel else ""
+
+            # 画像HTML を事前に組み立てる
+            if img_path:
+                try:
+                    b64, mime = _load_tonmana_b64(img_path)
+                    img_html = (
+                        f'<div style="border-radius:8px;overflow:hidden;{border}{bg}padding:2px;margin-bottom:6px">'
+                        f'<img src="data:{mime};base64,{b64}" style="width:100%;display:block;border-radius:6px">'
+                        f'</div>'
+                    )
+                except Exception:
+                    img_html = (
+                        f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
+                        f'height:60px;display:flex;align-items:center;justify-content:center;'
+                        f'color:#475569;font-size:0.65rem;padding:4px;text-align:center;'
+                        f'margin-bottom:6px">{name}</div>'
+                    )
+            else:
+                img_html = ""
+
             with col:
-                # 1. 名称
-                label_color = "#a78bfa" if is_sel else "#cbd5e1"
+                # 名称・概要・画像を1回のst.markdownにまとめる
                 st.markdown(
-                    f'<div style="font-size:0.78rem;font-weight:700;color:{label_color};'
-                    f'margin-bottom:3px">{"✓ " if is_sel else ""}{name}</div>',
+                    f'<div style="font-size:0.78rem;font-weight:700;color:{label_color};margin-bottom:3px">'
+                    f'{"✓ " if is_sel else ""}{name}</div>'
+                    f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;min-height:2.8em;margin-bottom:6px">'
+                    f'{short_desc}</div>'
+                    f'{img_html}',
                     unsafe_allow_html=True,
                 )
-                # 2. 概要
-                st.markdown(
-                    f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;min-height:2.8em;'
-                    f'margin-bottom:6px">{short_desc}</div>',
-                    unsafe_allow_html=True,
-                )
-                # 3. 画像
-                if img_path:
-                    try:
-                        b64, mime = _load_tonmana_b64(img_path)
-                        border = "border:2px solid #8b5cf6;" if is_sel else "border:1px solid #1e293b;"
-                        bg = "background:rgba(139,92,246,0.08);" if is_sel else ""
-                        st.markdown(
-                            f'<div style="border-radius:8px;overflow:hidden;{border}{bg}padding:2px;margin-bottom:6px">'
-                            f'<img src="data:{mime};base64,{b64}" style="width:100%;display:block;border-radius:6px">'
-                            f'</div>',
-                            unsafe_allow_html=True,
-                        )
-                    except Exception:
-                        st.markdown(
-                            f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
-                            f'height:60px;display:flex;align-items:center;justify-content:center;'
-                            f'color:#475569;font-size:0.65rem;padding:4px;text-align:center;'
-                            f'margin-bottom:6px">{name}</div>',
-                            unsafe_allow_html=True,
-                        )
-                # 4. 選択ボタン
+                # 選択ボタン
                 if is_sel:
                     st.markdown(
                         '<div style="text-align:center;color:#a78bfa;font-size:0.7rem;'
