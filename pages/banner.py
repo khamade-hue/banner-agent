@@ -126,6 +126,56 @@ _PATTERN_SHORT_DESC: dict[str, str] = {
 
 _AI_SENTINEL = "__AI_RECOMMEND__"
 
+# 訴求パターン別・人物使用の傾向（AIにおまかせ振り分け用）
+_PREFER_PEOPLE_PATTERNS = frozenset({
+    "口コミ・レビュー", "インフルエンサー投稿風", "フィルム写真風",
+    "チャット風", "アニメ風", "マンガ風", "ビフォーアフター",
+})
+_PREFER_NO_PEOPLE_PATTERNS = frozenset({
+    "図解", "テキストのみ", "比較・ランキング風",
+    "ダイナミックコピー", "ニュース風", "キャンペーン・セール",
+})
+
+
+def _assign_people_per_var(
+    assignments: list[tuple[str, str]] | None,
+    num_variations: int,
+) -> list[bool]:
+    """AIにおまかせ×複数バリエーション時に人物有無を振り分ける。
+    パターンの傾向から True/False を仮置きし、True/False が最低1枠ずつになるよう補正する。"""
+    if assignments:
+        raw: list[bool | None] = [
+            True if p in _PREFER_PEOPLE_PATTERNS
+            else False if p in _PREFER_NO_PEOPLE_PATTERNS
+            else None
+            for p, _ in assignments
+        ]
+    else:
+        raw = [None] * num_variations
+
+    has_true = any(v is True for v in raw)
+    has_false = any(v is False for v in raw)
+    if not has_true:
+        for i in range(len(raw)):
+            if raw[i] is None:
+                raw[i] = True
+                break
+        else:
+            raw[0] = True
+    if not has_false:
+        for i in range(len(raw) - 1, -1, -1):
+            if raw[i] is None:
+                raw[i] = False
+                break
+        else:
+            raw[-1] = False
+    last_val = True
+    for i in range(len(raw)):
+        if raw[i] is None:
+            raw[i] = not last_val
+        last_val = bool(raw[i])
+    return [bool(v) for v in raw]
+
 
 def _pattern_grid() -> str:
     """訴求パターンをビジュアルグリッドで選択し、選択されたパターン名（またはAI sentinel）を返す。"""
@@ -540,6 +590,7 @@ if _banner_mode == "新規生成":
             # AI推薦パターンの選択
             resolved_label = tonmana_label
             _ai_assignments: list[tuple[str, str]] = []  # (pattern_name, reason) — 複数推薦時
+            _ppl_assign: list[bool] | None = None  # per-variation people assignment
 
             if tonmana_label == _AI_SENTINEL:
                 st.write("**Step 0 / 3** — AI が最適な訴求パターンを選択中")
@@ -571,8 +622,16 @@ if _banner_mode == "新規生成":
                                 if _ai_assignments[_ri][0] not in _basic_pats:
                                     _ai_assignments[_ri] = (_basic_candidate, "汎用ベーシックパターンとして選定")
                                     break
+                        _ppl_assign: list[bool] | None = (
+                            _assign_people_per_var(_ai_assignments, len(_ai_assignments))
+                            if use_people is None else None
+                        )
                         for i, (pname, preason) in enumerate(_ai_assignments):
-                            st.write(f"  ✓ バリエーション{chr(65 + i)}: **{pname}**　← {preason}")
+                            _ppl_label = (
+                                f" ・ {'人物あり' if _ppl_assign[i] else '人物なし'}"
+                                if _ppl_assign is not None else ""
+                            )
+                            st.write(f"  ✓ バリエーション{chr(65 + i)}: **{pname}**　← {preason}{_ppl_label}")
                         resolved_label = " / ".join(p for p, _ in _ai_assignments)
                     else:
                         resolved_label, ai_reason = recommend_pattern(
@@ -638,14 +697,29 @@ if _banner_mode == "新規生成":
                         for i, (pname, _) in enumerate(_ai_assignments):
                             p_desc = _TONMANA_DESC.get(pname, pname)
                             ref_b64, ref_mime = _load_ref(pname)
-                            v_list = generate_banner_prompts(**_gen_prompt_args(p_desc, 1, ref_b64, ref_mime))
+                            _args = _gen_prompt_args(p_desc, 1, ref_b64, ref_mime)
+                            if _ppl_assign is not None:
+                                _args["use_people"] = _ppl_assign[i]
+                            v_list = generate_banner_prompts(**_args)
                             if v_list:
                                 v_list[0]["variation"] = chr(65 + i)
                                 variations.append(v_list[0])
                     else:
                         tonmana_desc = _TONMANA_DESC.get(resolved_label, resolved_label)
                         ref_b64, ref_mime = _load_ref(resolved_label)
-                        variations = generate_banner_prompts(**_gen_prompt_args(tonmana_desc, num_variations, ref_b64, ref_mime))
+                        if use_people is None and num_variations >= 2:
+                            # AIにおまかせ×手動パターン×複数枚: 人物有無を振り分けて個別生成
+                            variations = []
+                            _ppl_assign_manual = _assign_people_per_var(None, num_variations)
+                            for i, _vppl in enumerate(_ppl_assign_manual):
+                                _args = _gen_prompt_args(tonmana_desc, 1, ref_b64, ref_mime)
+                                _args["use_people"] = _vppl
+                                v_list = generate_banner_prompts(**_args)
+                                if v_list:
+                                    v_list[0]["variation"] = chr(65 + i)
+                                    variations.append(v_list[0])
+                        else:
+                            variations = generate_banner_prompts(**_gen_prompt_args(tonmana_desc, num_variations, ref_b64, ref_mime))
 
                     if not variations:
                         st.error("バリエーションが生成されませんでした。再度「バナーを生成」を押してください。")
