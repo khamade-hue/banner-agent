@@ -16,7 +16,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import extract_banner_copy, generate_banner_prompts, recommend_pattern, recommend_patterns, refine_banner_part
-from image_gen import compose_programmatic, generate_image
+from image_gen import generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_banners, load_copies, load_products, save_banner_entry
 
@@ -184,7 +184,7 @@ def _pattern_grid() -> str:
         return ""
 
     if "tonmana_sel_idx" not in st.session_state:
-        st.session_state["tonmana_sel_idx"] = 0
+        st.session_state["tonmana_sel_idx"] = -1
 
     # ── AIにおまかせカード ────────────────────────────────────────────────────
     is_ai = st.session_state["tonmana_sel_idx"] == -1
@@ -462,7 +462,7 @@ if _banner_mode == "新規生成":
     selected_platform_name = st.selectbox(
         "プラットフォーム *",
         [p.display_name for p in PLATFORMS],
-        index=0,
+        index=1,
         key="banner_platform",
     )
 
@@ -744,21 +744,10 @@ if _banner_mode == "新規生成":
             preview_cols = st.columns(n)
             col_slots = [col.empty() for col in preview_cols]
 
-            _compose_kw = dict(
-                headline=selected_copy.get("headline", ""),
-                sub_headline=selected_copy.get("sub_headline", ""),
-                cta_text=selected_cta,
-                rtbs=rtbs or None,
-                brand_primary_hex=brand_primary,
-                brand_accent_hex=brand_accent,
-            )
-            st.session_state["compose_kwargs"] = _compose_kw
-
             def _gen(item):
                 idx, v = item
                 ref_pil = _ref_pil_map.get(v["variation"])
                 img = generate_image(v["prompt"], reference_image=ref_pil, size=_gen_size)
-                img = compose_programmatic(img, **_compose_kw)
                 return idx, v, resize_for_selected_platforms(img, selected_platforms)
 
             gen_errors = []
@@ -803,6 +792,7 @@ if _banner_mode == "新規生成":
         st.session_state["gen_cta"]       = selected_cta
         st.session_state["gen_platforms"] = selected_platforms
         st.session_state["gen_tonmana"]   = resolved_label
+        st.session_state["gen_size"]      = _gen_size
 
 # ══════════════════════════════════════════════════════════════════════════════
 # リサイズ
@@ -1140,10 +1130,8 @@ if _banner_mode == "新規生成" and st.session_state.get("gen_results"):
                             new_prompt = refine_banner_part(
                                 v["prompt"], rev_part_label, target_elem, rev_instructions
                             )
-                            new_base_img = generate_image(new_prompt)
-                            _ckw = st.session_state.get("compose_kwargs", {})
-                            if _ckw:
-                                new_base_img = compose_programmatic(new_base_img, **_ckw)
+                            _regen_size = st.session_state.get("gen_size", "1024x1024")
+                            new_base_img = generate_image(new_prompt, size=_regen_size)
                             new_platform_images = resize_for_selected_platforms(
                                 new_base_img, current_platforms
                             )

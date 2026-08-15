@@ -41,6 +41,7 @@ def generate_images_batch(
 ) -> list[Image.Image]:
     """Generate n images in a single API call (same prompt). More efficient than n separate calls."""
     client = OpenAI()
+    _prompt = prompt + _NO_TEXT_SUFFIX
 
     if reference_image is not None:
         try:
@@ -65,7 +66,7 @@ def generate_images_batch(
     try:
         response = client.images.generate(
             model="gpt-image-2",
-            prompt=prompt,
+            prompt=_prompt,
             size="1024x1024",
             quality=quality,
             n=n,
