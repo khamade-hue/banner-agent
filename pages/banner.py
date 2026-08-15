@@ -453,7 +453,7 @@ if _banner_mode == "新規生成":
         use_people = None if _ppl_sel == "AIにおまかせ" else (_ppl_sel == "使用する")
     with col_pimg:
         st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">商品画像の使用</div>', unsafe_allow_html=True)
-        use_product_image = st.radio("商品画像", ["使用する", "使用しない"], horizontal=True,
+        use_product_image = st.radio("商品画像", ["使用する", "使用しない"], index=1, horizontal=True,
                                      key="banner_use_pimg", label_visibility="collapsed") == "使用する"
     with col_plogo:
         st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">商品ロゴの使用</div>', unsafe_allow_html=True)
@@ -559,6 +559,18 @@ if _banner_mode == "新規生成":
                             available_patterns=available,
                             count=num_variations,
                         )
+                        # 汎用/ベーシックから必ず1パターン含める
+                        _basic_pats = _PATTERN_GROUPS[0]["patterns"]
+                        if not any(p in _basic_pats for p, _ in _ai_assignments):
+                            _used = {p for p, _ in _ai_assignments}
+                            _basic_candidate = next(
+                                (p for p in _basic_pats if p not in _used), _basic_pats[0]
+                            )
+                            # 末尾の非ベーシックパターンを置き換え
+                            for _ri in range(len(_ai_assignments) - 1, -1, -1):
+                                if _ai_assignments[_ri][0] not in _basic_pats:
+                                    _ai_assignments[_ri] = (_basic_candidate, "汎用ベーシックパターンとして選定")
+                                    break
                         for i, (pname, preason) in enumerate(_ai_assignments):
                             st.write(f"  ✓ バリエーション{chr(65 + i)}: **{pname}**　← {preason}")
                         resolved_label = " / ".join(p for p, _ in _ai_assignments)
