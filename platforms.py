@@ -32,8 +32,6 @@ PLATFORMS = [
     # Google ディスプレイ
     Platform("Google レクタングル（300×250）",       "google_300x250",       300,  250, "1024x1024"),
     Platform("Google ハーフページ（300×600）",       "google_300x600",       300,  600, "1024x1536"),
-    Platform("Google リーダーボード（728×90）",      "google_728x90",        728,   90, "1536x1024"),
-    Platform("Google スカイスクレイパー（160×600）", "google_160x600",       160,  600, "1024x1536"),
 ]
 
 # gpt-image-2生成サイズ → ブリーフ用キャンバス表記（デフォルト）
