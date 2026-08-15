@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from PIL import Image
 import os
 
@@ -10,19 +10,29 @@ class Platform:
     width: int
     height: int
     gen_size: str = "1024x1024"  # gpt-image-2 generation size
+    canvas_label: str = ""  # empty = use GEN_SIZE_CANVAS[gen_size]
+
+    def get_canvas_label(self) -> str:
+        return self.canvas_label or GEN_SIZE_CANVAS.get(self.gen_size, self.gen_size)
 
 
 PLATFORMS = [
-    Platform("Instagram Square",  "instagram_square",  1080, 1080, "1024x1024"),
-    Platform("Instagram Story",   "instagram_story",   1080, 1920, "1024x1536"),
-    Platform("X (Twitter)",       "twitter",           1200,  675, "1536x1024"),
-    Platform("Facebook",          "facebook",          1200,  628, "1536x1024"),
-    Platform("Google 300x250",    "google_300x250",     300,  250, "1024x1024"),
-    Platform("Google 728x90",     "google_728x90",      728,   90, "1536x1024"),
-    Platform("Google 160x600",    "google_160x600",     160,  600, "1024x1536"),
+    # SNS 縦型
+    Platform("Instagram/TikTok ストーリー・リール", "instagram_story",     1080, 1920, "1024x1536"),
+    Platform("Instagram フィード（縦型 4:5）",      "instagram_feed_45",   1080, 1350, "1024x1536",
+             canvas_label="1080×1350px（縦型フィード・4:5）"),
+    # SNS 正方形・横型
+    Platform("Instagram フィード（正方形）",         "instagram_square",    1080, 1080, "1024x1024"),
+    Platform("X（Twitter）",                        "twitter",             1200,  675, "1536x1024"),
+    Platform("Facebook / LINE フィード",             "facebook_line",       1200,  628, "1536x1024"),
+    # Google ディスプレイ
+    Platform("Google レクタングル（300×250）",       "google_300x250",       300,  250, "1024x1024"),
+    Platform("Google ハーフページ（300×600）",       "google_300x600",       300,  600, "1024x1536"),
+    Platform("Google リーダーボード（728×90）",      "google_728x90",        728,   90, "1536x1024"),
+    Platform("Google スカイスクレイパー（160×600）", "google_160x600",       160,  600, "1024x1536"),
 ]
 
-# gpt-image-2生成サイズ → ブリーフ用キャンバス表記
+# gpt-image-2生成サイズ → ブリーフ用キャンバス表記（デフォルト）
 GEN_SIZE_CANVAS: dict[str, str] = {
     "1024x1024": "1080×1080px（正方形・1:1）",
     "1024x1536": "1080×1920px（縦長・9:16）",

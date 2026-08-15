@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import extract_banner_copy, generate_banner_prompts, recommend_pattern, recommend_patterns, refine_banner_part
 from image_gen import generate_image
-from platforms import GEN_SIZE_CANVAS, PLATFORMS, resize_for_selected_platforms
+from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_banners, load_copies, load_products, save_banner_entry
 
 # ── トンマナ定義（assets/tonmana/ のファイル名が表示名、値がAIプロンプト用説明）────
@@ -572,8 +572,9 @@ if _banner_mode == "新規生成":
             st.stop()
 
         selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
-        _gen_size = selected_platforms[0].gen_size if selected_platforms else "1024x1024"
-        _canvas_size = GEN_SIZE_CANVAS.get(_gen_size, "1080×1080px（正方形・1:1）")
+        _sel_platform = selected_platforms[0] if selected_platforms else PLATFORMS[0]
+        _gen_size = _sel_platform.gen_size
+        _canvas_size = _sel_platform.get_canvas_label()
 
         _cache_raw_base = "|".join([
             selected_product.get("id", ""),
