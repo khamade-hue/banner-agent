@@ -286,102 +286,77 @@ def generate_banner_prompts(
     axis_section = ""
     if appeal_axis:
         axis_section = f"""
-Appeal Axis: {appeal_axis['axis']}
-Axis Detail: {appeal_axis['description']}
-Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
+訴求軸: {appeal_axis['axis']}
+詳細: {appeal_axis['description']}
+ターゲットセグメント: {appeal_axis.get('target_segment', target_audience)}"""
 
     product_section = ""
     if ctx:
         lp_colors_line = ""
         if ctx.get("lp_colors"):
-            lp_colors_line = f"- Brand Colors (MANDATORY — apply identically to ALL variations, no per-variation changes): {' / '.join(ctx['lp_colors'])}"
+            lp_colors_line = f"- ブランドカラー（全バリエーション共通・変更禁止）: {' / '.join(ctx['lp_colors'])}"
         parts = []
-        if ctx.get("value_proposition"): parts.append(f"- Value Proposition: {ctx['value_proposition']}")
-        if ctx.get("strengths"):         parts.append(f"- Key Strengths: {ctx['strengths']}")
-        if ctx.get("customer_needs"):    parts.append(f"- Customer Needs: {ctx['customer_needs']}")
-        if ctx.get("pain_points"):       parts.append(f"- Pain Points Solved: {ctx['pain_points']}")
-        if ctx.get("differentiation"):   parts.append(f"- vs Competitors: {ctx['differentiation']}")
-        if ctx.get("product_info"):      parts.append(f"- Product Details: {ctx['product_info'][:800]}")
+        if ctx.get("value_proposition"): parts.append(f"- バリュープロポジション: {ctx['value_proposition']}")
+        if ctx.get("strengths"):         parts.append(f"- 強み: {ctx['strengths']}")
+        if ctx.get("customer_needs"):    parts.append(f"- 顧客ニーズ: {ctx['customer_needs']}")
+        if ctx.get("pain_points"):       parts.append(f"- 解決する課題: {ctx['pain_points']}")
+        if ctx.get("differentiation"):   parts.append(f"- 競合との差別化: {ctx['differentiation']}")
+        if ctx.get("product_info"):      parts.append(f"- 商品詳細: {ctx['product_info'][:800]}")
         if lp_colors_line:               parts.append(lp_colors_line)
         if parts:
-            product_section = "\nBRAND/SERVICE DETAILS:\n" + "\n".join(parts)
+            product_section = "\n【ブランド・サービス詳細】\n" + "\n".join(parts)
 
-    objective_section = f"\nCampaign Objective: {objective}" if objective else ""
-
-    headline_section = f"Main Headline: {headline_copy}" if headline_copy else "Main Headline: (generate a compelling Japanese headline)"
+    headline_section = headline_copy if headline_copy else "（指定なし。日本語で効果的なコピーを生成すること）"
     sub_headline_section = (
-        f"Sub-copy — REQUIRED, embed this exact text verbatim "
-        f"(split into lines of ≤18 chars if needed, do NOT shorten or rewrite): 「{sub_headline_copy}」"
+        f"サブコピー — 必ずそのまま掲載（≤18文字で改行可、省略・書き換え禁止）: 「{sub_headline_copy}」"
     ) if sub_headline_copy else ""
     offer_section = (
-        f"Offer/CTA — place this ENTIRE text verbatim in the CTA bar only: 「{offer_copy}」"
-        f" Do NOT split it — do NOT place any portion of this text outside the CTA bar as a separate element."
+        f"CTA — このテキスト全文をCTAバーのみに配置（分割・省略禁止）: 「{offer_copy}」"
     ) if offer_copy else ""
     features_section = ""
     if features:
-        features_section = "Feature Badges:\n" + "\n".join(f"• {f}" for f in features)
+        features_section = "フィーチャーバッジ:\n" + "\n".join(f"• {f}" for f in features)
 
     _vc: list[str] = []
     if use_product_image:
-        _vc.append("• PRODUCT IMAGE: Feature the product as a prominent visual element in every variation.")
+        _vc.append("• 商品画像: すべてのバリエーションで商品を主要なビジュアル要素として目立たせること。")
     else:
-        _vc.append("• PRODUCT IMAGE: Do NOT depict the physical product. Use lifestyle, abstract, or thematic imagery instead.")
+        _vc.append("• 商品画像: 商品そのものは映さないこと。ライフスタイル・抽象的・テーマ的な映像を使うこと。")
     if use_product_logo:
         _vc.append(
-            "• PRODUCT LOGO: Include a small product/brand logo mark in the TEXT PANEL ONLY — "
-            "position it in the upper-left corner of the text panel (above the headline). "
-            "Render as a clean, simplified logotype or icon mark in white or the brand accent color. "
-            "Size: 32–48px height, with 16px clearance from panel edges. "
-            "Do NOT place the logo in the CTA bar. Do NOT add a background box or border behind the logo."
+            "• ブランドロゴ: テキストパネルの左上角（ヘッドラインの上）にロゴマークを小さく配置すること。"
+            "白またはブランドアクセントカラーで、高さ32〜48px・パネル端から16pxの余白を確保。"
+            "CTAバーには配置しないこと。ロゴの背景にボックスや枠線を付けないこと。"
         )
     else:
-        _vc.append("• PRODUCT LOGO: Do NOT include any logo mark or logotype element in the design.")
+        _vc.append("• ブランドロゴ: ロゴマーク・ロゴタイプはいかなる形でも含めないこと。")
     if use_people:
-        _vc.append("• PEOPLE: Include human models or characters as the main visual subject where appropriate.")
+        _vc.append("• 人物: 適切な場合、人物モデルやキャラクターをメインビジュアルの被写体として含めること。")
     else:
         _vc.append(
-            "• PEOPLE: Do NOT include any people or human figures (no models, faces, hands, silhouettes). "
-            "INSTEAD, each variation MUST use a DISTINCTLY DIFFERENT visual concept from the list below — "
-            "never use the same concept for two variations. Assign concepts in order (variation A → concept 1, B → concept 2, etc.):\n"
-            "  CONCEPT 1 — EDITING SOFTWARE ON SCREEN: laptop or monitor at 15–25° angle displaying a professional "
-            "video editing timeline (color-graded footage, audio waveforms, color wheels). "
-            "Screen content looks premium. Soft environmental lighting reflects off the bezel. "
-            "Background: dark studio blur.\n"
-            "  CONCEPT 2 — THUMBNAIL MONTAGE / FILM STRIP: multiple video thumbnails or frames arranged as a "
-            "dynamic film-strip or mosaic grid — cinematic landscapes, dramatic scenes, brand-colored frames. "
-            "Composition suggests volume and variety of content. "
-            "Use perspective/depth so the strip recedes into the background. High visual energy.\n"
-            "  CONCEPT 3 — PRODUCTION EQUIPMENT CLOSE-UP: extreme close-up of cinema camera lens, "
-            "a lighting rig with practicals glowing, or an audio/video mixing console with illuminated faders. "
-            "Dramatic side-lighting, shallow DoF (f/1.4), rich dark tones. "
-            "No people — pure equipment as hero subject.\n"
-            "  CONCEPT 4 — STUDIO ENVIRONMENT: wide or medium shot of an empty editing suite, "
-            "production floor, or green-screen stage. Multiple screens glowing in a dark room, "
-            "practical light sources visible, cinematic atmosphere.\n"
-            "  If there are more variations than concepts, cycle back. "
-            "Do NOT use flat geometric shapes, generic icons, or abstract patterns in any concept. "
-            "Always aim for cinematic commercial photography aesthetics."
+            "• 人物: 人物・人間の姿（モデル・顔・手・シルエット）は一切含めないこと。"
+            "代わりに、各バリエーションは以下のリストから互いに異なるビジュアルコンセプトを使用すること（同じコンセプトを2つのバリエーションで使うことは禁止）。"
         )
-    visual_constraints_section = "\nVISUAL CONSTRAINTS — must apply to ALL variations:\n" + "\n".join(_vc)
+    visual_constraints_section = "\n【ビジュアル制約 — 全バリエーション共通】\n" + "\n".join(_vc)
 
     variation_labels = [chr(65 + i) for i in range(num_variations)]
 
     # Per-variation visual concept assignment (人物なし・複数バリエーション時)
     _no_people_concepts = [
-        "CONCEPT 1 — EDITING SOFTWARE ON SCREEN: laptop or dual monitor at 15–25° angle showing a professional video editing timeline (color-graded footage, audio waveforms, color wheels). Dark studio background, soft bezel reflection. Do NOT use any other concept.",
-        "CONCEPT 2 — THUMBNAIL MONTAGE / FILM STRIP: multiple video frames/thumbnails arranged as a dynamic film-strip or mosaic grid receding in perspective. High visual energy, diverse cinematic scenes. No monitors or editing UI. Do NOT use any other concept.",
-        "CONCEPT 3 — PRODUCTION EQUIPMENT CLOSE-UP: extreme close-up of cinema camera lens, lighting rig with practicals glowing, or mixing console with illuminated faders. Dramatic side-lighting, shallow DoF f/1.4. No screens or editing software. Do NOT use any other concept.",
-        "CONCEPT 4 — STUDIO ENVIRONMENT: empty editing suite or production floor. Multiple screens glowing in a dark room, practical light sources visible. Wide or medium shot. Do NOT use any other concept.",
+        "コンセプト1 — 動画編集ソフト画面: 15〜25°の角度のノートPC or デュアルモニターに、プロの動画編集タイムライン（カラーグレーディング映像・音声波形・カラーホイール）が映る。暗いスタジオ背景、ベゼルに柔らかい反射光。このコンセプト以外は使わないこと。",
+        "コンセプト2 — サムネイルモンタージュ/フィルムストリップ: 複数の動画フレーム・サムネイルをパース感のあるフィルムストリップやモザイクグリッドとして配置。躍動感のある構成、多様なシネマシーン。モニターや編集UIは含めないこと。このコンセプト以外は使わないこと。",
+        "コンセプト3 — 撮影機材クローズアップ: シネマカメラレンズ、ライティングリグ、またはミキシングコンソールの超接写。ドラマチックなサイドライティング、浅い被写界深度f/1.4、深みのある暗いトーン。画面や編集ソフトは含めないこと。このコンセプト以外は使わないこと。",
+        "コンセプト4 — スタジオ環境: 空の編集室または撮影スタジオの広角〜中景ショット。暗い部屋で光る複数のスクリーン、実用照明源。シネマティックな雰囲気。このコンセプト以外は使わないこと。",
     ]
     if not use_people and num_variations > 1:
         concept_lines = "\n".join(
-            f"  Variation {label}: {_no_people_concepts[i % len(_no_people_concepts)]}"
+            f"  バリエーション{label}: {_no_people_concepts[i % len(_no_people_concepts)]}"
             for i, label in enumerate(variation_labels)
         )
         variation_concepts_section = (
-            f"\nVISUAL CONCEPT ASSIGNMENT (人物なし — mandatory, one concept per variation):\n"
-            f"Each variation MUST use ONLY its assigned concept below. "
-            f"Using the same concept for two variations is a violation.\n"
+            f"\n【ビジュアルコンセプト割り当て（人物なし — 必須、1バリエーション1コンセプト）】\n"
+            f"各バリエーションは下記の割り当てられたコンセプトのみを使用すること。"
+            f"同じコンセプトを複数のバリエーションで使うことは違反。\n"
             f"{concept_lines}"
         )
     else:
@@ -389,7 +364,7 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
 
     banner_tool = {
         "name": "submit_banner_prompts",
-        "description": "Submit design brief prompts for gpt-image-2 banner ad generation",
+        "description": "gpt-image-2バナー広告生成用のデザインブリーフを送信する",
         "input_schema": {
             "type": "object",
             "required": ["variations"],
@@ -404,7 +379,7 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
                             "label": {"type": "string"},
                             "prompt": {
                                 "type": "string",
-                                "description": "Complete production-ready design brief for gpt-image-2 (500-700 words). Must cover: layout zones with exact proportions, visual zone with cinematic photo description, ALL text elements verbatim in Japanese with px size/weight/color/position, accent elements, full hex color palette.",
+                                "description": "gpt-image-2に渡す本番用デザインブリーフ（日本語で記述すること）。必須項目: レイアウトゾーンとpx比率、ビジュアルゾーンの描写（構図・照明・雰囲気）、全テキスト要素のverbatim日本語テキスト＋px・ウェイト・色・位置、アクセント装飾、完全なhexカラーパレット。",
                             },
                             "rationale": {"type": "string"},
                         },
@@ -429,7 +404,7 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
 {offer_section}
 {features_section}
 
-【広告目的】{objective_section if objective_section else "（未指定）"}
+【広告目的】{objective if objective else "（未指定）"}
 
 【訴求パターン】
 {tonmana}
@@ -445,7 +420,7 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
 そのうえで、訴求パターンの構造的本質をどう活かすかを考え、デザインブリーフに落とし込んでください。
 バリエーションごとに構図・ビジュアル表現を変えて、それぞれ異なるアプローチにしてください。
 
-【カラー固定ルール】全バリエーション共通のカラーパレットを使用すること。Variation Aで確定したhexコードをB以降も踏襲し、アクセントカラー・CTAバー色・ヘッドライン文字色を変更しないこと。"""
+【カラー固定ルール】全バリエーション共通のカラーパレットを使用すること。バリエーションAで確定したhexコードをB以降も踏襲し、アクセントカラー・CTAバー色・ヘッドライン文字色を変更しないこと。"""
 
     if reference_image_b64:
         _user_content: str | list = [
@@ -561,7 +536,13 @@ AIは長い文字列を正確に描画できません。必ず守ってくださ
 ③ テキスト配置（各要素のテキスト verbatim・位置・サイズ・色）
 ④ カラーパレット（hex コード）
 
-1バリエーションあたり400〜500語。具体的かつ簡潔に。""",
+1バリエーションあたり400〜600文字。具体的かつ簡潔に。
+
+---
+
+## 出力言語
+
+promptフィールドは**必ず日本語で**記述すること。バリエーションA・B・C…すべて日本語で統一すること。""",
         messages=[{"role": "user", "content": _user_content}],
     )
 
@@ -682,9 +663,9 @@ def _regex_extract_copy(prompt: str) -> dict:
         s = line.strip()
 
         # Track feature-badge section boundaries
-        if re.search(r"feature\s+badge|feature\s+icon|icon\s+badge|badge[s]?\s*:", s, re.I):
+        if re.search(r"feature\s+badge|feature\s+icon|icon\s+badge|badge[s]?\s*:|フィーチャーバッジ|特徴バッジ|バッジ\s*:", s, re.I):
             in_feature = True
-        elif re.match(r"^#{1,3}\s+\S|^[A-Z][A-Z\s]{4,}$|^##", s) and i > 0:
+        elif re.match(r"^#{1,3}\s+\S|^[A-Z][A-Z\s]{4,}$|^##|^\*\*[^*]+\*\*", s) and i > 0:
             in_feature = False  # new major section
 
         # "Exact text: 「テキスト」" — most reliable
@@ -706,18 +687,22 @@ def _regex_extract_copy(prompt: str) -> dict:
                     features.append(t)
             continue
 
-        # "Main Headline: テキスト"
-        m = re.match(r"[-•\s]*main\s+headline\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(].*)?$", s, re.I)
+        # "Main Headline: テキスト" or "ヘッドライン: テキスト"
+        m = re.match(
+            r"[-•\s]*(?:main\s+headline|ヘッドライン|メインコピー|見出し|キャッチコピー)"
+            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(（].*)?$",
+            s, re.I,
+        )
         if m:
             t = m.group(1).strip()
             if _has_jp(t) and t not in headlines:
                 headlines.append(t)
             continue
 
-        # "Sub-copy: テキスト" / "Supporting copy: テキスト"
+        # "Sub-copy: テキスト" or "サブコピー: テキスト"
         m = re.match(
-            r"[-•\s]*(?:sub[-\s]?copy|supporting\s+copy|sub[-\s]?headline|sub[-\s]?catch)"
-            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(].*)?$",
+            r"[-•\s]*(?:sub[-\s]?copy|supporting\s+copy|sub[-\s]?headline|sub[-\s]?catch|サブコピー|サブキャッチ|説明文)"
+            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(（].*)?$",
             s, re.I,
         )
         if m:
@@ -726,16 +711,23 @@ def _regex_extract_copy(prompt: str) -> dict:
                 sub_headlines.append(t)
             continue
 
-        # "Offer/CTA: テキスト" / "CTA: テキスト"
-        m = re.match(r"[-•\s]*(?:offer[/／])?cta(?:\s+text|\s+button|\s+copy)?\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(].*)?$", s, re.I)
+        # "Offer/CTA: テキスト" or "CTAバー: テキスト" or "テキスト: 「...」" in CTA context
+        m = re.match(
+            r"[-•\s]*(?:(?:offer[/／])?cta(?:\s+text|\s+button|\s+copy|\s*バー)?|ボタンテキスト)"
+            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(（].*)?$",
+            s, re.I,
+        )
         if m:
             t = m.group(1).strip()
             if _has_jp(t) and t not in offers:
                 offers.append(t)
             continue
 
-        # "Feature Badge: テキスト" / "Feature Badge — テキスト"
-        m = re.match(r"[-•\s]*feature\s+badge\s*[：:—–]\s*[「\"""]?(.+?)[」\"""]?\s*$", s, re.I)
+        # "Feature Badge: テキスト" or "バッジ1: テキスト"
+        m = re.match(
+            r"[-•\s]*(?:feature\s+badge|フィーチャーバッジ|バッジ\s*\d*)\s*[：:—–]\s*[「\"""]?(.+?)[」\"""]?\s*$",
+            s, re.I,
+        )
         if m:
             t = m.group(1).strip()
             if _has_jp(t) and len(t) <= 30 and t not in features:
@@ -760,13 +752,13 @@ def _regex_extract_copy(prompt: str) -> dict:
         if pos == -1:
             continue
         ctx = prompt[max(0, pos - 150):pos].lower()
-        if any(k in ctx for k in ["sub-copy", "sub copy", "supporting", "sub_copy"]):
+        if any(k in ctx for k in ["sub-copy", "sub copy", "supporting", "sub_copy", "サブ", "説明文"]):
             if q not in sub_headlines:
                 sub_headlines.append(q)
-        elif any(k in ctx for k in ["headline", "main", "catch", "キャッチ"]):
+        elif any(k in ctx for k in ["headline", "main", "catch", "キャッチ", "ヘッドライン", "メインコピー"]):
             if q not in headlines:
                 headlines.append(q)
-        elif any(k in ctx for k in ["offer", "cta", "button"]):
+        elif any(k in ctx for k in ["offer", "cta", "button", "ボタン"]):
             if q not in offers:
                 offers.append(q)
         elif len(q) <= 25 and q not in features:
@@ -828,12 +820,12 @@ def _haiku_extract_copy(prompt: str) -> dict:
             tools=[tool],
             tool_choice={"type": "tool", "name": "submit_copy"},
             system=(
-                "Extract Japanese advertising copy verbatim from English banner design briefs.\n"
-                "- headlines: large primary Japanese text (catch copy / main headline)\n"
-                "- sub_headlines: smaller supporting Japanese text below the headline (sub-copy line)\n"
-                "- offers: Japanese text on CTA buttons or offer lines\n"
-                "- features: short Japanese badge phrases (typically bullets under Feature Badges)\n"
-                "Return ONLY the Japanese text itself, never English descriptions or specs."
+                "デザインブリーフ（日本語または英語）から日本語の広告コピーを正確に抽出する。\n"
+                "- headlines: メインヘッドライン・キャッチコピー（大きな主要テキスト）\n"
+                "- sub_headlines: サブコピー・説明文（ヘッドライン下の補足テキスト）\n"
+                "- offers: CTAボタン・CTAバー上の日本語テキスト\n"
+                "- features: フィーチャーバッジの短い日本語フレーズ（5〜20文字）\n"
+                "日本語テキストのみを返すこと。英語の説明・仕様は含めないこと。"
             ),
             messages=[{
                 "role": "user",
