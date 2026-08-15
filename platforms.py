@@ -9,17 +9,25 @@ class Platform:
     filename: str
     width: int
     height: int
+    gen_size: str = "1024x1024"  # gpt-image-2 generation size
 
 
 PLATFORMS = [
-    Platform("Instagram Square",  "instagram_square",  1080, 1080),
-    Platform("Instagram Story",   "instagram_story",   1080, 1920),
-    Platform("X (Twitter)",       "twitter",           1200,  675),
-    Platform("Facebook",          "facebook",          1200,  628),
-    Platform("Google 300x250",    "google_300x250",     300,  250),
-    Platform("Google 728x90",     "google_728x90",      728,   90),
-    Platform("Google 160x600",    "google_160x600",     160,  600),
+    Platform("Instagram Square",  "instagram_square",  1080, 1080, "1024x1024"),
+    Platform("Instagram Story",   "instagram_story",   1080, 1920, "1024x1536"),
+    Platform("X (Twitter)",       "twitter",           1200,  675, "1536x1024"),
+    Platform("Facebook",          "facebook",          1200,  628, "1536x1024"),
+    Platform("Google 300x250",    "google_300x250",     300,  250, "1024x1024"),
+    Platform("Google 728x90",     "google_728x90",      728,   90, "1536x1024"),
+    Platform("Google 160x600",    "google_160x600",     160,  600, "1024x1536"),
 ]
+
+# gpt-image-2生成サイズ → ブリーフ用キャンバス表記
+GEN_SIZE_CANVAS: dict[str, str] = {
+    "1024x1024": "1080×1080px（正方形・1:1）",
+    "1024x1536": "1080×1920px（縦長・9:16）",
+    "1536x1024": "1200×630px（横長・3:2）",
+}
 
 
 def _smart_crop(img: Image.Image, target_w: int, target_h: int) -> Image.Image:

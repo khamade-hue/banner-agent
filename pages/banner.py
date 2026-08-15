@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import extract_banner_copy, generate_banner_prompts, recommend_pattern, recommend_patterns, refine_banner_part
 from image_gen import generate_image
-from platforms import PLATFORMS, resize_for_selected_platforms
+from platforms import GEN_SIZE_CANVAS, PLATFORMS, resize_for_selected_platforms
 from state import load_banners, load_copies, load_products, save_banner_entry
 
 # ── トンマナ定義（assets/tonmana/ のファイル名が表示名、値がAIプロンプト用説明）────
@@ -484,6 +484,8 @@ if _banner_mode == "新規生成":
             st.stop()
 
         selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
+        _gen_size = selected_platforms[0].gen_size if selected_platforms else "1024x1024"
+        _canvas_size = GEN_SIZE_CANVAS.get(_gen_size, "1080×1080px（正方形・1:1）")
 
         _cache_raw_base = "|".join([
             selected_product.get("id", ""),
@@ -571,6 +573,7 @@ if _banner_mode == "新規生成":
                     free_comment=free_comment.strip(),
                     reference_image_b64=ref_b64,
                     reference_image_mime=ref_mime,
+                    canvas_size=_canvas_size,
                 )
 
             if _cache_key in _brief_cache:
@@ -632,7 +635,7 @@ if _banner_mode == "新規生成":
             def _gen(item):
                 idx, v = item
                 ref_pil = _ref_pil_map.get(v["variation"])
-                img = generate_image(v["prompt"], reference_image=ref_pil)
+                img = generate_image(v["prompt"], reference_image=ref_pil, size=_gen_size)
                 return idx, v, resize_for_selected_platforms(img, selected_platforms)
 
             gen_errors = []

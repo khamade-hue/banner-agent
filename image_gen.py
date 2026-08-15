@@ -9,13 +9,14 @@ def generate_image(
     prompt: str,
     quality: str = "high",
     reference_image: Image.Image | None = None,
+    size: str = "1024x1024",
 ) -> Image.Image:
     """Generate image with gpt-image-2. Uses edit endpoint when reference_image is provided."""
     client = OpenAI()
 
     if reference_image is not None:
         try:
-            return _edit_with_reference(client, prompt, reference_image)
+            return _edit_with_reference(client, prompt, reference_image, size=size)
         except Exception as e:
             raise RuntimeError(f"[gpt-image-2 edit] {e}")
 
@@ -23,7 +24,7 @@ def generate_image(
         response = client.images.generate(
             model="gpt-image-2",
             prompt=prompt,
-            size="1024x1024",
+            size=size,
             quality=quality,
             n=1,
         )
@@ -74,7 +75,7 @@ def generate_images_batch(
         raise RuntimeError(f"[gpt-image-2 batch] {e}")
 
 
-def _edit_with_reference(client: OpenAI, prompt: str, ref: Image.Image) -> Image.Image:
+def _edit_with_reference(client: OpenAI, prompt: str, ref: Image.Image, size: str = "1024x1024") -> Image.Image:
     buf = io.BytesIO()
     ref.convert("RGBA").save(buf, "PNG")
     buf.seek(0)
@@ -89,7 +90,7 @@ def _edit_with_reference(client: OpenAI, prompt: str, ref: Image.Image) -> Image
             "Apply entirely new visuals and Japanese text content as specified in the brief below.]\n\n"
             + prompt
         ),
-        size="1024x1024",
+        size=size,
         n=1,
     )
     return _decode(response.data[0])

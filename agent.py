@@ -275,6 +275,9 @@ def generate_banner_prompts(
     free_comment: str = "",
     reference_image_b64: str = "",
     reference_image_mime: str = "image/jpeg",
+    user_reference_image_b64: str = "",
+    user_reference_image_mime: str = "image/jpeg",
+    canvas_size: str = "1080×1080px（正方形・1:1）",
 ) -> list[dict]:
     """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
     client = _claude()
@@ -412,6 +415,7 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
     }
 
     _user_text = f"""以下の情報をもとに、SNSバナー広告のデザインブリーフを{num_variations}パターン（{' / '.join(variation_labels)}）作成してください。
+【キャンバスサイズ】{canvas_size} — レイアウト・余白・テキストサイズはこのサイズと縦横比に合わせて設計すること。
 
 ---
 
@@ -470,8 +474,8 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
         max_tokens=16000,
         tools=[banner_tool],
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
-        system="""あなたはSNS広告のクリエイティブディレクターです。
-商品情報・コピー・訴求パターンをもとに、gpt-image-2で1080×1080pxのSNSバナー画像を生成するためのデザインブリーフを作成します。
+        system=f"""あなたはSNS広告のクリエイティブディレクターです。
+商品情報・コピー・訴求パターンをもとに、gpt-image-2で{canvas_size}のSNSバナー画像を生成するためのデザインブリーフを作成します。
 
 ## ブリーフを書く前の思考順序
 
@@ -483,11 +487,13 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
 - サブコピー・RTBはどんな根拠・補強をしているか
 - 目的（認知・クリック・CV）は何か
 
-**STEP 2 — 訴求パターンとの接合を考える**
-- 選択されたパターンの構造的本質は何か（レイアウト・視覚スタイル・情報の見せ方）
-- STEP 1で理解した商品・コピーを、このパターンで表現したとき何が際立つか
-- 参照画像は構成の参考として使い、色・被写体・テキストは商品に合わせて最適化する
-- パターンが指定する構造から外れた汎用レイアウトに引き戻さないこと
+**STEP 2 — 4軸で設計根拠を固める**
+- 【訴求軸】なぜこの訴求角度が商品・目的・ターゲットに最適か。競合との差異や心理的なフックは何か
+- 【配色】指定ブランドカラーをどう使えば信頼感・視認性・購買意欲が最大化されるか。色数・コントラスト・アクセントの役割を決める
+- 【コピー接続】ヘッドラインとサブコピーが伝えたいことを、どのビジュアル・レイアウト構造が最も効果的に補強するか
+- 【レイアウト】視線誘導（コピー→説明→CTA）をどう設計するか。余白・要素の優先順位・情報密度を決める
+- 選択されたパターンの構造的本質を活かす。パターンが指定する構造から外れた汎用レイアウトに引き戻さないこと
+- 参照画像は構成・スタイルの参考として使い、色・被写体・テキスト内容は商品に合わせて最適化する
 
 **STEP 3 — デザインブリーフを書く**
 STEP 1・2の理解を土台に、gpt-image-2が描ける具体的な画像描写として記述する。
