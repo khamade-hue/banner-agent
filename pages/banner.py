@@ -16,7 +16,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import extract_banner_copy, generate_banner_prompts, recommend_pattern, recommend_patterns, refine_banner_part
-from image_gen import generate_image
+from image_gen import compose_programmatic, generate_image
 from platforms import PLATFORMS, resize_for_selected_platforms
 from state import load_banners, load_copies, load_products, save_banner_entry
 
@@ -744,10 +744,21 @@ if _banner_mode == "新規生成":
             preview_cols = st.columns(n)
             col_slots = [col.empty() for col in preview_cols]
 
+            _compose_kw = dict(
+                headline=selected_copy.get("headline", ""),
+                sub_headline=selected_copy.get("sub_headline", ""),
+                cta_text=selected_cta,
+                rtbs=rtbs or None,
+                brand_primary_hex=brand_primary,
+                brand_accent_hex=brand_accent,
+            )
+            st.session_state["compose_kwargs"] = _compose_kw
+
             def _gen(item):
                 idx, v = item
                 ref_pil = _ref_pil_map.get(v["variation"])
                 img = generate_image(v["prompt"], reference_image=ref_pil, size=_gen_size)
+                img = compose_programmatic(img, **_compose_kw)
                 return idx, v, resize_for_selected_platforms(img, selected_platforms)
 
             gen_errors = []
@@ -1130,6 +1141,9 @@ if _banner_mode == "新規生成" and st.session_state.get("gen_results"):
                                 v["prompt"], rev_part_label, target_elem, rev_instructions
                             )
                             new_base_img = generate_image(new_prompt)
+                            _ckw = st.session_state.get("compose_kwargs", {})
+                            if _ckw:
+                                new_base_img = compose_programmatic(new_base_img, **_ckw)
                             new_platform_images = resize_for_selected_platforms(
                                 new_base_img, current_platforms
                             )
