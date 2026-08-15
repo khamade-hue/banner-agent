@@ -291,7 +291,7 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
     if ctx:
         lp_colors_line = ""
         if ctx.get("lp_colors"):
-            lp_colors_line = f"- LP Brand Colors: {' / '.join(ctx['lp_colors'])} ← USE THESE as the base palette"
+            lp_colors_line = f"- Brand Colors (MANDATORY — apply identically to ALL variations, no per-variation changes): {' / '.join(ctx['lp_colors'])}"
         parts = []
         if ctx.get("value_proposition"): parts.append(f"- Value Proposition: {ctx['value_proposition']}")
         if ctx.get("strengths"):         parts.append(f"- Key Strengths: {ctx['strengths']}")
@@ -439,7 +439,9 @@ Target Segment: {appeal_axis.get('target_segment', target_audience)}"""
 
 各バリエーションを書く前に、まず商品・コピーが伝えたいことの核心を自分の言葉で整理してください。
 そのうえで、訴求パターンの構造的本質をどう活かすかを考え、デザインブリーフに落とし込んでください。
-バリエーションごとに構図・ビジュアル表現を変えて、それぞれ異なるアプローチにしてください。"""
+バリエーションごとに構図・ビジュアル表現を変えて、それぞれ異なるアプローチにしてください。
+
+【カラー固定ルール】全バリエーション共通のカラーパレットを使用すること。Variation Aで確定したhexコードをB以降も踏襲し、アクセントカラー・CTAバー色・ヘッドライン文字色を変更しないこと。"""
 
     if reference_image_b64:
         _user_content: str | list = [
@@ -523,8 +525,26 @@ AIは長い文字列を正確に描画できません。必ず守ってくださ
 
 ## カラー
 
-- 提供されたブランドカラーをベースにパレットを構成する
-- 役割ラベル付きで4〜5色のhexコードを明示する
+- 提供されたブランドカラー（プライマリ・アクセント）を必ずベースにパレットを構成する
+- Variation Aでカラーパレット（4〜5色・役割ラベル付きhexコード）を確定する
+- Variation B以降は同一パレットを踏襲する（アクセントカラーの変更禁止）
+
+---
+
+## バリエーション間の一貫性ルール（CRITICAL）
+
+同じ広告セットの複数バリエーションは「同一ブランドの別クリエイティブ」として扱う。
+
+**全バリエーション共通で固定する要素：**
+- カラーパレット全色（プライマリ・アクセント・背景・テキスト色・CTA色すべて）
+- CTAバーの色・テキストスタイル・フォントウェイト
+- ヘッドラインの文字色
+- 訴求パターンが規定するレイアウト基本方向（左右分割ならB以降も左右分割）
+
+**バリエーションごとに変えてよい要素：**
+- ビジュアルコンセプト（被写体・構図・照明・雰囲気）のみ
+
+バリエーション間でアクセントカラーが変わっている場合は誤りです。
 
 ---
 

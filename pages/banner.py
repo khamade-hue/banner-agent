@@ -448,11 +448,17 @@ if _banner_mode == "新規生成":
 
     col_color, col_comment = st.columns([1, 2])
     with col_color:
-        color_hint = st.text_input(
-            "カラー（任意）",
-            placeholder="例: ブルー系 / #1e3a5f",
-            key="banner_color_hint",
+        st.markdown(
+            '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:6px">ブランドカラー</div>',
+            unsafe_allow_html=True,
         )
+        col_p, col_a = st.columns(2)
+        with col_p:
+            st.caption("プライマリ")
+            brand_primary = st.color_picker("プライマリ", "#0d1b2a", key="banner_brand_primary", label_visibility="collapsed")
+        with col_a:
+            st.caption("アクセント")
+            brand_accent = st.color_picker("アクセント", "#4f46e5", key="banner_brand_accent", label_visibility="collapsed")
     with col_comment:
         free_comment = st.text_area(
             "その他要望（任意）",
@@ -484,7 +490,7 @@ if _banner_mode == "新規生成":
             selected_copy.get("id", ""),
             tonmana_label, selected_cta, str(num_variations),
             str(use_product_image), str(use_product_logo), str(use_people),
-            color_hint.strip(), free_comment.strip(),
+            brand_primary, brand_accent, free_comment.strip(),
             *sorted(selected_rtbs),
         ])
         _brief_cache = st.session_state.setdefault("_brief_cache", {})
@@ -552,7 +558,7 @@ if _banner_mode == "新規生成":
                     appeal_axis=None,
                     product_context={
                         "product_info": selected_product.get("product_info", ""),
-                        "lp_colors": [color_hint.strip()] if color_hint.strip() else [],
+                        "lp_colors": [f"プライマリ:{brand_primary}", f"アクセント:{brand_accent}"],
                     },
                     objective="",
                     headline_copy=selected_copy.get("headline", ""),
