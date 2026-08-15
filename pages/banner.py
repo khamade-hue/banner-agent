@@ -606,13 +606,33 @@ if _banner_mode == "新規生成":
             n = len(variations)
             st.write(f"**Step 2 / 3** — gpt-image-2 で {n} 枚を並列生成中")
 
+            # 訴求パターン画像をgpt-image-2にも渡す（レイアウト参照用）
+            _ref_pil_map: dict[str, Image.Image | None] = {}
+            if _ai_assignments:
+                for _i, (_pname, _) in enumerate(_ai_assignments):
+                    _vl = chr(65 + _i)
+                    _ip = _TONMANA_IMG_MAP.get(_pname, "")
+                    try:
+                        _ref_pil_map[_vl] = Image.open(_ip).convert("RGB") if _ip else None
+                    except Exception:
+                        _ref_pil_map[_vl] = None
+            else:
+                _ip = _TONMANA_IMG_MAP.get(resolved_label, "")
+                try:
+                    _shared_ref = Image.open(_ip).convert("RGB") if _ip else None
+                except Exception:
+                    _shared_ref = None
+                for _v in variations:
+                    _ref_pil_map[_v["variation"]] = _shared_ref
+
             results = [None] * n
             preview_cols = st.columns(n)
             col_slots = [col.empty() for col in preview_cols]
 
             def _gen(item):
                 idx, v = item
-                img = generate_image(v["prompt"])
+                ref_pil = _ref_pil_map.get(v["variation"])
+                img = generate_image(v["prompt"], reference_image=ref_pil)
                 return idx, v, resize_for_selected_platforms(img, selected_platforms)
 
             gen_errors = []

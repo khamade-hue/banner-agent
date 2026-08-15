@@ -84,8 +84,10 @@ def _edit_with_reference(client: OpenAI, prompt: str, ref: Image.Image) -> Image
         model="gpt-image-2",
         image=buf,
         prompt=(
-            "Using the visual style, color palette, composition, and mood of the reference image "
-            f"as inspiration, create a new professional advertising banner: {prompt}"
+            "[Layout reference: use only the structural zone arrangement and compositional rhythm of the "
+            "reference image as a template — do NOT copy its colors, imagery, text, or brand. "
+            "Apply entirely new visuals and Japanese text content as specified in the brief below.]\n\n"
+            + prompt
         ),
         size="1024x1024",
         n=1,
