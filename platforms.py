@@ -23,7 +23,7 @@ class Platform:
 PLATFORMS = [
     # SNS 縦型
     Platform("Instagram/TikTok ストーリー・リール", "instagram_story",     1080, 1920, "1024x1536"),
-    Platform("Instagram フィード（縦型 4:5）",      "instagram_feed_45",   1080, 1350, "1024x1024",
+    Platform("Instagram フィード（縦型 4:5）",      "instagram_feed_45",   1080, 1350, "1024x1536",
              canvas_label="1080×1350px（縦型フィード・4:5）"),
     # SNS 正方形・横型
     Platform("Instagram フィード（正方形）",         "instagram_square",    1080, 1080, "1024x1024"),
