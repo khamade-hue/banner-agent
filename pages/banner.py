@@ -43,6 +43,19 @@ _TONMANA_DESC: dict[str, str] = {
 }
 
 
+# ── カラープリセット（ベース色, アクセント色）─────────────────────────────────
+_COLOR_PRESETS: list[tuple[str, str | None, str | None]] = [
+    ("ホワイト × ブルー",   "#ffffff", "#2563eb"),
+    ("ホワイト × ネイビー", "#ffffff", "#1e3a5f"),
+    ("ネイビー × ホワイト", "#0f172a", "#ffffff"),
+    ("ネイビー × ゴールド", "#0f172a", "#d97706"),
+    ("ホワイト × レッド",   "#ffffff", "#dc2626"),
+    ("ブラック × イエロー", "#1c1c1c", "#fbbf24"),
+    ("ホワイト × グリーン", "#ffffff", "#16a34a"),
+    ("カスタム",             None,      None),
+]
+
+
 @st.cache_data
 def _load_tonmana_b64(path: str, max_width: int = 240) -> tuple[str, str]:
     img = Image.open(path).convert("RGB")
@@ -450,16 +463,40 @@ if _banner_mode == "新規生成":
     col_color, col_comment = st.columns([1, 2])
     with col_color:
         st.markdown(
-            '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:6px">ブランドカラー</div>',
+            '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:6px">カラー</div>',
             unsafe_allow_html=True,
         )
-        col_p, col_a = st.columns(2)
-        with col_p:
-            st.caption("プライマリ")
-            brand_primary = st.color_picker("プライマリ", "#0d1b2a", key="banner_brand_primary", label_visibility="collapsed")
-        with col_a:
-            st.caption("アクセント")
-            brand_accent = st.color_picker("アクセント", "#4f46e5", key="banner_brand_accent", label_visibility="collapsed")
+        _preset_labels = [p[0] for p in _COLOR_PRESETS]
+        _preset_sel = st.selectbox(
+            "カラーセット", _preset_labels, index=0,
+            key="banner_color_preset", label_visibility="collapsed",
+        )
+        _preset = next(p for p in _COLOR_PRESETS if p[0] == _preset_sel)
+        if _preset[1] is None:
+            col_b, col_a2 = st.columns(2)
+            with col_b:
+                st.caption("ベース")
+                brand_primary = st.color_picker("ベース", "#ffffff", key="banner_brand_primary", label_visibility="collapsed")
+            with col_a2:
+                st.caption("アクセント")
+                brand_accent = st.color_picker("アクセント", "#2563eb", key="banner_brand_accent", label_visibility="collapsed")
+        else:
+            brand_primary, brand_accent = _preset[1], _preset[2]
+            col_b, col_a2 = st.columns(2)
+            with col_b:
+                st.markdown(
+                    f'<div style="font-size:0.65rem;color:#64748b;margin-bottom:3px">ベース</div>'
+                    f'<div style="height:26px;border-radius:6px;background:{brand_primary};'
+                    f'border:1px solid #334155"></div>',
+                    unsafe_allow_html=True,
+                )
+            with col_a2:
+                st.markdown(
+                    f'<div style="font-size:0.65rem;color:#64748b;margin-bottom:3px">アクセント</div>'
+                    f'<div style="height:26px;border-radius:6px;background:{brand_accent};'
+                    f'border:1px solid #334155"></div>',
+                    unsafe_allow_html=True,
+                )
     with col_comment:
         free_comment = st.text_area(
             "その他要望（任意）",
@@ -561,7 +598,7 @@ if _banner_mode == "新規生成":
                     appeal_axis=None,
                     product_context={
                         "product_info": selected_product.get("product_info", ""),
-                        "lp_colors": [f"プライマリ:{brand_primary}", f"アクセント:{brand_accent}"],
+                        "lp_colors": [f"ベース:{brand_primary}", f"アクセント:{brand_accent}"],
                     },
                     objective="",
                     headline_copy=selected_copy.get("headline", ""),
