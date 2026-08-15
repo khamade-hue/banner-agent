@@ -397,7 +397,6 @@ if _banner_mode == "新規生成":
         st.stop()
 
     selected_copy: dict | None = None
-    selected_rtbs: list[str] = []
     selected_cta: str = _CTA_LIST[0]
 
     if not copies:
@@ -446,18 +445,6 @@ if _banner_mode == "新規生成":
             unsafe_allow_html=True,
         )
 
-        # RTB 選択（チェックボックス）
-        if rtbs:
-            st.markdown(
-                '<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:6px">'
-                'RTB（使用するものを選択、選択しないことも可）</div>',
-                unsafe_allow_html=True,
-            )
-            rtb_cols = st.columns(len(rtbs))
-            selected_rtbs = [
-                rtb for i, rtb in enumerate(rtbs)
-                if rtb_cols[i].checkbox(rtb, value=True, key=f"banner_rtb_{sel_copy_idx}_{i}")
-            ]
 
         # CTA 選択
         st.markdown(
@@ -582,7 +569,7 @@ if _banner_mode == "新規生成":
             tonmana_label, selected_cta, str(num_variations),
             str(use_product_image), str(use_product_logo), str(use_people),
             brand_primary, brand_accent, free_comment.strip(),
-            *sorted(selected_rtbs),
+            *sorted(rtbs),
         ])
         _brief_cache = st.session_state.setdefault("_brief_cache", {})
 
@@ -676,7 +663,7 @@ if _banner_mode == "新規生成":
                     headline_copy=selected_copy.get("headline", ""),
                     sub_headline_copy=selected_copy.get("sub_headline", ""),
                     offer_copy=selected_cta,
-                    features=selected_rtbs,
+                    features=rtbs,
                     use_product_image=use_product_image,
                     use_product_logo=use_product_logo,
                     use_people=use_people,
