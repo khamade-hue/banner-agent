@@ -96,25 +96,82 @@ def _edit_with_reference(client: OpenAI, prompt: str, ref: Image.Image, size: st
     return _decode(response.data[0])
 
 
-def _load_font(size: int) -> ImageFont.FreeTypeFont:
-    candidates = [
-        # Windows
-        "C:/Windows/Fonts/meiryo.ttc",
-        "C:/Windows/Fonts/yugothb.ttc",
-        "C:/Windows/Fonts/YuGothB.ttc",
-        # Linux (Streamlit Cloud after fonts-noto-cjk)
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
-        "/usr/share/fonts/noto-cjk/NotoSansCJKjp-Bold.otf",
-        "/usr/share/fonts/truetype/noto/NotoSansCJKjp-Bold.otf",
-        "/usr/share/fonts/opentype/noto/NotoSansCJKjp-Bold.otf",
-    ]
-    for path in candidates:
+# (path, ttc_index) pairs — index 2 = Japanese face in CJK TTC files
+_FONT_CANDIDATES: dict[str, list[tuple[str, int]]] = {
+    # See-through serif: premium headline feel
+    "serif-bold": [
+        ("/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",    2),
+        ("/usr/share/fonts/noto-cjk/NotoSerifCJKjp-Bold.otf",       0),
+        ("/usr/share/fonts/truetype/noto/NotoSerifCJKjp-Bold.otf",  0),
+        # fallback → sans bold
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",     2),
+        ("C:/Windows/Fonts/yugothb.ttc",                             0),
+        ("C:/Windows/Fonts/YuGothB.ttc",                             0),
+        ("C:/Windows/Fonts/meiryo.ttc",                              0),
+    ],
+    # Regular / Medium weight for body text and badges
+    "regular": [
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",  2),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJKjp-Regular.otf",0),
+        ("/usr/share/fonts/noto-cjk/NotoSansCJKjp-Regular.otf",     0),
+        ("/usr/share/fonts/truetype/noto/NotoSansCJKjp-Regular.otf",0),
+        ("C:/Windows/Fonts/meiryo.ttc",                              0),
+        # fallback → bold
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",     2),
+        ("/usr/share/fonts/noto-cjk/NotoSansCJKjp-Bold.otf",        0),
+    ],
+    # Standard bold (CTA, badges accent)
+    "bold": [
+        ("C:/Windows/Fonts/yugothb.ttc",                             0),
+        ("C:/Windows/Fonts/YuGothB.ttc",                             0),
+        ("C:/Windows/Fonts/meiryo.ttc",                              0),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",     2),
+        ("/usr/share/fonts/noto-cjk/NotoSansCJKjp-Bold.otf",        0),
+        ("/usr/share/fonts/truetype/noto/NotoSansCJKjp-Bold.otf",   0),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJKjp-Bold.otf",   0),
+    ],
+}
+
+
+def _load_font(size: int, weight: str = "bold") -> ImageFont.FreeTypeFont:
+    for path, idx in _FONT_CANDIDATES.get(weight, _FONT_CANDIDATES["bold"]):
         if os.path.exists(path):
             try:
-                return ImageFont.truetype(path, size)
+                return ImageFont.truetype(path, size, index=idx)
             except Exception:
-                continue
+                try:
+                    return ImageFont.truetype(path, size)
+                except Exception:
+                    continue
     return ImageFont.load_default()
+
+
+def _draw_tracked_text(
+    draw: ImageDraw.ImageDraw,
+    xy: tuple[int, int],
+    text: str,
+    font,
+    fill,
+    tracking: int = 0,
+    stroke_width: int = 0,
+    stroke_fill=None,
+) -> None:
+    """Draw text with per-character tracking (letter-spacing). tracking=0 is normal."""
+    if tracking == 0:
+        draw.text(xy, text, font=font, fill=fill,
+                  stroke_width=stroke_width, stroke_fill=stroke_fill)
+        return
+    x, y = xy
+    _tmp = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    for char in text:
+        draw.text((x, y), char, font=font, fill=fill,
+                  stroke_width=stroke_width, stroke_fill=stroke_fill)
+        try:
+            cw = _tmp.textlength(char, font=font)
+        except Exception:
+            bb = _tmp.textbbox((0, 0), char, font=font)
+            cw = bb[2] - bb[0]
+        x += cw + tracking
 
 
 def add_text_overlay(img: Image.Image, headline: str, subtext: str = "") -> Image.Image:
@@ -222,10 +279,14 @@ def compose_programmatic(
     brand_accent_hex: str = "#2563eb",
 ) -> Image.Image:
     """
-    Post-process a gpt-image-2 banner with crisp programmatic elements:
-      - Headline + sub_headline : top zone with dark gradient backing
-      - RTB badge rows          : card list just above the CTA
-      - CTA button              : bottom zone, rounded rect
+    Post-process a gpt-image-2 banner with crisp programmatic elements.
+
+    Design philosophy:
+    - Full-bleed photo behind ALL elements (no opaque horizontal bands)
+    - Top & bottom vignette gradients for natural depth
+    - Serif-bold headline with letter tracking for a refined feel
+    - Semi-transparent RTB cards float on the darkened photo
+    - Solid accent CTA button at the bottom
 
     Call AFTER generate_image() and BEFORE smart_crop / resize.
     """
@@ -237,7 +298,7 @@ def compose_programmatic(
         return img
 
     is_landscape = w > h * 1.1
-    is_micro     = h < 320 or w < 320   # e.g. 300×250
+    is_micro     = h < 320 or w < 320
 
     primary = _hex_to_rgb(brand_primary_hex)
     accent  = _hex_to_rgb(brand_accent_hex)
@@ -245,18 +306,19 @@ def compose_programmatic(
     base    = img.copy().convert("RGBA")
     overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw    = ImageDraw.Draw(overlay)
-    mx      = max(24, int(w * 0.060))   # horizontal margin
+    mx      = max(24, int(w * 0.060))
 
-    # ── Font sizes (proportional) ─────────────────────────────────────────
-    cta_h      = max(44, int(h * (0.082 if is_micro else 0.062)))
-    badge_h    = max(40, int(h * (0.090 if is_micro else 0.058)))
-    badge_gap  = max(6,  int(h * 0.009))
-    badge_fs   = max(12, int(badge_h * 0.40))
-    cta_fs     = max(12, int(cta_h   * 0.40))
-    hl_fs      = max(28, int(w * (0.040 if is_landscape else 0.054)))
-    sub_fs     = max(13, int(w * (0.022 if is_landscape else 0.027)))
+    # ── Sizes ────────────────────────────────────────────────────────────
+    cta_h     = max(44, int(h * (0.082 if is_micro else 0.062)))
+    badge_h   = max(40, int(h * (0.090 if is_micro else 0.058)))
+    badge_gap = max(6,  int(h * 0.009))
+    badge_fs  = max(12, int(badge_h * 0.40))
+    cta_fs    = max(12, int(cta_h   * 0.40))
+    hl_fs     = max(28, int(w * (0.040 if is_landscape else 0.056)))
+    sub_fs    = max(13, int(w * (0.022 if is_landscape else 0.026)))
+    hl_track  = max(1, int(hl_fs * 0.04))  # letter tracking on headline
 
-    # ── Vertical layout (bottom → top) ───────────────────────────────────
+    # ── Layout (bottom → top) ────────────────────────────────────────────
     cta_mb = max(14, int(h * 0.022))
     cta_y  = h - cta_mb - cta_h
 
@@ -265,73 +327,91 @@ def compose_programmatic(
         n_rtbs = min(len(rtbs), 3)
 
     rtb_total = n_rtbs * (badge_h + badge_gap) - (badge_gap if n_rtbs else 0)
-    rtb_mb    = max(10, int(h * 0.015)) if n_rtbs else 0
+    rtb_mb    = max(10, int(h * 0.016)) if n_rtbs else 0
     rtb_y     = cta_y - rtb_mb - rtb_total if n_rtbs else cta_y
 
-    # ── Headline zone (portrait only) ────────────────────────────────────
-    hl_pct = 0.0
+    # ── DEPTH: dual vignette (top + bottom gradient on photo) ────────────
+    # Top vignette — behind headline
     if headline and not is_micro and not is_landscape:
-        hl_pct = 0.20 if h / w > 1.4 else 0.26
-    hl_zone_h = int(h * hl_pct)
-
-    if hl_zone_h > 0:
-        # Dark gradient: primary color fading downward
-        grad = Image.new("RGBA", (w, hl_zone_h), (0, 0, 0, 0))
-        gd   = ImageDraw.Draw(grad)
+        hl_pct    = 0.22 if h / w > 1.4 else 0.28
+        hl_zone_h = int(h * hl_pct)
+        grad_top  = Image.new("RGBA", (w, hl_zone_h), (0, 0, 0, 0))
+        gtd       = ImageDraw.Draw(grad_top)
         for yg in range(hl_zone_h):
-            alpha = int(178 * max(0.0, 1.0 - yg / hl_zone_h * 1.10))
-            gd.line([(0, yg), (w, yg)], fill=(*primary, alpha))
-        overlay.paste(grad, (0, 0), grad)
+            # 0→1 curve: strong at very top, smooth fade
+            t = yg / hl_zone_h
+            a = int(200 * (1.0 - t) ** 1.4)
+            gtd.line([(0, yg), (w, yg)], fill=(*primary, a))
+        overlay.paste(grad_top, (0, 0), grad_top)
+    else:
+        hl_zone_h = 0
 
-        hl_font  = _load_font(hl_fs)
-        sub_font = _load_font(sub_fs)
+    # Bottom vignette — behind RTBs and CTA, no hard edge
+    bot_grad_h = h - (hl_zone_h if hl_zone_h else int(h * 0.35))
+    bot_grad_h = max(bot_grad_h, int(h * 0.42))
+    grad_bot   = Image.new("RGBA", (w, bot_grad_h), (0, 0, 0, 0))
+    gbd        = ImageDraw.Draw(grad_bot)
+    for yg in range(bot_grad_h):
+        t = yg / bot_grad_h          # 0 at top of gradient, 1 at bottom
+        a = int(195 * t ** 1.6)      # accelerating curve toward bottom
+        gbd.line([(0, yg), (w, yg)], fill=(*primary, a))
+    overlay.paste(grad_bot, (0, h - bot_grad_h), grad_bot)
+
+    # ── Headline text (serif-bold + tracking) ────────────────────────────
+    if hl_zone_h > 0:
+        hl_font  = _load_font(hl_fs,  weight="serif-bold")
+        sub_font = _load_font(sub_fs, weight="regular")
         mw       = w - mx * 2
 
         hl_lines  = _wrap_text(headline, hl_font, mw)
         sub_lines = _wrap_text(sub_headline, sub_font, mw) if sub_headline else []
 
-        hl_lh  = int(hl_fs  * 1.28)
-        sub_lh = int(sub_fs * 1.30)
+        hl_lh  = int(hl_fs  * 1.25)
+        sub_lh = int(sub_fs * 1.35)
         blk_h  = (len(hl_lines) * hl_lh
-                  + (int(hl_fs * 0.35) + len(sub_lines) * sub_lh if sub_lines else 0))
+                  + (int(hl_fs * 0.30) + len(sub_lines) * sub_lh if sub_lines else 0))
         y0 = max(int(hl_zone_h * 0.10), (hl_zone_h - blk_h) // 2)
         y0 = max(y0, int(h * 0.038))
 
         for line in hl_lines:
-            draw.text(
-                (mx, y0), line, font=hl_font,
-                fill=(255, 255, 255, 255),
-                stroke_width=max(1, hl_fs // 22),
-                stroke_fill=(*primary, 200),
+            # Soft drop-shadow layer (offset 2,2)
+            _draw_tracked_text(
+                draw, (mx + 2, y0 + 2), line, hl_font,
+                fill=(*primary, 120), tracking=hl_track,
+            )
+            # Main crisp text
+            _draw_tracked_text(
+                draw, (mx, y0), line, hl_font,
+                fill=(255, 255, 255, 255), tracking=hl_track,
+                stroke_width=max(1, hl_fs // 26),
+                stroke_fill=(*primary, 180),
             )
             y0 += hl_lh
 
         if sub_lines:
-            y0 += int(hl_fs * 0.30)
+            y0 += int(hl_fs * 0.28)
             for line in sub_lines:
                 draw.text(
                     (mx, y0), line, font=sub_font,
-                    fill=(235, 240, 248, 220),
-                    stroke_width=1, stroke_fill=(*primary, 120),
+                    fill=(220, 228, 242, 210),
+                    stroke_width=1, stroke_fill=(*primary, 100),
                 )
                 y0 += sub_lh
 
-    # ── RTB badges ────────────────────────────────────────────────────────
+    # ── RTB badges (semi-transparent, float on vignette) ─────────────────
     if n_rtbs:
-        panel_top = rtb_y - max(8, int(h * 0.012))
-        panel_bot = cta_y - max(6, int(h * 0.010))
-        draw.rectangle([0, panel_top, w, panel_bot], fill=(248, 249, 252, 238))
-
-        bf    = _load_font(badge_fs)
+        bf    = _load_font(badge_fs, weight="regular")
         bar_w = max(4, int(w * 0.007))
 
         for i, rtb in enumerate(rtbs[:n_rtbs]):
             by  = rtb_y + i * (badge_h + badge_gap)
             bx1, bx2 = mx, w - mx
+            # Card: white at 88% opacity → photo bleeds through subtly
             draw.rounded_rectangle([bx1, by, bx2, by + badge_h],
-                                   radius=10, fill=(255, 255, 255, 255))
+                                   radius=10, fill=(255, 255, 255, 224))
             draw.rounded_rectangle([bx1, by, bx2, by + badge_h],
-                                   radius=10, outline=(*primary, 35), width=1)
+                                   radius=10, outline=(*primary, 28), width=1)
+            # Left accent bar
             draw.rounded_rectangle([bx1, by, bx1 + bar_w, by + badge_h],
                                    radius=3, fill=(*accent, 255))
             draw.text(
@@ -339,15 +419,19 @@ def compose_programmatic(
                 rtb, font=bf, fill=(*primary, 255), anchor="lm",
             )
 
-    # ── CTA button ────────────────────────────────────────────────────────
+    # ── CTA button ───────────────────────────────────────────────────────
     if cta_text:
         cx1, cx2 = mx, w - mx
+        # Subtle shadow underneath button
+        draw.rounded_rectangle(
+            [cx1 + 2, cta_y + 3, cx2 + 2, cta_y + cta_h + 3],
+            radius=int(cta_h * 0.38), fill=(*primary, 80),
+        )
         draw.rounded_rectangle(
             [cx1, cta_y, cx2, cta_y + cta_h],
-            radius=int(cta_h * 0.38),
-            fill=(*accent, 255),
+            radius=int(cta_h * 0.38), fill=(*accent, 255),
         )
-        cf = _load_font(cta_fs)
+        cf = _load_font(cta_fs, weight="bold")
         draw.text(
             (w // 2, cta_y + cta_h // 2), cta_text,
             font=cf, fill=(255, 255, 255, 255), anchor="mm",
