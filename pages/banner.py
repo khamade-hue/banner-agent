@@ -586,6 +586,7 @@ if _banner_mode == "新規生成":
                 available = [
                     {"name": n, "desc": _PATTERN_SHORT_DESC.get(n, "")}
                     for n in _TONMANA_NAMES
+                    if _TONMANA_IMG_MAP.get(n)
                 ]
                 try:
                     if num_variations >= 2:
