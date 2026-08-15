@@ -277,7 +277,9 @@ def generate_banner_prompts(
     reference_image_mime: str = "image/jpeg",
     user_reference_image_b64: str = "",
     user_reference_image_mime: str = "image/jpeg",
-    canvas_size: str = "1080×1080px（正方形・1:1）",
+    canvas_size: str = "1024×1024px（クロップなし・1080×1080px表示）",
+    crop_left: int = 0,
+    crop_top: int = 0,
 ) -> list[dict]:
     """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
     client = _claude()
@@ -397,12 +399,31 @@ def generate_banner_prompts(
         },
     }
 
+    # セーフゾーン指示をクロップ量から計算（バッファ込み）
+    _safe_lines = []
+    if crop_top > 0:
+        _safe_lines.append(
+            f"- CTAボタン：下端から{crop_top + 100}px以上内側に配置すること"
+            f"（下端{crop_top}pxクロップ＋100pxバッファ）。下端ギリギリ配置は絶対禁止。"
+        )
+        _safe_lines.append(
+            f"- ヘッドライン・サブコピー：上端から{crop_top + 50}px以上内側に配置すること。"
+        )
+    else:
+        _safe_lines.append("- CTAボタン・ヘッドライン：上下クロップはないが、端から50px以上内側に配置すること。")
+    if crop_left > 0:
+        _safe_lines.append(
+            f"- すべての重要テキスト・要素：左右端から{crop_left + 80}px以上内側に配置すること"
+            f"（左右{crop_left}pxクロップ＋80pxバッファ）。"
+        )
+    else:
+        _safe_lines.append("- すべての重要テキスト・要素：左右端から80px以上内側に配置すること。")
+    _safe_zone_text = "\n".join(_safe_lines)
+
     _user_text = f"""以下の情報をもとに、SNSバナー広告のデザインブリーフを{num_variations}パターン（{' / '.join(variation_labels)}）作成してください。
-【キャンバスサイズ】{canvas_size} — レイアウト・余白・テキストサイズはこのサイズと縦横比に合わせて設計すること。
-【セーフゾーン・厳守】生成後にクロップが入るため、以下を必ず守ること。
-- CTAボタン：下端から少なくとも20%以上内側（キャンバス高さの80%以内の位置）に配置すること。下端ギリギリへの配置は禁止。
-- ヘッドライン・サブコピー：上端から15%以上内側に配置すること。
-- すべてのテキスト・重要要素：左右端から15%以上内側に配置すること。
+【キャンバスサイズ】{canvas_size} — このサイズで生成し、クロップ後に最終バナーとして表示される。レイアウト・余白・テキストサイズはこのサイズと縦横比に合わせて設計すること。
+【セーフゾーン・厳守】以下のpx値を必ず守ること（クロップ量＋バッファ計算済み）:
+{_safe_zone_text}
 
 ---
 
@@ -463,6 +484,7 @@ def generate_banner_prompts(
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
         system=f"""あなたはSNS広告のクリエイティブディレクターです。
 商品情報・コピー・訴求パターンをもとに、gpt-image-2で{canvas_size}のSNSバナー画像を生成するためのデザインブリーフを作成します。
+キャンバスサイズは実際の生成サイズです。クロップ量はユーザー指示に記載されています。必ずそのpx値に従ってコンテンツを配置してください。
 
 ## ブリーフを書く前の思考順序
 

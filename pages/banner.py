@@ -562,6 +562,7 @@ if _banner_mode == "新規生成":
         _sel_platform = selected_platforms[0] if selected_platforms else PLATFORMS[0]
         _gen_size = _sel_platform.gen_size
         _canvas_size = _sel_platform.get_canvas_label()
+        _crop_left, _crop_top = _sel_platform.crop_margins()
 
         _cache_raw_base = "|".join([
             selected_product.get("id", ""),
@@ -671,6 +672,8 @@ if _banner_mode == "新規生成":
                     reference_image_b64=ref_b64,
                     reference_image_mime=ref_mime,
                     canvas_size=_canvas_size,
+                    crop_left=_crop_left,
+                    crop_top=_crop_top,
                 )
 
             if _cache_key in _brief_cache:

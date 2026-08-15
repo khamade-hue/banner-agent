@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from PIL import Image
 import os
 
@@ -9,37 +9,45 @@ class Platform:
     filename: str
     width: int
     height: int
-    gen_size: str = "1024x1024"  # gpt-image-2 generation size
-    canvas_label: str = ""  # empty = use GEN_SIZE_CANVAS[gen_size]
+    gen_size: str = "1024x1024"
 
     @property
     def display_name(self) -> str:
         return f"{self.name}  {self.width}×{self.height}"
 
+    def crop_margins(self) -> tuple[int, int]:
+        """Returns (crop_left, crop_top) in original gen_size pixels."""
+        gen_w, gen_h = (int(x) for x in self.gen_size.split("x"))
+        scale = max(self.width / gen_w, self.height / gen_h)
+        crop_left = round(((gen_w * scale - self.width) / 2) / scale)
+        crop_top = round(((gen_h * scale - self.height) / 2) / scale)
+        return crop_left, crop_top
+
     def get_canvas_label(self) -> str:
-        return self.canvas_label or GEN_SIZE_CANVAS.get(self.gen_size, self.gen_size)
+        """Returns actual generation canvas size with crop info for the design brief."""
+        gen_w, gen_h = (int(x) for x in self.gen_size.split("x"))
+        crop_left, crop_top = self.crop_margins()
+        crops = []
+        if crop_top > 0:
+            crops.append(f"上下各{crop_top}px")
+        if crop_left > 0:
+            crops.append(f"左右各{crop_left}px")
+        if crops:
+            crop_desc = "・".join(crops) + f"クロップ後に{self.width}×{self.height}px表示"
+        else:
+            crop_desc = f"クロップなし・{self.width}×{self.height}px表示"
+        return f"{gen_w}×{gen_h}px（{crop_desc}）"
 
 
 PLATFORMS = [
-    # SNS 縦型
-    Platform("Instagram/TikTok ストーリー・リール", "instagram_story",     1080, 1920, "1024x1536"),
-    Platform("Instagram フィード（縦型 4:5）",      "instagram_feed_45",   1080, 1350, "1024x1536",
-             canvas_label="1080×1350px（縦型フィード・4:5）"),
-    # SNS 正方形・横型
-    Platform("Instagram フィード（正方形）",         "instagram_square",    1080, 1080, "1024x1024"),
-    Platform("X（Twitter）",                        "twitter",             1200,  675, "1536x1024"),
-    Platform("Facebook / LINE フィード",             "facebook_line",       1200,  628, "1536x1024"),
-    # Google ディスプレイ
-    Platform("Google レクタングル（300×250）",       "google_300x250",       300,  250, "1024x1024"),
-    Platform("Google ハーフページ（300×600）",       "google_300x600",       300,  600, "1024x1536"),
+    Platform("Instagram/TikTok ストーリー・リール", "instagram_story",    1080, 1920, "1024x1536"),
+    Platform("Instagram フィード（縦型 4:5）",      "instagram_feed_45",  1080, 1350, "1024x1536"),
+    Platform("Instagram フィード（正方形）",         "instagram_square",   1080, 1080, "1024x1024"),
+    Platform("X（Twitter）",                        "twitter",            1200,  675, "1536x1024"),
+    Platform("Facebook / LINE フィード",             "facebook_line",      1200,  628, "1536x1024"),
+    Platform("Google レクタングル（300×250）",       "google_300x250",      300,  250, "1024x1024"),
+    Platform("Google ハーフページ（300×600）",       "google_300x600",      300,  600, "1024x1536"),
 ]
-
-# gpt-image-2生成サイズ → ブリーフ用キャンバス表記（デフォルト）
-GEN_SIZE_CANVAS: dict[str, str] = {
-    "1024x1024": "1080×1080px（正方形・1:1）",
-    "1024x1536": "1080×1920px（縦長・9:16）",
-    "1536x1024": "1200×630px（横長・3:2）",
-}
 
 
 def _smart_crop(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
@@ -50,6 +58,7 @@ def _smart_crop(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
     resized = img.resize((new_w, new_h), Image.LANCZOS)
     left = (new_w - target_w) // 2
     top = (new_h - target_h) // 2
+    top = max(0, top)
     return resized.crop((left, top, left + target_w, top + target_h))
 
 
