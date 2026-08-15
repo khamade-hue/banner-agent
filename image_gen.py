@@ -5,6 +5,13 @@ from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 
 
+_AD_BANNER_PREFIX = (
+    "Professional Japanese SNS advertising banner. "
+    "Commercial quality, high-impact marketing creative optimized for social media conversion. "
+    "Polished ad design with clear visual hierarchy. "
+)
+
+
 def generate_image(
     prompt: str,
     quality: str = "high",
@@ -13,17 +20,18 @@ def generate_image(
 ) -> Image.Image:
     """Generate image with gpt-image-2. Uses edit endpoint when reference_image is provided."""
     client = OpenAI()
+    _prompt = _AD_BANNER_PREFIX + prompt
 
     if reference_image is not None:
         try:
-            return _edit_with_reference(client, prompt, reference_image, size=size)
+            return _edit_with_reference(client, _prompt, reference_image, size=size)
         except Exception as e:
             raise RuntimeError(f"[gpt-image-2 edit] {e}")
 
     try:
         response = client.images.generate(
             model="gpt-image-2",
-            prompt=prompt,
+            prompt=_prompt,
             size=size,
             quality=quality,
             n=1,
@@ -33,47 +41,6 @@ def generate_image(
         raise RuntimeError(f"[gpt-image-2] {e}")
 
 
-def generate_images_batch(
-    prompt: str,
-    n: int = 1,
-    quality: str = "high",
-    reference_image: Image.Image | None = None,
-) -> list[Image.Image]:
-    """Generate n images in a single API call (same prompt). More efficient than n separate calls."""
-    client = OpenAI()
-    _prompt = prompt + _NO_TEXT_SUFFIX
-
-    if reference_image is not None:
-        try:
-            buf = io.BytesIO()
-            reference_image.convert("RGBA").save(buf, "PNG")
-            buf.seek(0)
-            buf.name = "reference.png"
-            response = client.images.edit(
-                model="gpt-image-2",
-                image=buf,
-                prompt=(
-                    "Using the visual style, color palette, composition, and mood of the reference image "
-                    f"as inspiration, create a new professional advertising banner: {prompt}"
-                ),
-                size="1024x1024",
-                n=n,
-            )
-            return [_decode(d) for d in response.data]
-        except Exception as e:
-            raise RuntimeError(f"[gpt-image-2 edit batch] {e}")
-
-    try:
-        response = client.images.generate(
-            model="gpt-image-2",
-            prompt=_prompt,
-            size="1024x1024",
-            quality=quality,
-            n=n,
-        )
-        return [_decode(d) for d in response.data]
-    except Exception as e:
-        raise RuntimeError(f"[gpt-image-2 batch] {e}")
 
 
 def _edit_with_reference(client: OpenAI, prompt: str, ref: Image.Image, size: str = "1024x1024") -> Image.Image:
