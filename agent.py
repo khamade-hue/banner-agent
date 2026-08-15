@@ -271,7 +271,7 @@ def generate_banner_prompts(
     features: list[str] | None = None,
     use_product_image: bool = True,
     use_product_logo: bool = False,
-    use_people: bool = True,
+    use_people: bool | None = None,
     free_comment: str = "",
     reference_image_b64: str = "",
     reference_image_mime: str = "image/jpeg",
@@ -330,7 +330,9 @@ def generate_banner_prompts(
         )
     else:
         _vc.append("• ブランドロゴ: ロゴマーク・ロゴタイプはいかなる形でも含めないこと。")
-    if use_people:
+    if use_people is None:
+        _vc.append("• 人物: 商品・訴求パターン・構成の文脈に合わせてAIが判断する。人物を使う場合も使わない場合も可。")
+    elif use_people:
         _vc.append("• 人物: 適切な場合、人物モデルやキャラクターをメインビジュアルの被写体として含めること。")
     else:
         _vc.append(
@@ -348,7 +350,7 @@ def generate_banner_prompts(
         "コンセプト3 — 撮影機材クローズアップ: シネマカメラレンズ、ライティングリグ、またはミキシングコンソールの超接写。ドラマチックなサイドライティング、浅い被写界深度f/1.4、深みのある暗いトーン。画面や編集ソフトは含めないこと。このコンセプト以外は使わないこと。",
         "コンセプト4 — スタジオ環境: 空の編集室または撮影スタジオの広角〜中景ショット。暗い部屋で光る複数のスクリーン、実用照明源。シネマティックな雰囲気。このコンセプト以外は使わないこと。",
     ]
-    if not use_people and num_variations > 1:
+    if use_people is False and num_variations > 1:
         concept_lines = "\n".join(
             f"  バリエーション{label}: {_no_people_concepts[i % len(_no_people_concepts)]}"
             for i, label in enumerate(variation_labels)

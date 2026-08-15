@@ -123,7 +123,7 @@ def _pattern_grid() -> str:
     if "tonmana_sel_idx" not in st.session_state:
         st.session_state["tonmana_sel_idx"] = 0
 
-    # ── AIにおすすめカード ────────────────────────────────────────────────────
+    # ── AIにおまかせカード ────────────────────────────────────────────────────
     is_ai = st.session_state["tonmana_sel_idx"] == -1
     ai_border = "border:2px solid #8b5cf6;" if is_ai else "border:1px dashed #334155;"
     ai_bg     = "background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(99,102,241,0.06));" if is_ai else "background:rgba(255,255,255,0.02);"
@@ -132,7 +132,7 @@ def _pattern_grid() -> str:
     with ai_row[0]:
         st.markdown(
             f'<div style="font-size:0.78rem;font-weight:700;color:{ai_lbl_c};margin-bottom:3px">'
-            f'{"✓ " if is_ai else ""}✨ AIにおすすめ</div>'
+            f'{"✓ " if is_ai else ""}✨ AIにおまかせ</div>'
             f'<div style="font-size:0.65rem;color:#64748b;line-height:1.4;min-height:2.8em;margin-bottom:6px">'
             f'目的・コピーを踏まえてAIが最適なパターンを自動選択</div>'
             f'<div style="{ai_bg}{ai_border}border-radius:8px;height:72px;'
@@ -435,8 +435,9 @@ if _banner_mode == "新規生成":
     col_ppl, col_pimg, col_plogo = st.columns(3)
     with col_ppl:
         st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">人物の使用</div>', unsafe_allow_html=True)
-        use_people = st.radio("人物", ["使用する", "使用しない"], horizontal=True,
-                              key="banner_use_people", label_visibility="collapsed") == "使用する"
+        _ppl_sel = st.radio("人物", ["AIにおまかせ", "使用する", "使用しない"], horizontal=True,
+                            key="banner_use_people", label_visibility="collapsed")
+        use_people = None if _ppl_sel == "AIにおまかせ" else (_ppl_sel == "使用する")
     with col_pimg:
         st.markdown('<div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:4px">商品画像の使用</div>', unsafe_allow_html=True)
         use_product_image = st.radio("商品画像", ["使用する", "使用しない"], horizontal=True,
