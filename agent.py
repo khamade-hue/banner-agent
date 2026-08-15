@@ -399,30 +399,41 @@ def generate_banner_prompts(
         },
     }
 
-    # セーフゾーン指示をクロップ量から計算（バッファ込み）
+    # セーフゾーン指示：クロップ量ぴったりを余白にしてもらう
+    # canvas_size 例: "1024×1536px（上下各128px...）"
+    try:
+        _gw, _gh = (int(x) for x in canvas_size.split("px")[0].split("×"))
+    except Exception:
+        _gw, _gh = 1024, 1024
+
     _safe_lines = []
     if crop_top > 0:
+        _inner_top = crop_top
+        _inner_bottom = _gh - crop_top
         _safe_lines.append(
-            f"- CTAボタン：下端から{crop_top + 100}px以上内側に配置すること"
-            f"（下端{crop_top}pxクロップ＋100pxバッファ）。下端ギリギリ配置は絶対禁止。"
+            f"- 上端0〜{_inner_top}px・下端{_inner_bottom}〜{_gh}px は【背景のみゾーン】：背景色・グラデーションのみ許可。テキスト・ロゴ・CTAボタン等のコンテンツ配置は絶対禁止。"
         )
         _safe_lines.append(
-            f"- ヘッドライン・サブコピー：上端から{crop_top + 50}px以上内側に配置すること。"
+            f"- すべてのコンテンツ（ヘッドライン・サブコピー・CTAボタン等）はy={_inner_top}px〜y={_inner_bottom}pxの範囲内にのみ配置すること。"
         )
     else:
-        _safe_lines.append("- CTAボタン・ヘッドライン：上下クロップはないが、端から50px以上内側に配置すること。")
+        _safe_lines.append("- 上下クロップなし。コンテンツは上下端から50px以上内側に配置すること。")
     if crop_left > 0:
+        _inner_left = crop_left
+        _inner_right = _gw - crop_left
         _safe_lines.append(
-            f"- すべての重要テキスト・要素：左右端から{crop_left + 80}px以上内側に配置すること"
-            f"（左右{crop_left}pxクロップ＋80pxバッファ）。"
+            f"- 左端0〜{_inner_left}px・右端{_inner_right}〜{_gw}px は【背景のみゾーン】：コンテンツ配置禁止。"
+        )
+        _safe_lines.append(
+            f"- すべてのコンテンツはx={_inner_left}px〜x={_inner_right}pxの範囲内にのみ配置すること。"
         )
     else:
-        _safe_lines.append("- すべての重要テキスト・要素：左右端から80px以上内側に配置すること。")
+        _safe_lines.append("- 左右クロップなし。コンテンツは左右端から80px以上内側に配置すること。")
     _safe_zone_text = "\n".join(_safe_lines)
 
     _user_text = f"""以下の情報をもとに、SNSバナー広告のデザインブリーフを{num_variations}パターン（{' / '.join(variation_labels)}）作成してください。
 【キャンバスサイズ】{canvas_size} — このサイズで生成し、クロップ後に最終バナーとして表示される。レイアウト・余白・テキストサイズはこのサイズと縦横比に合わせて設計すること。
-【セーフゾーン・厳守】以下のpx値を必ず守ること（クロップ量＋バッファ計算済み）:
+【セーフゾーン・厳守】生成後にクロップが入る。以下のゾーン指定を厳守すること:
 {_safe_zone_text}
 
 ---
