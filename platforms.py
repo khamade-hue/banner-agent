@@ -12,6 +12,10 @@ class Platform:
     gen_size: str = "1024x1024"  # gpt-image-2 generation size
     canvas_label: str = ""  # empty = use GEN_SIZE_CANVAS[gen_size]
 
+    @property
+    def display_name(self) -> str:
+        return f"{self.name}  {self.width}×{self.height}"
+
     def get_canvas_label(self) -> str:
         return self.canvas_label or GEN_SIZE_CANVAS.get(self.gen_size, self.gen_size)
 

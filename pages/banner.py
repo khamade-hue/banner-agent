@@ -461,7 +461,7 @@ if _banner_mode == "新規生成":
 
     selected_platform_name = st.selectbox(
         "プラットフォーム *",
-        [p.name for p in PLATFORMS],
+        [p.display_name for p in PLATFORMS],
         index=0,
         key="banner_platform",
     )
@@ -558,7 +558,7 @@ if _banner_mode == "新規生成":
             st.error("コピーを選択してください")
             st.stop()
 
-        selected_platforms = [p for p in PLATFORMS if p.name == selected_platform_name]
+        selected_platforms = [p for p in PLATFORMS if p.display_name == selected_platform_name]
         _sel_platform = selected_platforms[0] if selected_platforms else PLATFORMS[0]
         _gen_size = _sel_platform.gen_size
         _canvas_size = _sel_platform.get_canvas_label()
@@ -868,8 +868,8 @@ else:
     _section("出力プラットフォーム")
     selected_resize_platform_names = st.multiselect(
         "プラットフォームを選択 *",
-        [p.name for p in PLATFORMS],
-        default=[PLATFORMS[0].name],
+        [p.display_name for p in PLATFORMS],
+        default=[PLATFORMS[0].display_name],
         key="resize_platforms",
         label_visibility="collapsed",
     )
@@ -889,7 +889,7 @@ else:
                 st.error(f"元画像の読み込みに失敗しました: {e}")
                 st.stop()
 
-            target_platforms = [p for p in PLATFORMS if p.name in selected_resize_platform_names]
+            target_platforms = [p for p in PLATFORMS if p.display_name in selected_resize_platform_names]
             resized_imgs = resize_for_selected_platforms(src_img, target_platforms)
             st.session_state["resize_results"] = resized_imgs
             st.session_state["resize_banner"]  = sel_resize_banner
