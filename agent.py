@@ -277,9 +277,7 @@ def generate_banner_prompts(
     reference_image_mime: str = "image/jpeg",
     user_reference_image_b64: str = "",
     user_reference_image_mime: str = "image/jpeg",
-    canvas_size: str = "1024×1024px（クロップなし・1080×1080px表示）",
-    crop_left: int = 0,
-    crop_top: int = 0,
+    canvas_size: str = "1024×1024px（リサイズ後に1080×1080px表示）",
 ) -> list[dict]:
     """Use Claude to craft design-brief-style prompts for gpt-image-2 banner generation."""
     client = _claude()
@@ -399,42 +397,9 @@ def generate_banner_prompts(
         },
     }
 
-    # セーフゾーン指示：クロップ量ぴったりを余白にしてもらう
-    # canvas_size 例: "1024×1536px（上下各128px...）"
-    try:
-        _gw, _gh = (int(x) for x in canvas_size.split("px")[0].split("×"))
-    except Exception:
-        _gw, _gh = 1024, 1024
-
-    _safe_lines = []
-    if crop_top > 0:
-        _inner_top = crop_top
-        _inner_bottom = _gh - crop_top
-        _safe_lines.append(
-            f"- 上端0〜{_inner_top}px・下端{_inner_bottom}〜{_gh}px は【背景のみゾーン】：背景色・グラデーションのみ許可。テキスト・ロゴ・CTAボタン等のコンテンツ配置は絶対禁止。"
-        )
-        _safe_lines.append(
-            f"- すべてのコンテンツ（ヘッドライン・サブコピー・CTAボタン等）はy={_inner_top}px〜y={_inner_bottom}pxの範囲内にのみ配置すること。"
-        )
-    else:
-        _safe_lines.append("- 上下クロップなし。コンテンツは上下端から50px以上内側に配置すること。")
-    if crop_left > 0:
-        _inner_left = crop_left
-        _inner_right = _gw - crop_left
-        _safe_lines.append(
-            f"- 左端0〜{_inner_left}px・右端{_inner_right}〜{_gw}px は【背景のみゾーン】：コンテンツ配置禁止。"
-        )
-        _safe_lines.append(
-            f"- すべてのコンテンツはx={_inner_left}px〜x={_inner_right}pxの範囲内にのみ配置すること。"
-        )
-    else:
-        _safe_lines.append("- 左右クロップなし。コンテンツは左右端から80px以上内側に配置すること。")
-    _safe_zone_text = "\n".join(_safe_lines)
-
     _user_text = f"""以下の情報をもとに、SNSバナー広告のデザインブリーフを{num_variations}パターン（{' / '.join(variation_labels)}）作成してください。
-【キャンバスサイズ】{canvas_size} — このサイズで生成し、クロップ後に最終バナーとして表示される。レイアウト・余白・テキストサイズはこのサイズと縦横比に合わせて設計すること。
-【セーフゾーン・厳守】生成後にクロップが入る。以下のゾーン指定を厳守すること:
-{_safe_zone_text}
+【キャンバスサイズ】{canvas_size} — このサイズで生成し、アスペクト比を保ったままリサイズして表示される。クロップはない。レイアウト・余白・テキストサイズはこのサイズと縦横比に合わせて設計すること。
+【余白ルール】上下・左右の端から50px以上内側にすべてのコンテンツ（ヘッドライン・サブコピー・CTAボタン等）を配置すること。
 
 ---
 
@@ -495,7 +460,7 @@ def generate_banner_prompts(
         tool_choice={"type": "tool", "name": "submit_banner_prompts"},
         system=f"""あなたはSNS広告のクリエイティブディレクターです。
 商品情報・コピー・訴求パターンをもとに、gpt-image-2で{canvas_size}のSNSバナー画像を生成するためのデザインブリーフを作成します。
-キャンバスサイズは実際の生成サイズです。クロップ量はユーザー指示に記載されています。必ずそのpx値に従ってコンテンツを配置してください。
+キャンバスサイズは実際の生成サイズです。生成後はクロップなしでアスペクト比を保ったままリサイズして表示されます。
 
 ## ブリーフを書く前の思考順序
 

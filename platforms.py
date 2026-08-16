@@ -24,29 +24,19 @@ class Platform:
         return crop_left, crop_top
 
     def get_canvas_label(self) -> str:
-        """Returns actual generation canvas size with crop info for the design brief."""
+        """Returns actual generation canvas size for the design brief."""
         gen_w, gen_h = (int(x) for x in self.gen_size.split("x"))
-        crop_left, crop_top = self.crop_margins()
-        crops = []
-        if crop_top > 0:
-            crops.append(f"上下各{crop_top}px")
-        if crop_left > 0:
-            crops.append(f"左右各{crop_left}px")
-        if crops:
-            crop_desc = "・".join(crops) + f"クロップ後に{self.width}×{self.height}px表示"
-        else:
-            crop_desc = f"クロップなし・{self.width}×{self.height}px表示"
-        return f"{gen_w}×{gen_h}px（{crop_desc}）"
+        return f"{gen_w}×{gen_h}px（リサイズ後に{self.width}×{self.height}px表示）"
 
 
 PLATFORMS = [
-    Platform("Instagram/TikTok ストーリー・リール", "instagram_story",    1080, 1920, "1024x1536"),
-    Platform("Instagram フィード（縦型 4:5）",      "instagram_feed_45",  1080, 1350, "1024x1536"),
+    Platform("Instagram/TikTok ストーリー・リール", "instagram_story",    1080, 1920, "1152x2048"),
+    Platform("Instagram フィード（縦型 4:5）",      "instagram_feed_45",  1080, 1350, "1024x1280"),
     Platform("Instagram フィード（正方形）",         "instagram_square",   1080, 1080, "1024x1024"),
-    Platform("X（Twitter）",                        "twitter",            1200,  675, "1536x1024"),
-    Platform("Facebook / LINE フィード",             "facebook_line",      1200,  628, "1536x1024"),
-    Platform("Google レクタングル（300×250）",       "google_300x250",      300,  250, "1024x1024"),
-    Platform("Google ハーフページ（300×600）",       "google_300x600",      300,  600, "1024x1536"),
+    Platform("X（Twitter）",                        "twitter",            1200,  675, "1280x720"),
+    Platform("Facebook / LINE フィード",             "facebook_line",      1200,  628, "1216x640"),
+    Platform("Google レクタングル（300×250）",       "google_300x250",      300,  250, "960x800"),
+    Platform("Google ハーフページ（300×600）",       "google_300x600",      300,  600, "768x1536"),
 ]
 
 
