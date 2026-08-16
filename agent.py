@@ -713,7 +713,7 @@ def _regex_extract_copy(prompt: str) -> dict:
             in_feature = False  # new major section
 
         # "Exact text: 「テキスト」" — most reliable
-        m = re.match(r".*?exact\s+(?:japanese\s+)?text\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*$", s, re.I)
+        m = re.match(r'.*?exact\s+(?:japanese\s+)?text\s*[：:]\s*[「"""]?(.+?)[」"""]?\s*$', s, re.I)
         if m:
             t = m.group(1).strip()
             if _has_jp(t):
@@ -733,8 +733,8 @@ def _regex_extract_copy(prompt: str) -> dict:
 
         # "Main Headline: テキスト" or "ヘッドライン: テキスト"
         m = re.match(
-            r"[-•\s]*(?:main\s+headline|ヘッドライン|メインコピー|見出し|キャッチコピー)"
-            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(（].*)?$",
+            r'[-•\s]*(?:main\s+headline|ヘッドライン|メインコピー|見出し|キャッチコピー)'
+            r'\s*[：:]\s*[「"""]?(.+?)[」"""]?\s*(?:[—–(（].*)?$',
             s, re.I,
         )
         if m:
@@ -745,8 +745,8 @@ def _regex_extract_copy(prompt: str) -> dict:
 
         # "Sub-copy: テキスト" or "サブコピー: テキスト"
         m = re.match(
-            r"[-•\s]*(?:sub[-\s]?copy|supporting\s+copy|sub[-\s]?headline|sub[-\s]?catch|サブコピー|サブキャッチ|説明文)"
-            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(（].*)?$",
+            r'[-•\s]*(?:sub[-\s]?copy|supporting\s+copy|sub[-\s]?headline|sub[-\s]?catch|サブコピー|サブキャッチ|説明文)'
+            r'\s*[：:]\s*[「"""]?(.+?)[」"""]?\s*(?:[—–(（].*)?$',
             s, re.I,
         )
         if m:
@@ -757,8 +757,8 @@ def _regex_extract_copy(prompt: str) -> dict:
 
         # "Offer/CTA: テキスト" or "CTAバー: テキスト" or "テキスト: 「...」" in CTA context
         m = re.match(
-            r"[-•\s]*(?:(?:offer[/／])?cta(?:\s+text|\s+button|\s+copy|\s*バー)?|ボタンテキスト)"
-            r"\s*[：:]\s*[「\"""]?(.+?)[」\"""]?\s*(?:[—–(（].*)?$",
+            r'[-•\s]*(?:(?:offer[/／])?cta(?:\s+text|\s+button|\s+copy|\s*バー)?|ボタンテキスト)'
+            r'\s*[：:]\s*[「"""]?(.+?)[」"""]?\s*(?:[—–(（].*)?$',
             s, re.I,
         )
         if m:
@@ -769,7 +769,7 @@ def _regex_extract_copy(prompt: str) -> dict:
 
         # "Feature Badge: テキスト" or "バッジ1: テキスト"
         m = re.match(
-            r"[-•\s]*(?:feature\s+badge|フィーチャーバッジ|バッジ\s*\d*)\s*[：:—–]\s*[「\"""]?(.+?)[」\"""]?\s*$",
+            r'[-•\s]*(?:feature\s+badge|フィーチャーバッジ|バッジ\s*\d*)\s*[：:—–]\s*[「"""]?(.+?)[」"""]?\s*$',
             s, re.I,
         )
         if m:
