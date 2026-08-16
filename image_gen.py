@@ -5,10 +5,15 @@ from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 
 
-_AD_BANNER_PREFIX = (
+_AD_PREFIX_SNS = (
     "Professional Japanese SNS advertising banner. "
     "Commercial quality, high-impact marketing creative optimized for social media conversion. "
     "Polished ad design with clear visual hierarchy. "
+)
+_AD_PREFIX_DISPLAY = (
+    "Professional Japanese web display advertising banner. "
+    "Commercial quality, attention-grabbing digital marketing creative for Google Display Network. "
+    "Clean, conversion-optimized ad design with clear visual hierarchy. "
 )
 
 
@@ -17,10 +22,12 @@ def generate_image(
     quality: str = "high",
     reference_image: Image.Image | None = None,
     size: str = "1024x1024",
+    platform_name: str = "",
 ) -> Image.Image:
     """Generate image with gpt-image-2. Uses edit endpoint when reference_image is provided."""
     client = OpenAI()
-    _prompt = _AD_BANNER_PREFIX + prompt
+    _prefix = _AD_PREFIX_DISPLAY if "google" in platform_name.lower() else _AD_PREFIX_SNS
+    _prompt = _prefix + prompt
 
     if reference_image is not None:
         try:

@@ -751,7 +751,7 @@ if _banner_mode == "新規生成":
             def _gen(item):
                 idx, v = item
                 ref_pil = _ref_pil_map.get(v["variation"])
-                img = generate_image(v["prompt"], reference_image=ref_pil, size=_gen_size)
+                img = generate_image(v["prompt"], reference_image=ref_pil, size=_gen_size, platform_name=_sel_platform.filename)
                 return idx, v, resize_for_selected_platforms(img, selected_platforms)
 
             gen_errors = []
@@ -1135,7 +1135,8 @@ if _banner_mode == "新規生成" and st.session_state.get("gen_results"):
                                 v["prompt"], rev_part_label, target_elem, rev_instructions
                             )
                             _regen_size = st.session_state.get("gen_size", "1024x1024")
-                            new_base_img = generate_image(new_prompt, size=_regen_size)
+                            _regen_platform_name = current_platforms[0].filename if current_platforms else ""
+                            new_base_img = generate_image(new_prompt, size=_regen_size, platform_name=_regen_platform_name)
                             new_platform_images = resize_for_selected_platforms(
                                 new_base_img, current_platforms
                             )
